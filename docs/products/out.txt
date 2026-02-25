@@ -1,8 +1,4 @@
-<pre id="id"></pre>
-
-<script>
-
-let data = `Fruit	Apple	Golden-Delicious	golden_delicious_iconic#Golden Delicious has a white juicy pulp and a greenish yellow shell. The taste is mellow and sweet, making Golden Delicious suitable for desserts.|Title: Apple Golden Delicious Class 1 
+Fruit	Apple	Golden-Delicious	golden_delicious_iconic#Golden Delicious has a white juicy pulp and a greenish yellow shell. The taste is mellow and sweet, making Golden Delicious suitable for desserts.|Title: Apple Golden Delicious Class 1 
 Country and volume: Italy, ca 180g 
 Description: Golden Delicious has a white juicy pulp and a greenish yellow shell. The taste is mellow and sweet, making Golden Delicious suitable for desserts.
 URL: https://www.hemkop.se/produkt/apple-Golden-Delicious-Klass-1-100142141_KG
@@ -1184,84 +1180,5 @@ URL: https://www.hemkop.se/produkt/Zucchini-Klass-1-100268130_ST
 Vegetables	Zucchini	zucchini_iconic#Zucchini can be eaten raw, but is usually used in soups, pots, stews, etc.|Title: Zucchini Class 1 
 Country: Spain 
 Description: Zucchini can be eaten raw, but is usually used in soups, pots, stews, etc.
-URL: https://www.hemkop.se/produkt/Zucchini-Klass-1-100268130_ST`
-
-
-
-function parseProductString(str) {
-  const result = {};
-  
-  // Split into lines and ignore empty ones
-  const lines = str.split('\n').map(l => l.trim()).filter(Boolean);
-  
-  for (const line of lines) {
-    const [rawKey, ...rest] = line.split(':');
-    if (!rawKey || rest.length === 0) continue;
-    
-    const key = rawKey.trim();
-    const value = rest.join(':').trim(); // in case value has ':'
-    
-    // Map human-readable labels to JSON field names
-    switch (key.toLowerCase()) {
-      case 'title':
-        result.title = value;
-        break;
-      case 'country and volume':
-        result.subtitle = value;
-        break;
-      case 'country':
-        result.subtitle = value;
-        break;
-      case 'description':
-        result.description = value;
-        break;
-    //  case 'ingredients':
-    //    result.description = value;
-    //    break;
-    //  case 'url':
-      //  result.url = value;
-      //  break;
-      case 'manufacturer and volume':
-        result.subtitle = value;
-        break;
-      case 'manufacturing country':
-        result.subtitle = value +", " + result.country;
-        break;
-      
-      default: break
-        // store any unexpected field as-is
-        //result[key] = value;
-    }
-  }
-  
-  return result;
-}
-
-let out = ""
-let items = data.split("***")
-
-for (let i = 0, l = items.length; i < l; i += 1) {
-  let s = items[i].split("\t")
-  if (s.length == 3) {
-    let x = s[2].split("#")
-    out += `${s[0].trim()}\t${s[1].trim()}\t${x[0]}|${x[1].split("|")[0]}|`
-    let p = parseProductString(x[1].split("|")[1])
-    if (p.description != x[1].split("|")[0])
-      out += `${p.title}|${p.subtitle}|${p.description}\n`
-    else
-      out += `${p.title}|${p.subtitle}\n`
-  } else {
-    let x = s[3].split("#")
-    out += `${s[0].trim()}\t${s[1].trim()}\t${s[2].trim()}\t${x[0]}|${x[1].split("|")[0]}|`
-    let p = parseProductString(x[1].split("|")[1])
-    if (p.description != x[1].split("|")[0])
-      out += `${p.title}|${p.subtitle}|${p.description}\n`
-    else
-      out += `${p.title}|${p.subtitle}\n`
-  }
-}
-
-  console.log(out)
-</script>
-
-
+URL: https://www.hemkop.se/produkt/Zucchini-Klass-1-100268130_ST
+***
