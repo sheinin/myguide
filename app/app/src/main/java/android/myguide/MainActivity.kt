@@ -12,11 +12,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import android.myguide.ui.theme.MyGuideTheme
+import androidx.room.Room
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var vm: ViewModel
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+
+
+        val dao = UserDatabase.getDatabase(application).userDao()
+        val repository = Repository(dao)
+        vm = ViewModel(repository)
+
+        // Fetch all users when the activity starts
+
+        vm.allUsers.observe(this) { users ->
+            users.map { qqq("users: $it") }
+            //userAdapter.submitList(users) // Use submitList here
+        }
+        vm.fetchItems()
         setContent {
             MyGuideTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -45,3 +64,6 @@ fun GreetingPreview() {
         Greeting("Android")
     }
 }
+
+
+fun qqq(q: String) { println("qqq $q") }
