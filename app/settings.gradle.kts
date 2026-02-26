@@ -1,3 +1,4 @@
+
 pluginManagement {
     repositories {
         google {
@@ -10,6 +11,8 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    // Define a function to load properties
+
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -21,3 +24,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "My Guide"
 include(":app")
+
+
+
+

@@ -12,7 +12,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import android.myguide.ui.theme.MyGuideTheme
-import androidx.room.Room
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.rememberCameraPositionState
 
 class MainActivity : ComponentActivity() {
 
@@ -25,13 +28,13 @@ class MainActivity : ComponentActivity() {
 
 
 
-        val dao = UserDatabase.getDatabase(application).userDao()
+        val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         vm = ViewModel(repository)
 
         // Fetch all users when the activity starts
 
-        vm.allUsers.observe(this) { users ->
+        vm.allItems.observe(this) { users ->
             users.map { qqq("users: $it") }
             //userAdapter.submitList(users) // Use submitList here
         }
@@ -54,6 +57,14 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
         text = "Hello $name!",
         modifier = modifier
+    )
+    val singapore = LatLng(1.35, 103.86)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(singapore, 10f)
+    }
+    GoogleMap(
+        modifier = Modifier.fillMaxSize(),
+        cameraPositionState = cameraPositionState
     )
 }
 

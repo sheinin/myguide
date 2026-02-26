@@ -1,4 +1,7 @@
 import org.gradle.kotlin.dsl.implementation
+import java.util.Properties
+import java.io.File
+
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,11 +17,18 @@ android {
     }
 
     defaultConfig {
+        fun loadProperties(fileName: String, path: String = rootDir.absolutePath) =
+            Properties().apply {
+                load(File("$path/$fileName").inputStream())
+            }
+        val localProperties: Properties = loadProperties("local.properties")
+
         applicationId = "android.myguide"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders["googleMapsApiKey"] = localProperties["MAPS_API_KEY"]!!
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -66,4 +76,5 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.maps.compose)
 }
