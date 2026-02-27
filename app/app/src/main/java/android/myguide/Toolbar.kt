@@ -52,7 +52,7 @@ class Toolbar {
     val title = _title
     fun back(vi: View? = null) {
         val i = items.lastIndex.dec()
-        if (i == -1) null//activity.showSplash()
+        if (i == -1) vm.showSplash.value = true//activity.showSplash()
         else if (vi == null) goto(i)
         else goto(i)
     }

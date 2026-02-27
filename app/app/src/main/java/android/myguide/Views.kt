@@ -1,5 +1,6 @@
 package android.myguide
 
+import android.util.Log.w
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,10 +95,30 @@ fun Main(
                     }
             ) {
                 Icon(
-                    painterResource(if (isMap) R.drawable.list else R.drawable.map),
+                    painterResource(R.drawable.back),
                     "",
                     modifier = Modifier.clickable(
-                        onClick = { isMap = !isMap }
+                        onClick = { vm.toolbar.back() }
+                    )
+                )
+                Icon(
+                    painterResource(R.drawable.list),
+                    "",
+                    modifier = Modifier.clickable(
+                        onClick = {
+                            isMap = false
+                            screen.render.display(Settings.Display.LIST)
+                        }
+                    )
+                )
+                Icon(
+                    painterResource(R.drawable.map),
+                    "",
+                    modifier = Modifier.clickable(
+                        onClick = {
+                            isMap = true
+                            screen.render.display(Settings.Display.MAP)
+                        }
                     )
                 )
             }
@@ -146,9 +168,12 @@ fun Main(
                         .fillMaxWidth()
                         .horizontalScroll(horizontalScrollState)
                 ) {
+                    val h = bind.h.observeAsState()
+                    val w = bind.w.observeAsState()
+                    qqq("WH"+w.value+ " "+h.value)
                     Box(
                         modifier = Modifier
-                            .size(bind.w.value!!, bind.h.value!!)
+                            .size(w.value!!, h.value!!)
                             .padding(end = 8.dp)
                             .background(Color(0xFF6200EE))
                     ) {
@@ -179,13 +204,21 @@ fun RenderItem(item: ViewModel.Cycler.Item) {
                 .size(60.dp)
 
         )
-        Text(
-            item.title,
-            color = Color.Red,
+        Column(
             modifier = Modifier.padding(8.dp).fillMaxWidth()
-              //
                 .background(Color.Green)
-
-        )
+        ) {
+            Text(
+                item.title,
+                color = Color.Red,
+                style = typography.bodyMedium,
+            )
+            Text(
+                item.description ?: "",
+                color = Color.Red,
+                maxLines = 2,
+                style = typography.bodyMedium
+            )
+        }
     }
 }

@@ -47,8 +47,8 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             val title: String,
             val subtitle: String?,
             val description: String?,
-            val x: Dp,
-            val y: Dp,
+            var x: Dp,
+            var y: Dp,
             val w: Dp,
             val h: Dp
         )
@@ -121,7 +121,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     }
     val current = MutableLiveData<Boolean?>(null)
     val toolbar = Toolbar()
-
+    val showSplash = MutableLiveData(true)
 
     val mapShowing = MutableLiveData(true)
     val screen = mapOf(false to Screen(), true to Screen())

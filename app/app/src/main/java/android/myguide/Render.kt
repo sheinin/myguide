@@ -1,6 +1,11 @@
 package android.myguide
 
+import android.R.attr.scrollY
+import android.R.attr.x
 import android.myguide.Settings.Display.*
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -16,6 +21,8 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.collections.get
+import kotlin.text.toFloat
 
 class Render(
     val activity: MainActivity,
@@ -106,7 +113,7 @@ class Render(
         val height: Dp
             get() =
                 when (this) {
-                    DEFAULT -> 100.dp
+                    DEFAULT -> 60.dp
                     CHAIN -> 100.dp
                     PLAYER -> 100.dp
                 }
@@ -167,17 +174,21 @@ class Render(
         ordinal += 1
     }
     private fun measure(ix: Int) {
-        val item = list.getOrNull(ix) ?: return
-/*
+        //val item = list.getOrNull(ix) ?: return
+
         val paragraph = androidx.compose.ui.text.Paragraph(
-            text = "Foo",
-            style = MaterialTheme.typography.body1,
-            constraints = Constraints(maxWidth = maxWidthInPx),
-            density = LocalDensity.current,
-            fontFamilyResolver = LocalFontFamilyResolver.current,
+            text = list[ix].title,
+            style = typography.bodyMedium,
+            constraints = Constraints(maxWidth = (screenWidth - 80.dp).toPx().toInt()),
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
         )
-        paragraph.lineCount
-  */
+        val m = 12.dp * paragraph.lineCount.dec()
+        qqq("M"+list[ix].title + " "+m + " "+paragraph.lineCount)
+        data.display[ix].height += m
+       // data.display[ix].measure = m
+
+
      /*   val height1 = dp2px(18.844444f)
         val height2 = dp2px(15.288889f)
         measureLine1a.text = data.display[ix].name
@@ -294,6 +305,43 @@ class Render(
                // sleep { scrollY.setScrollingEnabled(display != MAP) }
             }
 
+        }
+    }
+    fun display(display: Settings.Display) {
+        this.display = display
+        val start = 0
+        val end = min(batch, data.ruler.size)
+        pics.fill(-1)
+        observe(display)
+        //pos()
+        qqq("DIS "+display)
+        if (display == MAP) {
+            //if (data.ruler.isNotEmpty()) renderX(0)
+            //handler = com.nearmeentertainment.vegasnearme.screen.Render.Handlers.NONE
+
+            bind.w.value = screenWidth * data.ruler.size
+            bind.h.value = mapHeight
+
+            data.vm.mapIndexed { ix, it ->
+                it.x = screenWidth * ix
+                it.y = 0.dp
+            }
+
+            //scrollY.setIsMap(true)
+            ///scrollY.setScrollingEnabled(false)
+            //activity.runOnUiThread {
+                (start until end).map {
+                   renderX(it)
+               //     elements[it].count = 2
+                }
+              //  handler = handler.set(true)
+           // }
+        } else {
+            handler = handler.set(false)
+
+            bind.w.value = screenWidth
+            bind.h.value = height
+            (start until end).map { renderY(it) }
         }
     }
     fun load(list: List<ListInterface>, display: Settings.Display = Settings.Display.LIST, callback: (() -> Unit)? = null) {
@@ -425,12 +473,30 @@ class Render(
         spinners.clear()
     }
 
+    private fun renderX(ix: Int) {
+        val point = data.point.getOrNull(ix) ?: return
 
+        val disp = data.display.find { it.ordinal == point } ?: return
+        val index = ix.mod(batch)
+        data.stack[index] = ix
+        //qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index + " name:"+data.vm.getOrNull(point)?.line1aText?.value+data.stack.map { it }.toList().joinToString("."))
+
+
+        que(index = index, ix = disp.ordinal)
+        /*data.vm.getOrNull(point)?.also {
+
+            cycler.items[index].postValue(it)
+
+        } ?: return
+        cycler.hidden[index].value = false
+
+         */
+    }
     private fun renderY(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        qqq("RF "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title)
+        //qqq("RF "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title)
         data.stack[index] = ix
         /*elements[index].also {
             it.count = 0
@@ -474,7 +540,7 @@ class Render(
     private fun vm(ix: Int) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-        qqq(">"+data.ruler.getOrNull(ix)+ " "+ix+" "+item.title  +  " ")
+        //qqq(">"+data.ruler.getOrNull(ix)+ " "+ix+" "+item.title  +  " ")
         val vm =
             ViewModel.Cycler.Item(
                 title = item.title,
