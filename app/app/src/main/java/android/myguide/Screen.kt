@@ -1,9 +1,8 @@
 package android.myguide
 
-import android.view.View
+import android.myguide.QueryType.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
 
 
 class Screen(
@@ -36,6 +35,9 @@ class Screen(
     //    it.calibrate(realm.query(Activity::class).find().subList(0, cyclerBatch).toMutableList())
     }
 
+    private var id: String? = null
+    private var display: Settings.Display? = null
+    var queryType: QueryType? = null
 
 
     override fun build(
@@ -43,6 +45,9 @@ class Screen(
         display: Settings.Display,
         queryType: QueryType,
     ) {
+        this.id = id
+        this.display = display
+        this.queryType = queryType
         qqq(
             "SCREEN BUILD query:" + queryType
                     + " ident:" +ident
@@ -84,18 +89,29 @@ class Screen(
     }
 
     override fun query() {
-        val l = vm.allItems.value!!.filter { it.info != null }.map {
-            val i = it.info?.split("|")!!
-            object: ListInterface {
-                override val title: String = i.getOrNull(2) ?: ""
-                override val subtitle = i.getOrNull(2) ?: ""
-                override val description = i.getOrNull(3) ?: ""
-            }
-        }.toList()
         render.reset()
-        render.load(l)
+        render.load(
+            when (queryType) {
+                ITEM -> {
+                    id?.also { vm.fetchShops(it) } ?: vm.fetchShops()
+                    vm.allShops.value!!
+                }
+                ITEMS -> {
+                    vm.fetchItems()
+                    vm.allItems.value!!
+                }
+                SHOP -> {
+                    id?.also { vm.fetchItems(it) } ?: vm.fetchItems()
+                    vm.allItems.value!!
+                }
+                SHOPS -> {
+                    vm.fetchShops()
+                    vm.allShops.value!!
+                }
+                else -> listOf()
+            }
+        )
         // qqq("SCREEN QUERY " + ident + " " +screen)
-   //     screen?.query()
     }
 
     override fun reset() {
@@ -136,6 +152,6 @@ class Settings {
 enum class QueryType {
     ITEM,
     ITEMS,
-    STORE,
-    STORES;
+    SHOP,
+    SHOPS;
 }

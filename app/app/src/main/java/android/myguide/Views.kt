@@ -1,9 +1,10 @@
 package android.myguide
 
-import android.util.Log.w
 import android.view.ViewTreeObserver
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -14,9 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,15 +30,22 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.constraintlayout.compose.Dimension
-import androidx.constraintlayout.compose.MotionScene
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -73,20 +82,100 @@ fun Main(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            val (toolbar, scroll) = createRefs()
+            val (toolbar, ctrl, scroll) = createRefs()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(0.dp)
+                    .background(MaterialTheme.colorScheme.background)
+                    .constrainAs(toolbar) {
+                        top.linkTo(parent.top)
+                        bottom.linkTo(ctrl.top)
+                    }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp, 4.dp)
+                ) {
+                    Image(
+                        painterResource(R.drawable.home),
+                        contentDescription = "Home",
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        modifier = Modifier
+                            .clickable(
+                                onClick = {
+                                    vm.showSplash.value = true
+                                    vm.toolbar.clear()
+                                }
+                            )
+                            .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = CircleShape
+                            )
+                            .padding(5.dp)
+                    )
+                    Text(
+                        vm.toolbar.title[screen.ident]!!.value!!,
+                        style = typography.titleLarge,
+                        maxLines = 1,
+                        fontWeight = FontWeight.Bold,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(8.dp, 0.dp)
+                            .fillMaxWidth()
+                            .weight(1f)
+                    )
+                    Image(
+                        painter = painterResource(R.drawable.back),
+                        contentDescription = "",
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        modifier = Modifier.clickable(
+                                onClick = { vm.toolbar.back() }
+                            )
+                            .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = CircleShape
+                            )
+                            .padding(5.dp)
+                    )
+                }
+                if (vm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
+                    Row(Modifier.padding(8.dp, 4.dp)) {
+                        ArrowText(
+                            vm.toolbar.crumbs[screen.ident]!!.value!![0],
+                            modifier = Modifier.weight(1f)
+                        )
+                        ArrowText(
+                            vm.toolbar.crumbs[screen.ident]!!.value!![1],
+                            modifier = Modifier.weight(1f)
+                                .alpha(if (vm.toolbar.crumbs[screen.ident]!!.value!![1].isNotEmpty()) 1f else 0f)
+                        )
+                        ArrowText(
+                            vm.toolbar.crumbs[screen.ident]!!.value!![2],
+                            modifier = Modifier.weight(1f)
+                                .alpha(if (vm.toolbar.crumbs[screen.ident]!!.value!![2].isNotEmpty()) 1f else 0f)
+                        )
+                    }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(0.dp)
                     .background(MaterialTheme.colorScheme.background)
                     .padding(8.dp)
-                    .constrainAs(toolbar) {
+                    .constrainAs(ctrl) {
                         if (isMap) {
-                            top.linkTo(parent.top)
+                            top.linkTo(toolbar.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         } else {
-                            top.linkTo(parent.top)
+                            top.linkTo(toolbar.bottom)
                             bottom.linkTo(scroll.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -94,32 +183,39 @@ fun Main(
                         height = Dimension.wrapContent
                     }
             ) {
-                Icon(
-                    painterResource(R.drawable.back),
-                    "",
+                Image(
+                    painter = painterResource(R.drawable.list),
+                    contentDescription = "list",
                     modifier = Modifier.clickable(
-                        onClick = { vm.toolbar.back() }
-                    )
-                )
-                Icon(
-                    painterResource(R.drawable.list),
-                    "",
-                    modifier = Modifier.clickable(
-                        onClick = {
-                            isMap = false
-                            screen.render.display(Settings.Display.LIST)
-                        }
-                    )
+                            onClick = {
+                                isMap = false
+                                screen.render.display(Settings.Display.LIST)
+                            }
+                        )
+                        .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            shape = CircleShape
+                        )
+                        .padding(5.dp)
                 )
                 Icon(
                     painterResource(R.drawable.map),
-                    "",
+                    "map",
                     modifier = Modifier.clickable(
-                        onClick = {
-                            isMap = true
-                            screen.render.display(Settings.Display.MAP)
-                        }
-                    )
+                            onClick = {
+                                isMap = true
+                                screen.render.display(Settings.Display.MAP)
+                            }
+                        )
+                        .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            shape = CircleShape
+                        )
+                        .padding(5.dp)
                 )
             }
             val scrollState = rememberScrollState()
@@ -132,7 +228,6 @@ fun Main(
                     with(dens) {
                         screen.render.observeY(scrollState.value.toDp())
                     }
-                  //  println("qqqScroll position: ${scrollState.value}")
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -155,7 +250,7 @@ fun Main(
                             height = Dimension.wrapContent
                         } else {
                             bottom.linkTo(parent.bottom)
-                            top.linkTo(toolbar.bottom)
+                            top.linkTo(ctrl.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                             height = Dimension.fillToConstraints
@@ -170,17 +265,21 @@ fun Main(
                 ) {
                     val h = bind.h.observeAsState()
                     val w = bind.w.observeAsState()
-                    qqq("WH"+w.value+ " "+h.value)
                     Box(
                         modifier = Modifier
                             .size(w.value!!, h.value!!)
                             .padding(end = 8.dp)
                             .background(Color(0xFF6200EE))
                     ) {
-                        val items by bind.cycler.items.collectAsStateWithLifecycle()
+                        val items by
+                            if (
+                                screen.queryType == QueryType.SHOP
+                                || screen.queryType == QueryType.ITEMS
+                            ) bind.cycler.items.collectAsStateWithLifecycle()
+                            else bind.cycler.items.collectAsStateWithLifecycle()
                         repeat(batch) { index ->
                             val item = items[index]
-                            if (item.title.isNotEmpty()) RenderItem(item)
+                            if (item.title.isNotEmpty()) RenderItem(screen.queryType!!, item)
                         }
                     }
                 }
@@ -191,18 +290,29 @@ fun Main(
 }
 
 @Composable
-fun RenderItem(item: ViewModel.Cycler.Item) {
-    qqq("TITLE " + " "+item.x+ " "+item.y +" "+item.w + " "+item.h+ " " +item?.title )
+fun RenderItem(queryType: QueryType, item: ViewModel.Cycler.Item) {
+    //qqq("TITLE " + " "+item.x+ " "+item.y +" "+item.w + " "+item.h+ " " +item?.title )
     Row(
         modifier = Modifier
             .offset(item.x, item.y)
             .size(item.w, item.h)
+            .clickable(
+                onClick = {
+                  //  qqq("CL"+item.id+"--"+item.title)
+                    vm.toolbar.navigate(
+                        id = item.id,
+                        title = item.title,
+                        queryType =
+                            if (queryType == QueryType.SHOP || queryType == QueryType.ITEMS) QueryType.ITEM
+                            else QueryType.SHOP
+                    )
+                }
+            )
     ) {
         Image(
             painterResource(R.drawable.ic_launcher_foreground), "",
             modifier = Modifier
                 .size(60.dp)
-
         )
         Column(
             modifier = Modifier.padding(8.dp).fillMaxWidth()
@@ -218,6 +328,80 @@ fun RenderItem(item: ViewModel.Cycler.Item) {
                 color = Color.Red,
                 maxLines = 2,
                 style = typography.bodyMedium
+            )
+        }
+    }
+}
+
+
+@Composable
+fun Splash(modifier: Modifier) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        Text(
+            "STORES",
+            modifier = Modifier
+                .weight(1f)
+                .clickable(
+                    onClick = {
+                        vm.showSplash.value = false
+                        vm.toolbar.navigate(
+                            queryType = QueryType.SHOPS,
+                            title = "Stores"
+                        )
+                    }
+                )
+        )
+        Text(
+            "ITEMS",
+            modifier = Modifier
+                .weight(1f)
+                .clickable(
+                    onClick = {
+                        vm.showSplash.value = false
+                        vm.toolbar.navigate(
+                            queryType = QueryType.ITEMS,
+                            title = "Stores"
+                        )
+                    }
+                )
+        )
+    }
+}
+
+
+@Composable
+fun ArrowText(
+    text: String,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color(0xFF2196F3),
+    textColor: Color = Color.White
+) {
+    Row(
+        modifier = modifier
+            .wrapContentSize()
+            .padding(4.dp, 0.dp)
+            .fillMaxWidth()
+    ) {
+        // Main rounded rectangle
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(
+                    color = backgroundColor,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = text,
+                color = textColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

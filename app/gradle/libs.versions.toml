@@ -15,6 +15,7 @@ roomCompiler = "2.8.4"
 roomRuntime = "2.8.4"
 runtimeLivedata = "1.10.4"
 roomKtx = "2.8.4"
+animation = "1.10.3"
 
 [libraries]
 androidx-compose-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "runtimeLivedata" }
@@ -39,6 +40,7 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

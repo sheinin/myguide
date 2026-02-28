@@ -1,14 +1,6 @@
 package android.myguide
 
-import android.R.attr.scrollY
-import android.R.attr.x
 import android.myguide.Settings.Display.*
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.widget.ImageView
-import android.widget.RelativeLayout
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -21,8 +13,6 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.collections.get
-import kotlin.text.toFloat
 
 class Render(
     val activity: MainActivity,
@@ -74,10 +64,10 @@ class Render(
 
                                     data.vm.getOrNull(next.value)?.let { v ->
 
-                                        qqq("JQ "+v.y+" " +next.key+" "+v.title+ " "+next.key)
+                                        //qqq("JQ "+v.y+" " +next.key+" "+v.title+ " "+next.key)
 
                                         cycler.updateItem(next.key, v)
-                                        cycler.hidden[next.key].value = false
+                                        //cycler.hidden[next.key].value = false
                                     } ?: return@runOnUiThread
                                     pics[next.key] = next.value
                                 }
@@ -105,6 +95,7 @@ class Render(
                 }
             }
         }
+        //calibrate(vm.allItems.value!!)
     }
     enum class DisplayType {
         DEFAULT,
@@ -162,42 +153,29 @@ class Render(
                 distance = 0,
                 drawable = 0,
                 height = displayType.height,
-                title = item.title,
+                title = item.title!!,
                 ordinal = ordinal,
                 type = displayType
             )
         )
         //qqq("?? "+item.displayName+ " "+ordinal+" "+px2dp(data.display.last().height)+item.currentTime)//.+" "
-
-//        qqq("? "+item.displayName+ " "+ordinal+" "+data.display.last.height)//.+" "
-        //item.header?.length+" "+item.headline + " "+item.openType)
         ordinal += 1
     }
     private fun measure(ix: Int) {
         //val item = list.getOrNull(ix) ?: return
 
         val paragraph = androidx.compose.ui.text.Paragraph(
-            text = list[ix].title,
+            text = list[ix].title!!,
             style = typography.bodyMedium,
             constraints = Constraints(maxWidth = (screenWidth - 80.dp).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
         val m = 12.dp * paragraph.lineCount.dec()
-        qqq("M"+list[ix].title + " "+m + " "+paragraph.lineCount)
+       // qqq("M"+list[ix].title + " "+m + " "+paragraph.lineCount)
         data.display[ix].height += m
        // data.display[ix].measure = m
 
-
-     /*   val height1 = dp2px(18.844444f)
-        val height2 = dp2px(15.288889f)
-        measureLine1a.text = data.display[ix].name
-        measureLine2a.text = item.locatedAt ?: ""
-        val x = measureLine1a.lineCount.dec() * height1 + measureLine2a.lineCount.dec() * height2
-        data.display[ix].height += x + headline(ix)
-        data.display[ix].measure = x
-
-      */
     }
     private fun job(position: Dp = 0.dp, callback: (() -> Unit)? = null) {
         @Suppress("UNUSED_VARIABLE")
@@ -220,7 +198,7 @@ class Render(
             LIST -> {
                 ini = ::ini1
                 ms = ::measure
-                offset = 6
+                offset = 2
                 val x = data.display.sumOf { h -> h.height.value.toInt() }
                 val lim = position + screenHeight
                 while (
@@ -234,7 +212,7 @@ class Render(
                     ms.invoke(s)
                 }
 
-                qqq("LIM "+list.size+" "+start +" "+ min(list.size, batch)+" "+lim +" " +position + " "+screenHeight)
+                //qqq("LIM "+list.size+" "+start +" "+ min(list.size, batch)+" "+lim +" " +position + " "+screenHeight)
                 start = max(start - min(list.size, batch), 0)
             }
             MAP -> {
@@ -263,12 +241,9 @@ class Render(
             qqq("job empty")
             activity.runOnUiThread { callback?.invoke() }
             (0 until list.size).map { vm(it) }
-        //    setListIsEmpty(if (isStatic) true else null) //???
-          //  sleep { scrollY.setScrollingEnabled(display != MAP) }
             return
         }
-        qqq("SL "+start + " "+limit + " ")
-    //    setListIsEmpty(data.ruler.isEmpty())
+        ///qqq("SL "+start + " "+limit + " ")
         CoroutineScope(Dispatchers.IO).launch {
             /*when (getSettings().display) {
                 Display.D3 ->
@@ -302,7 +277,6 @@ class Render(
                 ruler(false)
                 data.vm.withIndex().filter { it.value.title == "" }.map { vm(it.index) }
                // qqq("job ms:${(System.currentTimeMillis() - t)} pos:$position start:$start limit:$limit ruler:${data.ruler.size} static:$isStatic")
-               // sleep { scrollY.setScrollingEnabled(display != MAP) }
             }
 
         }
@@ -313,29 +287,15 @@ class Render(
         val end = min(batch, data.ruler.size)
         pics.fill(-1)
         observe(display)
-        //pos()
-        qqq("DIS "+display)
         if (display == MAP) {
-            //if (data.ruler.isNotEmpty()) renderX(0)
-            //handler = com.nearmeentertainment.vegasnearme.screen.Render.Handlers.NONE
-
+            handler = handler.set(true)
             bind.w.value = screenWidth * data.ruler.size
             bind.h.value = mapHeight
-
             data.vm.mapIndexed { ix, it ->
                 it.x = screenWidth * ix
                 it.y = 0.dp
             }
-
-            //scrollY.setIsMap(true)
-            ///scrollY.setScrollingEnabled(false)
-            //activity.runOnUiThread {
-                (start until end).map {
-                   renderX(it)
-               //     elements[it].count = 2
-                }
-              //  handler = handler.set(true)
-           // }
+            (start until end).map { renderX(it) }
         } else {
             handler = handler.set(false)
             data.vm.mapIndexed { ix, it ->
@@ -353,9 +313,7 @@ class Render(
         ordinal = 0
         handler = handler.set(display == MAP)
         data.vm = MutableList(this@Render.list.size) { cycler.item }
-   ////     scrollY.setScrollingEnabled(false)
-      /////////  pos()
-        (0 until batch).map { cycler.hidden[it].value = true }
+      //  (0 until batch).map { cycler.hidden[it].value = true }
         val position = vm.toolbar.positionGet()
         if ((position ?: 0.dp) > 0.dp) {
            /* if (display == MAP) {
@@ -391,15 +349,8 @@ class Render(
                             && c.value.first + c.value.second.unaryMinus() > it.ordinal
                 }
         }
-        //??? if (data.ruler.size > filter.size) return
         val list = filter.subList(data.ruler.size, filter.size)
-        if (list.isEmpty()) {
-            if (data.ruler.isEmpty()) {
-       //         view.layoutParams.height = 0
-         //       view.layoutParams.width = screenWidth
-            }
-            return
-        }
+
         if (getSettings().display == Settings.Display.D3) {
       /*      list.map { d ->
                 data.point.add(d.ordinal)
@@ -425,12 +376,11 @@ class Render(
                 bind.w.value = screenWidth
                 bind.h.value = height//filter.sumOf { h -> h.height } //+ dp2px(16f)// + if (isStatic) divider else dp2px(16f)
             }
-            qqq("H"+height)
         }
     }
     fun listen(listen: Boolean) {
-       // handler = if (listen) handler.set(display == MAP)
-       // else Handlers.NONE
+        handler = if (listen) handler.set(display == MAP)
+        else Handlers.NONE
     }
     fun observeY(y: Dp) {
         max(data.ruler.indexOfLast { it < y } - offset, 0).also { f ->
@@ -483,17 +433,7 @@ class Render(
         val index = ix.mod(batch)
         data.stack[index] = ix
         //qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index + " name:"+data.vm.getOrNull(point)?.line1aText?.value+data.stack.map { it }.toList().joinToString("."))
-
-
         que(index = index, ix = disp.ordinal)
-        /*data.vm.getOrNull(point)?.also {
-
-            cycler.items[index].postValue(it)
-
-        } ?: return
-        cycler.hidden[index].value = false
-
-         */
     }
     private fun renderY(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
@@ -501,19 +441,10 @@ class Render(
         val index = ix.mod(batch)
         //qqq("RF "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title)
         data.stack[index] = ix
-        /*elements[index].also {
-            it.count = 0
-            it.root.y = data.ruler.getOrNull(ix) ?: return
-            it.root.layoutParams.height = disp.height
-        }
-
-         */
         que(index = index, ix = disp.ordinal)
     }
 
     private fun que(index: Int, ix: Int) {
-     //   elements[index].thumbnail.alpha = 0f
-        //qqq("QU "+index + " " +ix)
         jobQue.remove(index)
         jobQue[index] = ix
       //  activity.picasso.cancelRequest(elements[index].thumbnail)
@@ -543,11 +474,12 @@ class Render(
     private fun vm(ix: Int) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-        //qqq(">"+data.ruler.getOrNull(ix)+ " "+ix+" "+item.title  +  " ")
+      //  qqq(">"+item.id + " "+ix+" "+item.title  +  " ")
         val vm =
             ViewModel.Cycler.Item(
-                title = item.title,
-                subtitle = item.subtitle,
+                id = item.id!!,
+                title = item.title!!,
+                subtitle = item.origin,
                 description = item.description,
                 x = 0.dp,
                 y = data.ruler.getOrNull(ix) ?: 0.dp,

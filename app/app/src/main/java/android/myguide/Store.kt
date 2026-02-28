@@ -1,13 +1,6 @@
 package android.myguide
 
 import android.content.Context
-import android.graphics.drawable.Drawable
-import android.text.SpannableString
-import android.widget.Toolbar
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
@@ -17,6 +10,7 @@ import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Query
+import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,14 +22,37 @@ import kotlin.jvm.java
 data class Item(
     val parent: String,
     val id: String,
+    val pic: String?,
+    val title: String?,
+    val origin: String?,
+    val description: String?,
     val drawable: Int?,
-    val info: String?
+)
+
+
+@Entity(tableName = "shops", primaryKeys = ["id"])
+data class Shop(
+    val id: String,
+    val title: String,
+    val description: String,
+    val origin: String,
+    val lat: Double,
+    val lng: Double,
+    val drawable: Int?,
+)
+
+@Entity(tableName = "shop_items", primaryKeys = ["shop", "item"])
+data class ShopItems(
+    val shop: String,
+    val item: String
 )
 
 interface ListInterface {
-    val title: String
-    val subtitle: String?
     val description: String?
+    val drawable: Int?
+    val id: String?
+    val origin: String?
+    val title: String?
 }
 
 class ViewModel(private val repository: Repository) : ViewModel() {
@@ -44,6 +61,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val isMap = MutableLiveData(true)
         val size = MutableLiveData(0)
         data class Item(
+            val id: String,
             val title: String,
             val subtitle: String?,
             val description: String?,
@@ -52,13 +70,9 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             val w: Dp,
             val h: Dp
         )
-        data class CyclerState(
-            val isMap: Boolean = true,
-            val items: List<Item> = emptyList(),
-            val hiddenIndices: Set<Int> = emptySet()
-        )
         val item =
             Item(
+                id = "",
                 title = "",
                 subtitle = "",
                 description = "",
@@ -69,27 +83,18 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             )
         private val _items = MutableStateFlow<List<Item>>(emptyList())
         val items = _items.asStateFlow()
-
-        val hidden = List(batch) { MutableLiveData(false) }
-        //val items = List(batch) { MutableLiveData<Item>().apply { postValue(item) } }
-
-      //  var items = mutableStateListOf<Item>()
-        //    private set
-
-        // Example: Initialize with some data
+        //val hidden = List(batch) { MutableLiveData(false) }
         init {
             repeat(batch) {
                 _items.value += item
             }
         }
-
-
-
         fun updateItem(index: Int, item: Item) {
             _items.update {
                 it.mapIndexed { ix, it ->
                     if (ix == index)
                         it.copy(
+                            id = item.id,
                             title = item.title,
                             subtitle = item.subtitle,
                             description = item.description,
@@ -102,13 +107,6 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                 }
             }
         }
-
-
-
-      //  val its: List<LiveData<MutableLiveData<Item>>> get() = items
-
-        //private val _items = mutableStateListOf<Item>(item,item,item,item,item,item,item,item,item,item,item,item,item,item,item,item,)
-        //val items: SnapshotStateList<Item> = _items
     }
 
     class Screen {
@@ -122,39 +120,74 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     val current = MutableLiveData<Boolean?>(null)
     val toolbar = Toolbar()
     val showSplash = MutableLiveData(true)
-
     val mapShowing = MutableLiveData(true)
     val screen = mapOf(false to Screen(), true to Screen())
-    private val _allItems = MutableLiveData<List<Item>>()
-    val allItems: LiveData<List<Item>> get() = _allItems
+    private val _allItems = MutableLiveData<List<ListInterface>>()
+    val allItems: LiveData<List<ListInterface>> get() = _allItems
     fun fetchItems() {
         repository.getItems {
             _allItems.postValue(it)
         }
     }
-
-    val allProducts: LiveData<List<ListInterface>> = MutableLiveData<List<ListInterface>>()
-
+    fun fetchItems(id: String) {
+        repository.getItems {
+            _allItems.postValue(it)
+        }
+    }
+    private val _allShops = MutableLiveData<List<ListInterface>>()
+    val allShops: LiveData<List<ListInterface>> get() = _allShops
+    fun fetchShops() {
+        repository.getShops {
+            _allShops.postValue(it)
+        }
+    }
+    fun fetchShops(id: String) {
+        repository.getShops(id) {
+            _allShops.postValue(it)
+        }
+    }
 }
 
 
 class Repository(private val storeDao: StoreDao) {
-    fun getItems(callback: (List<Item>) -> Unit) {
+    fun getItems(callback: (List<ListInterface>) -> Unit) {
         Thread {
-            callback(storeDao.items())
+            callback(storeDao.items().map { it.toInterface() }.toList())
+        }.start()
+    }
+    fun getItems(id: String, callback: (List<ListInterface>) -> Unit) {
+        Thread {
+            callback(storeDao.items(id).map { it.toInterface() }.toList())
+        }.start()
+    }
+    fun getShops(callback: (List<ListInterface>) -> Unit) {
+        Thread {
+            callback(storeDao.shops().map { it.toInterface() }.toList())
+        }.start()
+    }
+    fun getShops(id: String, callback: (List<ListInterface>) -> Unit) {
+        Thread {
+            callback(storeDao.shops(id).map { it.toInterface() }.toList())
         }.start()
     }
 }
 
 
 @Dao
+@RewriteQueriesToDropUnusedColumns
 interface StoreDao {
-    @Query("SELECT * FROM items ORDER BY id DESC")
+    @Query("SELECT * FROM items WHERE title IS NOT NULL ORDER BY title DESC")
     fun items(): List<Item>
+    @Query("SELECT * FROM items WHERE id IN (SELECT item from shop_items where shop = :id) ORDER BY title DESC")
+    fun items(id: String): List<Item>
+    @Query("SELECT * FROM shops ORDER BY title DESC")
+    fun shops(): List<Shop>
+    @Query("SELECT * FROM shops WHERE id IN (SELECT shop from shop_items where item = :id) ORDER BY title DESC")
+    fun shops(id: String): List<Shop>
 }
 
 
-@Database(entities = [Item::class], version = 1, exportSchema = false)
+@Database(entities = [Item::class, Shop::class, ShopItems::class], version = 1, exportSchema = false)
 abstract class StoreDatabase : RoomDatabase() {
     abstract fun storeDao(): StoreDao
 
@@ -164,7 +197,11 @@ abstract class StoreDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): StoreDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(context.applicationContext, StoreDatabase::class.java, "store_database")
+                val instance = Room.databaseBuilder(
+                        context.applicationContext,
+                        StoreDatabase::class.java,
+                        "store_database"
+                    )
                     .createFromAsset("store_database")
                     .build()
                 INSTANCE = instance
@@ -174,3 +211,24 @@ abstract class StoreDatabase : RoomDatabase() {
     }
 }
 
+
+fun Item.toInterface(): ListInterface {
+    return object : ListInterface {
+        override val id = this@toInterface.id
+        override val description = this@toInterface.description
+        override val drawable = this@toInterface.drawable
+        override val origin= this@toInterface.origin
+        override val title = this@toInterface.title
+    }
+}
+
+
+fun Shop.toInterface(): ListInterface {
+    return object : ListInterface {
+        override val id = this@toInterface.id
+        override val description = this@toInterface.description
+        override val drawable = this@toInterface.drawable
+        override val origin= this@toInterface.origin
+        override val title = this@toInterface.title
+    }
+}

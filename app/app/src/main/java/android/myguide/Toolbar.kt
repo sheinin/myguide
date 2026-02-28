@@ -1,30 +1,21 @@
 package android.myguide
 
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
-import kotlin.text.toFloat
-import android.animation.ValueAnimator
-import android.graphics.drawable.TransitionDrawable
 import android.view.View
-import android.view.ViewGroup
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
-import org.json.JSONObject
 
 class Toolbar {
     interface ScreenTools {
         fun build(
             id: String? = null,
             display: Settings.Display = Settings.Display.LIST,
-            queryType: QueryType = QueryType.STORES,
+            queryType: QueryType = QueryType.SHOPS,
         )
         fun getPosition(): Dp
         fun query()
         fun reset()
         fun update()
-        //val root: ViewGroup
         val ident: Boolean
     }
     class Item(
@@ -37,19 +28,16 @@ class Toolbar {
         var position: Dp
     )
     private lateinit var activity: MainActivity
-
-    private val _crumbs = mapOf(
+    private var tracker = true
+    var items = mutableListOf<Item>()
+    val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
         true to MutableLiveData(List(3) { "" })
     )
-    private val _title = mapOf(
+    val title = mapOf(
         false to MutableLiveData(""),
         true to MutableLiveData("")
     )
-    private var tracker = true
-    var items = mutableListOf<Item>()
-    val crumbs = _crumbs
-    val title = _title
     fun back(vi: View? = null) {
         val i = items.lastIndex.dec()
         if (i == -1) vm.showSplash.value = true//activity.showSplash()
@@ -64,7 +52,7 @@ class Toolbar {
                 display = Settings.Display.LIST,
                 title = "",
                 position = 0.dp,
-                queryType = QueryType.STORES,
+                queryType = QueryType.SHOPS,
                 slide = null
             )
         )
@@ -99,13 +87,15 @@ class Toolbar {
     fun navigate(
         id: String? = null,
         display: Settings.Display = Settings.Display.LIST,
-        queryType: QueryType = QueryType.STORES,
+        queryType: QueryType = QueryType.SHOPS,
         slide: Boolean? = null,
         title: String
     ) {
+
+        qqq("NAVIGATE id:"+id+" title:"+title+" query:"+queryType)
         items.mapIndexed { ix, it ->
             if (it.queryType == queryType && it.id == id) {
-              //  goto(ix)
+                goto(ix)
                 return
             }
         }
@@ -129,11 +119,10 @@ class Toolbar {
                 if (items.size > 3) activity.resources.getString(R.string.ellipsis) else items.getOrNull(1)?.title ?: "",
                 if (items.size > 2) items.last().title else ""
             )
-        _title[tracker]!!.value = title
+        this.title[tracker]!!.value = title
         cached = true
         items.add(item)
         vm.current.value = next.ident
-        qqq("ID"+next.ident)
     //    if (slide != null) {
             next.build(
                 id = id,
@@ -162,6 +151,7 @@ class Toolbar {
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
         tracker = !tracker
+        vm.current.value = next.ident
         current.reset()
         if (item.display.isMap) vm.mapShowing.value = true
         if (cached) {
@@ -170,7 +160,7 @@ class Toolbar {
         //    if (last.slide == true) slideOut(current.root, next.root) { next.update() }
           //  else animCross(current.root, next.root) { next.update() }
         } else {
-            _crumbs[next.ident]!!.value =
+            crumbs[next.ident]!!.value =
                 listOf(
                     if (items.size > 1) items[0].title else  "",
                     if (items.size > 4) activity.resources.getString(R.string.ellipsis)
@@ -178,7 +168,7 @@ class Toolbar {
                     else items.getOrNull(1)?.title ?: "",
                     if (items.size > 3) items[items.lastIndex.dec()].title else ""
                 )
-            _title[next.ident]!!.value = item.title
+            title[next.ident]!!.value = item.title
             next.build(
                 id = item.id,
                 display = item.display,

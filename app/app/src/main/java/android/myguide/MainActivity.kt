@@ -1,5 +1,7 @@
 package android.myguide
 
+import android.R.attr.label
+import android.R.attr.visible
 import android.myguide.ViewModel.*
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,12 +18,22 @@ import android.myguide.ui.theme.MyGuideTheme
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -36,6 +48,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
+import java.lang.System.exit
 
 val batch = 15
 var screenHeight = 0.dp
@@ -67,13 +80,8 @@ class MainActivity : ComponentActivity() {
                         // binding = bind.screenB
                     )
         )
-
-
-        vm.allItems.observe(this) { users ->
-            //users.map { qqq("users: $it") }
-            //userAdapter.submitList(users) // Use submitList here
-        }
         vm.fetchItems()
+        vm.fetchShops()
         vm.toolbar.init(this)
         setContent {
             density = LocalDensity.current
@@ -83,51 +91,25 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val show = vm.showSplash.observeAsState()
-                    if (show.value!!)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .padding(innerPadding)
-                                .fillMaxSize()
-                        ) {
-                            Text(
-                                "STORES",
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable(
-                                        onClick = {
-                                            vm.toolbar.navigate(
-                                                queryType = QueryType.STORES,
-                                                title = "Stores"
-                                            )
-                                        }
-                                    )
-                            )
-                            Text(
-                                "ITEMS",
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable(
-                                        onClick = {
-                                            vm.showSplash.value = false
-                                            vm.toolbar.navigate(
-                                                queryType = QueryType.ITEMS,
-                                                title = "Stores"
-                                            )
-                                        }
-                                    )
-                            )
-                        }
+                    if (show.value!!) Splash(Modifier.padding(innerPadding))
                     else {
                         val ident = vm.current.observeAsState()
-                        AnimatedVisibility(ident.value == false) {
+                        AnimatedVisibility(
+                            visible = ident.value == false,
+                            enter = fadeIn(initialAlpha = 0.3f),
+                            exit = fadeOut()
+                        ) {
                             Main(
                                 ident = false,
                                 modifier = Modifier.padding(innerPadding),
                                 screen = screen[false]!!
                             )
                         }
-                        AnimatedVisibility(ident.value == true) {
+                        AnimatedVisibility(
+                            ident.value == true,
+                            enter = fadeIn(initialAlpha = 0.3f),
+                            exit = fadeOut()
+                        ) {
                             Main(
                                 ident = true,
                                 modifier = Modifier.padding(innerPadding),
