@@ -338,7 +338,10 @@ class Render(
            // }
         } else {
             handler = handler.set(false)
-
+            data.vm.mapIndexed { ix, it ->
+                it.x = 0.dp
+                it.y = data.ruler[ix]
+            }
             bind.w.value = screenWidth
             bind.h.value = height
             (start until end).map { renderY(it) }

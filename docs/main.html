@@ -1200,7 +1200,8 @@ function parseProductString(str) {
     
     const key = rawKey.trim();
     const value = rest.join(':').trim(); // in case value has ':'
-    
+    console.log(key)
+    console.log(value)
     // Map human-readable labels to JSON field names
     switch (key.toLowerCase()) {
       case 'title':
@@ -1215,17 +1216,14 @@ function parseProductString(str) {
       case 'description':
         result.description = value;
         break;
-    //  case 'ingredients':
-    //    result.description = value;
-    //    break;
-    //  case 'url':
-      //  result.url = value;
-      //  break;
+      case 'ingredients':
+        result.description = value;
+        break;
       case 'manufacturer and volume':
         result.subtitle = value;
         break;
       case 'manufacturing country':
-        result.subtitle = value +", " + result.country;
+        result.subtitle = value +", " + result.subtitle;
         break;
       
       default: break
@@ -1233,7 +1231,7 @@ function parseProductString(str) {
         //result[key] = value;
     }
   }
-  
+  console.log(result)
   return result;
 }
 
@@ -1242,23 +1240,26 @@ let items = data.split("***")
 
 for (let i = 0, l = items.length; i < l; i += 1) {
   let s = items[i].split("\t")
+  let p = ""
   if (s.length == 3) {
     let x = s[2].split("#")
-    out += `${s[0].trim()}\t${s[1].trim()}\t${x[0]}|${x[1].split("|")[0]}|`
-    let p = parseProductString(x[1].split("|")[1])
-    if (p.description != x[1].split("|")[0])
-      out += `${p.title}|${p.subtitle}|${p.description}\n`
-    else
-      out += `${p.title}|${p.subtitle}\n`
+    out += `${s[0].trim()}\t${s[1].trim()}\t\t${x[0]}\t`
+    desc = parseProductString(x[1].split("|")[1])
+    
   } else {
     let x = s[3].split("#")
-    out += `${s[0].trim()}\t${s[1].trim()}\t${s[2].trim()}\t${x[0]}|${x[1].split("|")[0]}|`
-    let p = parseProductString(x[1].split("|")[1])
-    if (p.description != x[1].split("|")[0])
-      out += `${p.title}|${p.subtitle}|${p.description}\n`
-    else
-      out += `${p.title}|${p.subtitle}\n`
+    out += `${s[0].trim()}\t${s[1].trim()}\t${s[2].trim()}\t${x[0]}\t`
+    p = parseProductString(x[1].split("|")[1])
+    //console.log(p)
+//    if (p.description != x[1].split("|")[0])
+  //    out += `${p.title}|${x[1].split("|")[0]}|${p.subtitle}|${p.description}\n`
+    //else
+      //out += `${p.title}|${x[1].split("|")[0]}|${p.subtitle}\n`
   }
+  if (p.description != x[1].split("|")[0])
+      out += `${p.title}|${x[1].split("|")[0]}|${p.subtitle}|${p.description}\n`
+    else
+      out += `${p.title}|${x[1].split("|")[0]}|${p.subtitle}\n`
 }
 
   console.log(out)
