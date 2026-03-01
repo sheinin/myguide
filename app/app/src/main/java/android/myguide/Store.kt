@@ -55,119 +55,35 @@ interface ListInterface {
     val title: String?
 }
 
-class ViewModel(private val repository: Repository) : ViewModel() {
-
-    class Cycler {
-        val isMap = MutableLiveData(true)
-        val size = MutableLiveData(0)
-        data class Item(
-            val id: String,
-            val title: String,
-            val subtitle: String?,
-            val description: String?,
-            var x: Dp,
-            var y: Dp,
-            val w: Dp,
-            val h: Dp
-        )
-        val item =
-            Item(
-                id = "",
-                title = "",
-                subtitle = "",
-                description = "",
-                x = 0.dp,
-                y = 0.dp,
-                w = 0.dp,
-                h = 0.dp
-            )
-        private val _items = MutableStateFlow<List<Item>>(emptyList())
-        val items = _items.asStateFlow()
-        //val hidden = List(batch) { MutableLiveData(false) }
-        init {
-            repeat(batch) {
-                _items.value += item
-            }
-        }
-        fun updateItem(index: Int, item: Item) {
-            _items.update {
-                it.mapIndexed { ix, it ->
-                    if (ix == index)
-                        it.copy(
-                            id = item.id,
-                            title = item.title,
-                            subtitle = item.subtitle,
-                            description = item.description,
-                            x = item.x,
-                            y = item.y,
-                            w = item.w,
-                            h = item.h
-                        )
-                    else it
-                }
-            }
-        }
-    }
-
-    class Screen {
-        val isMap = MutableLiveData(false)
-        val cycler = Cycler()
-        val x = MutableLiveData(0.dp)
-        val y = MutableLiveData(0.dp)
-        val w = MutableLiveData(0.dp)
-        val h = MutableLiveData(0.dp)
-    }
-    val current = MutableLiveData<Boolean?>(null)
-    val toolbar = Toolbar()
-    val showSplash = MutableLiveData(true)
-    val mapShowing = MutableLiveData(true)
-    val screen = mapOf(false to Screen(), true to Screen())
-    private val _allItems = MutableLiveData<List<ListInterface>>()
-    val allItems: LiveData<List<ListInterface>> get() = _allItems
-    fun fetchItems() {
-        repository.getItems {
-            _allItems.postValue(it)
-        }
-    }
-    fun fetchItems(id: String) {
-        repository.getItems {
-            _allItems.postValue(it)
-        }
-    }
-    private val _allShops = MutableLiveData<List<ListInterface>>()
-    val allShops: LiveData<List<ListInterface>> get() = _allShops
-    fun fetchShops() {
-        repository.getShops {
-            _allShops.postValue(it)
-        }
-    }
-    fun fetchShops(id: String) {
-        repository.getShops(id) {
-            _allShops.postValue(it)
-        }
-    }
-}
-
-
 class Repository(private val storeDao: StoreDao) {
-    fun getItems(callback: (List<ListInterface>) -> Unit) {
+    fun getItems(callback: (List<Item>) -> Unit) {
         Thread {
-            callback(storeDao.items().map { it.toInterface() }.toList())
+            callback(storeDao.items())
         }.start()
     }
-    fun getItems(id: String, callback: (List<ListInterface>) -> Unit) {
+    fun getItems(id: String, callback: (List<Item>) -> Unit) {
         Thread {
-            callback(storeDao.items(id).map { it.toInterface() }.toList())
+            callback(storeDao.items(id))
         }.start()
     }
-    fun getShops(callback: (List<ListInterface>) -> Unit) {
+    fun getShops(callback: (List<Shop>) -> Unit) {
         Thread {
-            callback(storeDao.shops().map { it.toInterface() }.toList())
+            callback(storeDao.shops())
         }.start()
     }
-    fun getShops(id: String, callback: (List<ListInterface>) -> Unit) {
+    fun getShops(id: String,callback: (List<Shop>) -> Unit) {
         Thread {
-            callback(storeDao.shops(id).map { it.toInterface() }.toList())
+            callback(storeDao.shops(id))
+        }.start()
+    }
+    fun updateShop(drawable: Int, id: String) {
+        Thread {
+            storeDao.updateShop(drawable, id)
+        }.start()
+    }
+    fun updateItem(drawable: Int, pic: String) {
+        Thread {
+            storeDao.updateItem(drawable, pic)
         }.start()
     }
 }
@@ -176,6 +92,10 @@ class Repository(private val storeDao: StoreDao) {
 @Dao
 @RewriteQueriesToDropUnusedColumns
 interface StoreDao {
+    @Query("UPDATE items SET drawable = :drawable WHERE pic = :pic")
+    fun updateItem(drawable: Int, pic: String)
+    @Query("UPDATE shops SET drawable = :drawable WHERE id = :id")
+    fun updateShop(drawable: Int, id: String)
     @Query("SELECT * FROM items WHERE title IS NOT NULL ORDER BY title DESC")
     fun items(): List<Item>
     @Query("SELECT * FROM items WHERE id IN (SELECT item from shop_items where shop = :id) ORDER BY title DESC")

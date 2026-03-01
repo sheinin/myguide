@@ -89,28 +89,18 @@ class Screen(
     }
 
     override fun query() {
+        fun callback(list: List<ListInterface>) {
+            render.load(list, display!!)
+        }
         render.reset()
-        render.load(
-            when (queryType) {
-                ITEM -> {
-                    id?.also { vm.fetchShops(it) } ?: vm.fetchShops()
-                    vm.allShops.value!!
-                }
-                ITEMS -> {
-                    vm.fetchItems()
-                    vm.allItems.value!!
-                }
-                SHOP -> {
-                    id?.also { vm.fetchItems(it) } ?: vm.fetchItems()
-                    vm.allItems.value!!
-                }
-                SHOPS -> {
-                    vm.fetchShops()
-                    vm.allShops.value!!
-                }
-                else -> listOf()
-            }
-        )
+        vm.screen[ident]!!.cycler.reset()
+        when (queryType) {
+            ITEM -> vm.fetchShops(id!!, ::callback)
+            ITEMS -> vm.fetchItems(::callback)
+            SHOP -> vm.fetchItems(id!!, ::callback)
+            SHOPS -> vm.fetchShops(::callback)
+            else -> {}
+        }
         // qqq("SCREEN QUERY " + ident + " " +screen)
     }
 
@@ -154,4 +144,11 @@ enum class QueryType {
     ITEMS,
     SHOP,
     SHOPS;
+    val title: String
+        get() = when (this) {
+            ITEM -> "Available at These Locations:"
+            ITEMS -> "All Available Items:"
+            SHOP -> "Available Items:"
+            SHOPS -> "All Shops:"
+        }
 }

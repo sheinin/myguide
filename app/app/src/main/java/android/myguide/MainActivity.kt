@@ -2,6 +2,8 @@ package android.myguide
 
 import android.R.attr.label
 import android.R.attr.visible
+import android.content.Context
+import android.graphics.drawable.Drawable
 import android.myguide.ViewModel.*
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -43,6 +45,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.VerticalAlign
+import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.LiveData
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -66,7 +69,33 @@ class MainActivity : ComponentActivity() {
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         vm = ViewModel(repository)
-
+        vm.toolbar.init(this)
+        vm.updateItemList { list ->
+            list.filter { it.drawable == null && it.pic != null }
+                .map {
+                    vm.updateItem(
+                        this.resources.getIdentifier(
+                            it.pic,
+                            "drawable",
+                            this.packageName
+                        ),
+                        it.pic!!
+                    )
+                }
+        }
+        vm.updateShopList { list ->
+            list.filter { it.drawable == null }
+                .map {
+                    vm.updateShop(
+                        this.resources.getIdentifier(
+                            it.id,
+                            "drawable",
+                            this.packageName
+                        )
+                        , it.id
+                    )
+                }
+        }
         screen = mapOf(
             false to
                     Screen(
@@ -80,9 +109,6 @@ class MainActivity : ComponentActivity() {
                         // binding = bind.screenB
                     )
         )
-        vm.fetchItems()
-        vm.fetchShops()
-        vm.toolbar.init(this)
         setContent {
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
@@ -91,7 +117,8 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val show = vm.showSplash.observeAsState()
-                    if (show.value!!) Splash(Modifier.padding(innerPadding))
+                    if (show.value!!)
+                        Splash(Modifier.padding(innerPadding))
                     else {
                         val ident = vm.current.observeAsState()
                         AnimatedVisibility(

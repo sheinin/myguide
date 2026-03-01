@@ -11,8 +11,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.Integer.max
 import java.lang.Integer.min
+import java.time.temporal.TemporalAdjusters.next
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration.Companion.minutes
 
 class Render(
     val activity: MainActivity,
@@ -95,7 +97,7 @@ class Render(
                 }
             }
         }
-        //calibrate(vm.allItems.value!!)
+        calibrate()
     }
     enum class DisplayType {
         DEFAULT,
@@ -104,7 +106,7 @@ class Render(
         val height: Dp
             get() =
                 when (this) {
-                    DEFAULT -> 60.dp
+                    DEFAULT -> 106.dp
                     CHAIN -> 100.dp
                     PLAYER -> 100.dp
                 }
@@ -166,16 +168,17 @@ class Render(
 
         val paragraph = androidx.compose.ui.text.Paragraph(
             text = list[ix].title!!,
-            style = typography.bodyMedium,
-            constraints = Constraints(maxWidth = (screenWidth - 80.dp).toPx().toInt()),
+            style = typography.bodyLarge,
+            constraints = Constraints(maxWidth = (screenWidth - 130.dp).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-        val m = 12.dp * paragraph.lineCount.dec()
-       // qqq("M"+list[ix].title + " "+m + " "+paragraph.lineCount)
-        data.display[ix].height += m
-       // data.display[ix].measure = m
-
+        if (paragraph.lineCount > 3) {
+            val m = 12.dp * (paragraph.lineCount - 2)
+            // qqq("M"+list[ix].title + " "+m + " "+paragraph.lineCount)
+            data.display[ix].height += m
+            // data.display[ix].measure = m
+        }
     }
     private fun job(position: Dp = 0.dp, callback: (() -> Unit)? = null) {
         @Suppress("UNUSED_VARIABLE")
@@ -243,7 +246,7 @@ class Render(
             (0 until list.size).map { vm(it) }
             return
         }
-        ///qqq("SL "+start + " "+limit + " ")
+        qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
             /*when (getSettings().display) {
                 Display.D3 ->
@@ -373,8 +376,8 @@ class Render(
                 bind.h.value = mapHeight
             }
             else {
-                bind.w.value = screenWidth
-                bind.h.value = height//filter.sumOf { h -> h.height } //+ dp2px(16f)// + if (isStatic) divider else dp2px(16f)
+                bind.w.postValue(screenWidth)
+                bind.h.postValue(height)//filter.sumOf { h -> h.height } //+ dp2px(16f)// + if (isStatic) divider else dp2px(16f)
             }
         }
     }
@@ -450,9 +453,19 @@ class Render(
       //  activity.picasso.cancelRequest(elements[index].thumbnail)
         spinners[index] = ix
     }
-    fun calibrate(list: List<ListInterface>) {
-        this.list = list
+    fun calibrate() {
+        qqq("ca")
+return
+        data.vm = MutableList(batch) { cycler.item }
+        val l = mutableListOf<ListInterface>()
         (0 until batch).map {
+            l += object : ListInterface {
+                override val title: String = "calibrate"
+                override val origin: String = ""
+                override val description: String = ""
+                override val drawable: Int = 0
+                override val id: String = ""
+            }
             data.display.add(
                 Data.Display(
                     height = 100.dp,
@@ -462,25 +475,27 @@ class Render(
                     type = DisplayType.DEFAULT
                 )
             )
+
+            list = l
+
             vm(it)
+
+            cycler.updateItem(it, data.vm[it])
         }
-        ruler()
-        sleep {
-            (0 until batch).map { renderY(it) }
-            reset()
-        }
+
     }
 
     private fun vm(ix: Int) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-      //  qqq(">"+item.id + " "+ix+" "+item.title  +  " ")
+        //qqq(">"+item.id + " "+ix+" "+item.title  +  " "+item.drawable)
         val vm =
             ViewModel.Cycler.Item(
                 id = item.id!!,
                 title = item.title!!,
                 subtitle = item.origin,
                 description = item.description,
+                drawable = item.drawable,
                 x = 0.dp,
                 y = data.ruler.getOrNull(ix) ?: 0.dp,
                 w = screenWidth,
