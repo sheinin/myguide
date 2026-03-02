@@ -1,32 +1,40 @@
 package android.myguide
 
+import android.R.attr.scheme
 import android.view.ViewTreeObserver
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,16 +44,27 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.max
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
@@ -60,9 +79,8 @@ fun Main(
     screen: Screen
 ) {
     val bind = vm.screen[ident]!!
-    val horizontalScrollState = rememberScrollState()
-    var isMap by remember { mutableStateOf(false) }
-
+    val dialog by vm.screen[screen.ident]!!.dialog.observeAsState()
+    val display by vm.screen[screen.ident]!!.display.observeAsState()
     Box(
         modifier
             .fillMaxSize()
@@ -85,9 +103,8 @@ fun Main(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(8.dp)
                     .constrainAs(toolbar) {
-                        if (isMap) {
+                        if (display == Settings.Display.MAP) {
                             top.linkTo(parent.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -101,7 +118,8 @@ fun Main(
                     }
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(8.dp)
                 ) {
                     Image(
                         painterResource(R.drawable.home),
@@ -156,18 +174,33 @@ fun Main(
                             ArrowText(
                                 vm.toolbar.crumbs[screen.ident]!!.value!![it],
                                 modifier = Modifier.weight(1f)
-                                    .alpha(if (vm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f else 0f)
+                                    .alpha(
+                                        if (vm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
+                                        else 0f
+                                    )
+                                    .clickable(
+                                        onClick = {
+                                            vm.toolbar.click(it)
+                                        }
+                                    )
                             )
                         }
                     }
-                if (isMap) Control(screen)
+                if (display == Settings.Display.MAP) Control(screen)
             }
-            val scrollState = rememberScrollState()
+            val scrollStateY = rememberScrollState()
             val view = LocalView.current
-            DisposableEffect(view) {
+            LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
+                if (display != Settings.Display.MAP)
+                    scrollStateY.animateScrollTo(
+                        vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
+                    )
+            }
+            DisposableEffect(view, display) {
+                if (display == Settings.Display.MAP) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     with(density) {
-                        screen.render.observeY(scrollState.value.toDp())
+                        screen.render.observe(scrollStateY.value.toDp())
                     }
                 }
                 val vto = view.viewTreeObserver
@@ -179,10 +212,13 @@ fun Main(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .verticalScroll(scrollStateY)
+                    .background(
+                        if (display == Settings.Display.MAP) Color.Transparent
+                        else MaterialTheme.colorScheme.surface
+                    )
                     .constrainAs(scroll) {
-                        if (isMap) {
+                        if (display == Settings.Display.MAP) {
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -197,11 +233,33 @@ fun Main(
 
                     }
             ) {
-                if (!isMap) Control(screen)
+                if (display != Settings.Display.MAP)
+                    Control(screen)
+                val scrollStateX = rememberScrollState()
+                val view = LocalView.current
+                LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
+                    if (display == Settings.Display.MAP)
+                        scrollStateX.animateScrollTo(
+                            vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
+                        )
+                }
+                DisposableEffect(view, display) {
+                    if (display == Settings.Display.LIST) return@DisposableEffect onDispose {}
+                    val listener = ViewTreeObserver.OnScrollChangedListener {
+                        with(density) {
+                            screen.render.observe(scrollStateX.value.toDp())
+                        }
+                    }
+                    val vto = view.viewTreeObserver
+                    vto.addOnScrollChangedListener(listener)
+                    onDispose {
+                        vto.removeOnScrollChangedListener(listener)
+                    }
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(horizontalScrollState)
+                        .horizontalScroll(scrollStateX)
                 ) {
                     val h = bind.h.observeAsState()
                     val w = bind.w.observeAsState()
@@ -212,32 +270,50 @@ fun Main(
                         val items by bind.cycler.items.collectAsStateWithLifecycle()
                         repeat(batch) { index ->
                             val item = items[index]
-                            if (item.title.isNotEmpty()) RenderItem(screen.queryType!!, item)
+                            if (item.title.isNotEmpty())
+                                RenderItem(
+                                    index = index,
+                                    screen = screen,
+                                    item = item,
+                                    x = scrollStateX,
+                                    y = scrollStateY
+                                )
                         }
                     }
                 }
 
             }
         }
+        if (dialog == true) MyDialog(screen)
     }
 }
 
 @Composable
-fun RenderItem(queryType: QueryType, item: ViewModel.Cycler.Item) {
-    //qqq("TITLE " + " "+item.x+ " "+item.y +" "+item.w + " "+item.h+ " " +item?.title )
+fun RenderItem(
+    index: Int,
+    screen: Screen,
+    item: ViewModel.Cycler.Item,
+    x: ScrollState,
+    y: ScrollState
+) {
+    val display by vm.screen[screen.ident]!!.display.observeAsState()
+    //qqq("TITLE " + " "+ item.more+  " " +item?.title  +" "+item.description)
     Row(
         modifier = Modifier
             .offset(item.x, item.y)
             .size(item.w, item.h)
             .clickable(
                 onClick = {
+                    vm.toolbar.items.last().position =
+                        if (display == Settings.Display.MAP) x.value.toDp()
+                        else y.value.toDp()
                     vm.toolbar.navigate(
                         id = item.id,
                         title = item.title,
                         queryType =
                             if (
-                                queryType == QueryType.SHOP
-                                || queryType == QueryType.ITEMS
+                                screen.queryType == QueryType.SHOP
+                                || screen.queryType == QueryType.ITEMS
                             ) QueryType.ITEM
                             else QueryType.SHOP
                     )
@@ -255,44 +331,115 @@ fun RenderItem(queryType: QueryType, item: ViewModel.Cycler.Item) {
             )
             .padding(8.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(90.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = RoundedCornerShape(8.dp)
-                )
-        ) {
-            if (item.drawable != null)
-                Image(
-                    painterResource(item.drawable),
-                    "item icon",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp))
-                )
-        }
+        if (display != Settings.Display.MAP && item.drawable != null)
+            Image(
+                painterResource(item.drawable),
+                "item icon",
+                modifier = Modifier
+                    .size(90.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .clip(RoundedCornerShape(8.dp))
+            )
         Column(
             modifier = Modifier.padding(8.dp).fillMaxWidth()
         ) {
+
+            val scheme = MaterialTheme.colorScheme
+
             Text(
                 item.title,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.secondary,
                 style = typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            val display by vm.screen[screen.ident]!!.display.observeAsState()
+            val txt by remember(item.more, item.description, display) {
+                mutableStateOf(
+                    buildAnnotatedString {
+                        append(item.description!!)
+                        if (item.more == true && display != Settings.Display.MAP)
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = "lastThree",
+                                    linkInteractionListener = {
+                                        screen.render.ellipsis(index)
+                                    }
+                                )
+                            ) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        textDecoration = TextDecoration.None,
+                                        color = scheme.primary,
+                                        fontSize = typography.bodyLarge.fontSize
+                                    )
+                                ) { append(" \u25B2") }
+                            }
+                    }
+                )
+            }
+            var desc by remember(item.more, item.description, display) { mutableStateOf(txt) }
+
+            //qqq("D"+display+desc)
+            var alpha by remember(display) { mutableFloatStateOf(0f) }
+            var full by remember(item.more) { mutableStateOf(item.more) }
             Text(
-                item.description ?: "",
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 3,
+                desc,//if (full == true) txt else desc,
+                modifier = Modifier.alpha(alpha).fillMaxWidth(),
                 style = typography.bodyMedium,
-                overflow = TextOverflow.Ellipsis
+                maxLines =
+                    if (display == Settings.Display.MAP) 2
+                    else Int.MAX_VALUE,
+                onTextLayout = { layoutResult ->
+                    if (display == Settings.Display.MAP) {
+                        alpha = 1f
+                        return@Text
+                    }
+                    if (full == false) {
+                        if (layoutResult.lineCount > 2) {
+                            val startIndex = layoutResult.getLineStart(0)
+                            val endIndex = layoutResult.getLineEnd(1)
+                            val s = item.description!!.substring(startIndex, endIndex)
+                            //qqq("i "+startIndex+ " "+endIndex + " "+item.description!!.length)
+                            if (endIndex > 5)
+                                desc = buildAnnotatedString {
+                                    val startIndex = s.length - 4
+                                    append(s.take(startIndex))
+                                    withLink(
+                                        LinkAnnotation.Clickable(
+                                            tag = "lastThree",
+                                            linkInteractionListener = {
+                                                screen.render.ellipsis(index)
+                                            }
+                                        )
+                                    ) {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                textDecoration = TextDecoration.None,
+                                                color = scheme.primary,
+                                                fontSize = typography.bodyMedium.fontSize,
+                                            )
+                                        ) {
+                                            append(" \u25BC")
+                                        }
+                                    }
+                                }
+                          //  else qqq("TEXT! " + item.description!!.length + " " + layoutResult.lineCount + " " + desc)
+                        }
+                        if (layoutResult.lineCount != item.description!!.length) alpha = 1f
+                    } else alpha = 1f
+                },
+                overflow =
+                    if (display == Settings.Display.MAP) TextOverflow.Ellipsis
+                    else TextOverflow.Clip
             )
         }
     }
@@ -301,39 +448,58 @@ fun RenderItem(queryType: QueryType, item: ViewModel.Cycler.Item) {
 
 @Composable
 fun Splash(modifier: Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Column (
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxSize()
     ) {
-        Text(
-            "STORES",
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .weight(1f)
+                //.weight(1f)
                 .clickable(
                     onClick = {
                         vm.showSplash.value = false
                         vm.toolbar.navigate(
                             queryType = QueryType.SHOPS,
-                            title = "Stores"
+                            title = "All Shops"
                         )
                     }
                 )
-        )
-        Text(
-            "ITEMS",
+        ) {
+            Image(painter = painterResource(R.drawable.all_shops), "all shops",
+                modifier = Modifier.size(screenWidth * .5f))
+            Text(
+                "SHOPS",
+                fontWeight = FontWeight.Bold,
+                style = typography.displayMedium,)
+        }
+        Spacer(Modifier.height(16.dp))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .weight(1f)
+                //.weight(1f)
                 .clickable(
                     onClick = {
                         vm.showSplash.value = false
                         vm.toolbar.navigate(
                             queryType = QueryType.ITEMS,
-                            title = "Stores"
+                            title = "All Items"
                         )
                     }
                 )
-        )
+        ) {
+            Image(
+                painter = painterResource(R.drawable.all_items), "all items",
+                modifier = Modifier.size(screenWidth * .5f)
+            )
+            Text(
+                "ITEMS",
+                fontWeight = FontWeight.Bold,
+                style = typography.displayMedium
+            )
+        }
     }
 }
 
@@ -351,7 +517,6 @@ fun ArrowText(
             .padding(4.dp, 0.dp)
             .fillMaxWidth()
     ) {
-        // Main rounded rectangle
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -373,8 +538,8 @@ fun ArrowText(
 }
 
 @Composable
-fun Control(screen: Screen, callback: (Settings.Display) -> Unit) {
-    var isMap by remember { mutableStateOf(vm.screen[screen.ident]!!.display.value == Settings.Display.MAP) }
+fun Control(screen: Screen) {
+    val display by vm.screen[screen.ident]!!.display.observeAsState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -399,12 +564,14 @@ fun Control(screen: Screen, callback: (Settings.Display) -> Unit) {
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
                 modifier = Modifier.clickable(
                     onClick = {
-                        callback(Settings.Display.LIST)
+                        //    isMap = true
+                        vm.screen[screen.ident]!!.display.value = Settings.Display.LIST
+                        screen.render.display(Settings.Display.LIST)
                     }
                 )
                     .padding(8.dp, 0.dp)
                     .background(
-                        if (!isMap) MaterialTheme.colorScheme.primary
+                        if (display != Settings.Display.MAP) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.secondary,
                         shape = CircleShape
                     )
@@ -421,12 +588,13 @@ fun Control(screen: Screen, callback: (Settings.Display) -> Unit) {
                 "map",
                 colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
                 modifier = Modifier.clickable(
-                    onClick = {
-                        vm.screen[screen.ident]!!.display.postValue(Settings.Display.MAP)
-                    }
-                )
+                        onClick = {
+                            vm.screen[screen.ident]!!.display.value = Settings.Display.MAP
+                            screen.render.display(Settings.Display.MAP)
+                        }
+                    )
                     .background(
-                        if (isMap) MaterialTheme.colorScheme.primary
+                        if (display == Settings.Display.MAP) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.secondary,
                         shape = CircleShape
                     )
@@ -439,3 +607,54 @@ fun Control(screen: Screen, callback: (Settings.Display) -> Unit) {
             )
     }
 }
+
+
+@Composable
+fun MyDialog(screen: Screen) {
+    Dialog(
+        onDismissRequest = {
+            qqq("dis")
+            vm.screen[screen.ident]!!.dialog.postValue(false) },
+        properties = DialogProperties(
+
+            usePlatformDefaultWidth = false // Important for custom alignment/width control
+        )
+    ) {
+        (LocalView.current.parent as DialogWindowProvider).window.setDimAmount(0f)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    onClick = { vm.screen[screen.ident]!!.dialog.value = false }
+                )
+                .padding(top = 86.dp, start = 8.dp, end = 8.dp), // Adjust top padding as needed
+            contentAlignment = Alignment.TopCenter // Aligns content to the top center
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    val list = vm.toolbar.items.subList(1, vm.toolbar.items.lastIndex.dec())
+                    items(list.size) {
+                        Text(
+                            text = list[it].title,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    vm.toolbar.goto(it.inc())
+                                    vm.screen[screen.ident]!!.dialog.value = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -20,10 +20,11 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             val subtitle: String?,
             val description: String?,
             val drawable: Int?,
+            val more: Boolean?,
             var x: Dp,
             var y: Dp,
-            val w: Dp,
-            val h: Dp
+            var w: Dp,
+            var h: Dp
         )
         val item =
             Item(
@@ -32,6 +33,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                 subtitle = "",
                 description = "",
                 drawable = null,
+                more = null,
                 x = 0.dp,
                 y = 0.dp,
                 w = 0.dp,
@@ -58,6 +60,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                             subtitle = item.subtitle,
                             description = item.description,
                             drawable = item.drawable,
+                            more = item.more,
                             x = item.x,
                             y = item.y,
                             w = item.w,
@@ -71,7 +74,9 @@ class ViewModel(private val repository: Repository) : ViewModel() {
 
     class Screen {
         val display = MutableLiveData(Settings.Display.LIST)
+        val dialog = MutableLiveData(false)
         val cycler = Cycler()
+        val position = MutableLiveData(0.dp)
         val x = MutableLiveData(0.dp)
         val y = MutableLiveData(0.dp)
         val w = MutableLiveData(0.dp)

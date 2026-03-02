@@ -1,6 +1,8 @@
 package android.myguide
 
 import android.myguide.QueryType.*
+import android.system.Os.listen
+import androidx.compose.runtime.snapshots.Snapshot.Companion.observe
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -13,7 +15,7 @@ class Screen(
     private val bind = vm.screen[ident]!!
     private fun getSettings(): Settings {
         val s = Settings().apply {
-            display = Settings.Display.LIST
+            display = this.display
             sort = mutableMapOf(
                 true to Settings.Sort.DISTANCE,
                 false to Settings.Sort.DISTANCE
@@ -23,20 +25,14 @@ class Screen(
     }
     val render = Render(
         activity = activity,
-        bind = bind,
-    //    view = binding.scroller,
-    //    scrollY = binding.scrollY,
-    //    scrollX = binding.scrollX,
-        //slider = ::slider,
-       // getOpenStatus = ::getOpenStatus,
-    //    setListIsEmpty = ::listIsEmpty,
+        screen = this,
         getSettings = ::getSettings
     ).also {
     //    it.calibrate(realm.query(Activity::class).find().subList(0, cyclerBatch).toMutableList())
     }
 
     private var id: String? = null
-    private var display: Settings.Display? = null
+    //var display: Settings.Display? = null
     var queryType: QueryType? = null
 
 
@@ -46,43 +42,19 @@ class Screen(
         queryType: QueryType,
     ) {
         this.id = id
-        this.display = display
         this.queryType = queryType
         qqq(
             "SCREEN BUILD query:" + queryType
                     + " ident:" +ident
                     + " id:" + id
                     + " display:" + display
+            + " position:" + vm.toolbar.items.last().position
         )
-        render.reset()
         bind.cycler.isMap.value = display.isMap
-        /*screen = when (queryType.screen) {
-            Toolbar.ScreenTypes.GRID -> {
-                scrList.scrollAlignment(false)
-                scrGrid
-            }
-            Toolbar.ScreenTypes.MAIN -> {
-                scrList.scrollAlignment(false)
-                scrMain
-            }
-            Toolbar.ScreenTypes.LIST -> {
-                scrList
-            }
-            null -> null
-        }
-        screen?.build(
-            id = id,
-            display = display,
-            placeMapFor = placeMapFor,
-            pentaItem = pentaItem,
-            queryType = queryType,
-            openTabNum = openTabNum,
-            timestamp = timestamp
-        )
-
-         */
+        bind.display.value = display
+        bind.position.value = 0.dp
+        render.reset()
     }
-
 
     override fun getPosition(): Dp {
         return 0.dp//screen!!.getPosition()
@@ -90,10 +62,14 @@ class Screen(
 
     override fun query() {
         fun callback(list: List<ListInterface>) {
-            render.load(list, display!!)
+            val l = mutableListOf<ListInterface>()
+            repeat(5) {
+                l.addAll(list)
+            }
+            render.load(l)
         }
         render.reset()
-        vm.screen[ident]!!.cycler.reset()
+        bind.cycler.reset()
         when (queryType) {
             ITEM -> vm.fetchShops(id!!, ::callback)
             ITEMS -> vm.fetchItems(::callback)
@@ -112,6 +88,10 @@ class Screen(
     }
 
     override fun update() {
+        qqq("UPDATE SCREEN " + ident + " " + vm.toolbar.items.last().position)
+        //observe(disp)
+        bind.position.postValue(vm.toolbar.items.last().position)
+        render.listen(true)
     }
 
 }

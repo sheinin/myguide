@@ -1,57 +1,36 @@
 package android.myguide
 
-import android.R.attr.label
-import android.R.attr.visible
-import android.content.Context
-import android.graphics.drawable.Drawable
-import android.myguide.ViewModel.*
+import android.myguide.ui.theme.MyGuideTheme
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import android.myguide.ui.theme.MyGuideTheme
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.shrinkOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.VerticalAlign
-import androidx.core.content.res.ResourcesCompat
-import androidx.lifecycle.LiveData
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
-import java.lang.System.exit
 
 val batch = 15
 var screenHeight = 0.dp
@@ -193,5 +172,11 @@ fun sleep(delay: Long = 0, callback: (() -> Unit)) { Handler(Looper.getMainLoope
 fun Dp.toPx(): Float {
     return with(density) {
         this@toPx.toPx()
+    }
+}
+
+fun Int.toDp(): Dp {
+    return with(density) {
+        this@toDp.toDp()
     }
 }
