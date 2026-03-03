@@ -1,5 +1,7 @@
 package android.myguide
 
+import android.myguide.ViewModel.Cycler.XY
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
@@ -8,46 +10,64 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.collections.plus
+import kotlin.math.exp
 
 
 class ViewModel(private val repository: Repository) : ViewModel() {
 
     class Cycler {
         val isMap = MutableLiveData(true)
-        data class Item(
-            val id: String,
-            val title: String,
-            val subtitle: String?,
-            val description: String?,
-            val drawable: Int?,
-            val more: Boolean?,
+        data class XY(
             var x: Dp,
             var y: Dp,
             var w: Dp,
             var h: Dp
         )
+        data class Item(
+            val id: String,
+            val title: String,
+            val subtitle: String?,
+            val description: String?,
+            val expandable:  AnnotatedString?,
+            val drawable: Int?,
+        )
         val item =
             Item(
                 id = "",
                 title = "",
-                subtitle = "",
-                description = "",
+                subtitle = null,
+                description = null,
+                expandable = null,
                 drawable = null,
-                more = null,
-                x = 0.dp,
-                y = 0.dp,
-                w = 0.dp,
-                h = 0.dp
             )
+        private val _expandable = MutableStateFlow<List<AnnotatedString?>>(emptyList())
+        val expandable = _expandable.asStateFlow()
+        private val _more = MutableStateFlow<List<Boolean?>>(emptyList())
+        val more = _more.asStateFlow()
         private val _items = MutableStateFlow<List<Item>>(emptyList())
         val items = _items.asStateFlow()
-        init {
-            reset()
-        }
+        private val _xy = MutableStateFlow<List<XY>>(emptyList())
+        val xy = _xy.asStateFlow()
+        init { reset() }
         fun reset() {
+            _expandable.value = emptyList()
             _items.value = emptyList()
+            _more.value = emptyList()
+            _xy
             repeat(batch) {
+                _expandable.value += null
                 _items.value += item
+                _more.value += null
+                _xy.value += XY(0.dp, 0.dp, 0.dp, 0.dp)
+            }
+        }
+        fun updateExpandable(index: Int, e: AnnotatedString?) {
+            _expandable.update {
+              //  qqq("UE "+index+" "+e)
+                it.mapIndexed { ix, it ->
+                    if (ix == index) e
+                    else it
+                }
             }
         }
         fun updateItem(index: Int, item: Item) {
@@ -59,12 +79,29 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                             title = item.title,
                             subtitle = item.subtitle,
                             description = item.description,
-                            drawable = item.drawable,
-                            more = item.more,
-                            x = item.x,
-                            y = item.y,
-                            w = item.w,
-                            h = item.h
+                            drawable = item.drawable
+                        )
+                    else it
+                }
+            }
+        }
+        fun updateMore(index: Int, more: Boolean?) {
+            _more.update {
+                it.mapIndexed { ix, it ->
+                    if (ix == index) more
+                    else it
+                }
+            }
+        }
+        fun updateXY(index: Int, xy: XY) {
+            _xy.update {
+                it.mapIndexed { ix, it ->
+                    if (ix == index)
+                        it.copy(
+                            x = xy.x,
+                            y = xy.y,
+                            w = xy.w,
+                            h = xy.h
                         )
                     else it
                 }
@@ -83,6 +120,14 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val h = MutableLiveData(0.dp)
     }
     val current = MutableLiveData<Boolean?>(null)
+
+    private val _measure = MutableStateFlow<Triple<String, Int, (Int, AnnotatedString?) -> Unit>>(
+        Triple("", 0) { _, _ -> })
+    val measure = _measure.asStateFlow()
+    fun measure(measure: Triple<String, Int, (Int, AnnotatedString?) -> Unit>) {
+        _measure.value = measure
+    }
+    //val measure = MutableLiveData<Triple<String, Int, (Int, AnnotatedString?) -> Unit>>()
     val toolbar = Toolbar()
     val showSplash = MutableLiveData(true)
     val mapShowing = MutableLiveData(true)

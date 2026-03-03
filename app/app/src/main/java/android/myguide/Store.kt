@@ -96,13 +96,13 @@ interface StoreDao {
     fun updateItem(drawable: Int, pic: String)
     @Query("UPDATE shops SET drawable = :drawable WHERE id = :id")
     fun updateShop(drawable: Int, id: String)
-    @Query("SELECT * FROM items WHERE title IS NOT NULL ORDER BY title DESC")
+    @Query("SELECT * FROM items WHERE title IS NOT NULL ORDER BY title")
     fun items(): List<Item>
-    @Query("SELECT * FROM items WHERE id IN (SELECT item from shop_items where shop = :id) ORDER BY title DESC")
+    @Query("SELECT * FROM items WHERE id IN (SELECT item from shop_items where shop = :id) ORDER BY title")
     fun items(id: String): List<Item>
-    @Query("SELECT * FROM shops ORDER BY title DESC")
+    @Query("SELECT * FROM shops ORDER BY title")
     fun shops(): List<Shop>
-    @Query("SELECT * FROM shops WHERE id IN (SELECT shop from shop_items where item = :id) ORDER BY title DESC")
+    @Query("SELECT * FROM shops WHERE id IN (SELECT shop from shop_items where item = :id) ORDER BY title")
     fun shops(id: String): List<Shop>
 }
 

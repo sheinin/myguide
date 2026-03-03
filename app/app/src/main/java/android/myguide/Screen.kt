@@ -45,7 +45,7 @@ class Screen(
         this.queryType = queryType
         qqq(
             "SCREEN BUILD query:" + queryType
-                    + " ident:" +ident
+                    + " ident:" +ident+vm.toolbar.items.last().ident
                     + " id:" + id
                     + " display:" + display
             + " position:" + vm.toolbar.items.last().position
@@ -63,7 +63,7 @@ class Screen(
     override fun query() {
         fun callback(list: List<ListInterface>) {
             val l = mutableListOf<ListInterface>()
-            repeat(5) {
+            repeat(1) {
                 l.addAll(list)
             }
             render.load(l)
@@ -81,7 +81,6 @@ class Screen(
     }
 
     override fun reset() {
-        render.observe(null)
         render.listen(false)
      //   if (!binding.vm!!.isMap.value!!) activity.markers.clear()
        // screen?.reset()

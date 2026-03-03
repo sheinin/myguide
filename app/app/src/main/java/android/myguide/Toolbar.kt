@@ -44,6 +44,10 @@ class Toolbar {
         else if (vi == null) goto(i)
         else goto(i)
     }
+    fun ellipsis(ix: Int) {
+        qqq("EEE" +ix)
+        activity.screen[items.last().ident]!!.render.ellipsis(ix)
+    }
     fun blank() {
         vm.toolbar.items.add(
             Item(
@@ -62,25 +66,12 @@ class Toolbar {
         tracker = true
     }
     fun click(ix: Int) {
-        if (ix == -1) vm.showSplash.postValue(true)
-        else if (ix == 1 && items.size > 4) vm.screen[tracker]!!.dialog.postValue(true)
-            /*vmm.dialog.also { di ->
-                di.show(
-                    anchor = vmm.toolbar.last!!.root.findViewById(R.id.tv_middle_crumb),
-                    fade = false,
-                    items = items.subList(ix, items.size.dec().dec()).mapIndexed { i, it ->
-                        it.title to { if (ix + i < items.lastIndex) vmm.toolbar.goto(ix + i) }
-                    },
-                    posX = 0,
-                    posY = 1,
-                    width = px2dp((screenWidth.toFloat() * .75).toInt()),
-                    yOff = 12f
-                )
-            }
-
-             */
-        else if (ix == 2 && items.size > 4) goto(items.lastIndex.dec())
-        else goto(ix)
+        when (ix) {
+            -1 -> vm.showSplash.postValue(true)
+            1 if items.size > 4 -> vm.screen[tracker]!!.dialog.postValue(true)
+            2 if items.size > 4 -> goto(items.lastIndex.dec())
+            else -> goto(ix)
+        }
     }
     fun positionGet(): Dp? = if (items.isNotEmpty()) items.last().position else null
     fun init(activity: MainActivity) { this.activity = activity }
@@ -95,7 +86,6 @@ class Toolbar {
         slide: Boolean? = null,
         title: String
     ) {
-
         qqq("NAVIGATE id:"+id+" title:"+title+" query:"+queryType)
         items.mapIndexed { ix, it ->
             if (it.queryType == queryType && it.id == id) {
@@ -103,7 +93,6 @@ class Toolbar {
                 return
             }
         }
-        //if (items.isNotEmpty()) items.last().position = last!!.getPosition()
         val current = activity.screen[tracker]
         tracker = !tracker
         val item =
@@ -134,11 +123,11 @@ class Toolbar {
             queryType = queryType,
         )
         current!!.reset()
-        sleep(10) {
+    //    sleep(10) {
             next.query()
            // if (slide) slideIn(current.root, next.root) { next.query() }
            // else animCross(current.root, next.root) { next.query() }
-        }
+     //   }
       //  }
     }
     fun splash() {
@@ -154,7 +143,8 @@ class Toolbar {
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
         tracker = !tracker
-        vm.current.value = next.ident
+        items.last().ident = next.ident //
+        vm.current.value = next.ident// why duped
         current.reset()
         if (item.display.isMap) vm.mapShowing.value = true
         if (cached) {
@@ -177,11 +167,11 @@ class Toolbar {
                 display = item.display,
                 queryType = item.queryType
             )
-            sleep(1) {
+           // sleep(1000) {
                 next.query()
             //    if (last.slide == true) slideOut(current.root, next.root) { next.query() }
               //  else animCross(current.root, next.root) { next.query() }
-            }
+           // }
         }
     }
 }

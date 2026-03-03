@@ -1,6 +1,8 @@
 package android.myguide
 
 import android.R.attr.scheme
+import android.R.attr.x
+import android.R.attr.y
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -71,6 +73,8 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun Main(
@@ -102,7 +106,7 @@ fun Main(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(colorScheme.background)
                     .constrainAs(toolbar) {
                         if (display == Settings.Display.MAP) {
                             top.linkTo(parent.top)
@@ -124,7 +128,7 @@ fun Main(
                     Image(
                         painterResource(R.drawable.home),
                         contentDescription = "Home",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        colorFilter = ColorFilter.tint(colorScheme.background),
                         modifier = Modifier
                             .clickable(
                                 onClick = {
@@ -132,10 +136,10 @@ fun Main(
                                     vm.toolbar.clear()
                                 }
                             )
-                            .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                            .background(colorScheme.secondary, shape = CircleShape)
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.colorScheme.tertiary,
+                                color = colorScheme.tertiary,
                                 shape = CircleShape
                             )
                             .padding(5.dp)
@@ -155,14 +159,14 @@ fun Main(
                     Image(
                         painter = painterResource(R.drawable.back),
                         contentDescription = "",
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        colorFilter = ColorFilter.tint(colorScheme.background),
                         modifier = Modifier.clickable(
                                 onClick = { vm.toolbar.back() }
                             )
-                            .background(MaterialTheme.colorScheme.secondary, shape = CircleShape)
+                            .background(colorScheme.secondary, shape = CircleShape)
                             .border(
                                 width = 1.dp,
-                                color = MaterialTheme.colorScheme.tertiary,
+                                color = colorScheme.tertiary,
                                 shape = CircleShape
                             )
                             .padding(5.dp)
@@ -215,7 +219,7 @@ fun Main(
                     .verticalScroll(scrollStateY)
                     .background(
                         if (display == Settings.Display.MAP) Color.Transparent
-                        else MaterialTheme.colorScheme.surface
+                        else colorScheme.surface
                     )
                     .constrainAs(scroll) {
                         if (display == Settings.Display.MAP) {
@@ -296,12 +300,16 @@ fun RenderItem(
     x: ScrollState,
     y: ScrollState
 ) {
+    val expandable by vm.screen[screen.ident]!!.cycler.expandable.collectAsStateWithLifecycle()
+    val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
+    val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
     val display by vm.screen[screen.ident]!!.display.observeAsState()
     //qqq("TITLE " + " "+ item.more+  " " +item?.title  +" "+item.description)
+    val h by remember(xy[index].h) { mutableStateOf(xy[index].h) }
     Row(
         modifier = Modifier
-            .offset(item.x, item.y)
-            .size(item.w, item.h)
+            .offset(xy[index].x, xy[index].y)
+            .size(xy[index].w, h)
             .clickable(
                 onClick = {
                     vm.toolbar.items.last().position =
@@ -321,12 +329,12 @@ fun RenderItem(
             )
             .padding(8.dp, 0.dp, 8.dp, 0.dp)
             .background(
-                color = MaterialTheme.colorScheme.surface,
+                color = colorScheme.surface,
                 shape = RoundedCornerShape(8.dp)
             )
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outline,
+                color = colorScheme.outline,
                 shape = RoundedCornerShape(8.dp)
             )
             .padding(8.dp)
@@ -338,12 +346,12 @@ fun RenderItem(
                 modifier = Modifier
                     .size(90.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.surface,
+                        color = colorScheme.surface,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline,
+                        color = colorScheme.outline,
                         shape = RoundedCornerShape(8.dp)
                     )
                     .clip(RoundedCornerShape(8.dp))
@@ -351,95 +359,74 @@ fun RenderItem(
         Column(
             modifier = Modifier.padding(8.dp).fillMaxWidth()
         ) {
-
-            val scheme = MaterialTheme.colorScheme
-
             Text(
                 item.title,
-                color = MaterialTheme.colorScheme.secondary,
+                color = colorScheme.secondary,
                 style = typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (item.subtitle?.isNotEmpty() == true)
+                Text(
+                    item.subtitle,
+                    color = colorScheme.secondary,
+                    style = typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             val display by vm.screen[screen.ident]!!.display.observeAsState()
-            val txt by remember(item.more, item.description, display) {
-                mutableStateOf(
+            val txt=// by remember(more[index], item.description) { mutableStateOf(
                     buildAnnotatedString {
-                        append(item.description!!)
-                        if (item.more == true && display != Settings.Display.MAP)
+                        withStyle(
+                            style = SpanStyle(
+                                color = colorScheme.secondary,
+                                fontSize = typography.bodySmall.fontSize,
+                            )
+                        ) { append(item.description!!) }
+                        if (more[index] == true && display != Settings.Display.MAP)
                             withLink(
                                 LinkAnnotation.Clickable(
                                     tag = "lastThree",
                                     linkInteractionListener = {
-                                        screen.render.ellipsis(index)
+                                        screen.render.ellipsis(screen.render.data.stack[index])
                                     }
                                 )
                             ) {
                                 withStyle(
                                     style = SpanStyle(
                                         textDecoration = TextDecoration.None,
-                                        color = scheme.primary,
-                                        fontSize = typography.bodyLarge.fontSize
+                                        color =     colorScheme.primary,
+                                        fontSize = typography.bodySmall.fontSize
                                     )
-                                ) { append(" \u25B2") }
+                                ) { append("...") }//" \u25B2") }
                             }
                     }
+           // )}
+            var desc by remember(more[index], item.description, display, expandable[index]) {
+                mutableStateOf(
+                    if (more[index] == true) txt
+                    else (expandable[index] ?: txt)
                 )
             }
-            var desc by remember(item.more, item.description, display) { mutableStateOf(txt) }
-
-            //qqq("D"+display+desc)
-            var alpha by remember(display) { mutableFloatStateOf(0f) }
-            var full by remember(item.more) { mutableStateOf(item.more) }
+            //qqq("D "+index+more[index]+item.title+ "--"+expandable[index])
             Text(
-                desc,//if (full == true) txt else desc,
-                modifier = Modifier.alpha(alpha).fillMaxWidth(),
-                style = typography.bodyMedium,
-                maxLines =
-                    if (display == Settings.Display.MAP) 2
-                    else Int.MAX_VALUE,
-                onTextLayout = { layoutResult ->
-                    if (display == Settings.Display.MAP) {
-                        alpha = 1f
-                        return@Text
-                    }
-                    if (full == false) {
-                        if (layoutResult.lineCount > 2) {
-                            val startIndex = layoutResult.getLineStart(0)
-                            val endIndex = layoutResult.getLineEnd(1)
-                            val s = item.description!!.substring(startIndex, endIndex)
-                            //qqq("i "+startIndex+ " "+endIndex + " "+item.description!!.length)
-                            if (endIndex > 5)
-                                desc = buildAnnotatedString {
-                                    val startIndex = s.length - 4
-                                    append(s.take(startIndex))
-                                    withLink(
-                                        LinkAnnotation.Clickable(
-                                            tag = "lastThree",
-                                            linkInteractionListener = {
-                                                screen.render.ellipsis(index)
-                                            }
-                                        )
-                                    ) {
-                                        withStyle(
-                                            style = SpanStyle(
-                                                textDecoration = TextDecoration.None,
-                                                color = scheme.primary,
-                                                fontSize = typography.bodyMedium.fontSize,
-                                            )
-                                        ) {
-                                            append(" \u25BC")
-                                        }
-                                    }
-                                }
-                          //  else qqq("TEXT! " + item.description!!.length + " " + layoutResult.lineCount + " " + desc)
-                        }
-                        if (layoutResult.lineCount != item.description!!.length) alpha = 1f
-                    } else alpha = 1f
+                desc,
+                onTextLayout = { textLayoutResult ->
+                    // The width is available in pixels (px), convert to Dp for use in modifiers
+                    val widthInPixels = textLayoutResult.size.width
+                   // qqq("W " +with(density) { widthInPixels.toDp() })
                 },
+                modifier = Modifier
+                    //.alpha(alpha)
+                    .fillMaxWidth(),
+                style = typography.bodySmall,
+                maxLines =
+                    if (display == Settings.Display.MAP || expandable[index] == null) 2
+                    else Int.MAX_VALUE,
                 overflow =
-                    if (display == Settings.Display.MAP) TextOverflow.Ellipsis
-                    else TextOverflow.Clip
+                 //   if (display == Settings.Display.MAP || expandable[index] == null)
+                        TextOverflow.Ellipsis
+                  //  else TextOverflow.Clip
             )
         }
     }
@@ -545,7 +532,7 @@ fun Control(screen: Screen) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .background(MaterialTheme.colorScheme.background)
+            .background(colorScheme.background)
             .padding(8.dp)
     ) {
         Text(
@@ -561,7 +548,7 @@ fun Control(screen: Screen) {
             Image(
                 painter = painterResource(R.drawable.list),
                 contentDescription = "list",
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                colorFilter = ColorFilter.tint(colorScheme.background),
                 modifier = Modifier.clickable(
                     onClick = {
                         //    isMap = true
@@ -571,13 +558,13 @@ fun Control(screen: Screen) {
                 )
                     .padding(8.dp, 0.dp)
                     .background(
-                        if (display != Settings.Display.MAP) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.secondary,
+                        if (display != Settings.Display.MAP) colorScheme.primary
+                        else colorScheme.secondary,
                         shape = CircleShape
                     )
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.tertiary,
+                        color = colorScheme.tertiary,
                         shape = CircleShape
                     )
                     .padding(5.dp)
@@ -586,7 +573,7 @@ fun Control(screen: Screen) {
             Image(
                 painterResource(R.drawable.map),
                 "map",
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                colorFilter = ColorFilter.tint(colorScheme.background),
                 modifier = Modifier.clickable(
                         onClick = {
                             vm.screen[screen.ident]!!.display.value = Settings.Display.MAP
@@ -594,13 +581,13 @@ fun Control(screen: Screen) {
                         }
                     )
                     .background(
-                        if (display == Settings.Display.MAP) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.secondary,
+                        if (display == Settings.Display.MAP) colorScheme.primary
+                        else colorScheme.secondary,
                         shape = CircleShape
                     )
                     .border(
                         width = 1.dp,
-                        color = MaterialTheme.colorScheme.tertiary,
+                        color = colorScheme.tertiary,
                         shape = CircleShape
                     )
                     .padding(5.dp)
@@ -632,7 +619,7 @@ fun MyDialog(screen: Screen) {
         ) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface,
+                color = colorScheme.surface,
                 modifier = Modifier.padding(8.dp)
             ) {
                 LazyColumn(
