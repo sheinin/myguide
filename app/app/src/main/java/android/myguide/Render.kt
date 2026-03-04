@@ -1,6 +1,5 @@
 package android.myguide
 
-import android.R.attr.data
 import android.myguide.Settings.Display.*
 import android.myguide.vm
 import android.view.ViewTreeObserver
@@ -15,19 +14,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.Integer.max
 import java.lang.Integer.min
-import java.time.temporal.TemporalAdjusters.next
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.time.Duration.Companion.minutes
+import kotlin.collections.getOrNull
+import kotlin.collections.set
+import kotlin.collections.withIndex
+import kotlin.math.absoluteValue
 
 class Render(
     val activity: MainActivity,
-    //val view: RelativeLayout,
-   // val bind: ViewModel.Screen,
     val screen: Screen,
-//    val scrollY: LockableNestedScrollView,
- //   val scrollX: HorizontalScrollView,
-    //val setListIsEmpty: (Boolean?) -> Unit,
     val getSettings: () -> Settings
 ) {
     val bind = vm.screen[screen.ident]!!
@@ -61,7 +57,6 @@ class Render(
     private var list: List<ListInterface> = listOf()
     private var job: Job? = null
     private var jobQue = ConcurrentHashMap<Int, Int>()
-    private var observer: ViewTreeObserver.OnScrollChangedListener? = null
     private var ordinal = 0
     var offset = 0
     init {
@@ -110,14 +105,12 @@ class Render(
     }
     enum class DisplayType {
         DEFAULT,
-        CHAIN,
-        PLAYER;
+        NODE;
         val height: Dp
             get() =
                 when (this) {
                     DEFAULT -> 108.dp
-                    CHAIN -> 100.dp
-                    PLAYER -> 100.dp
+                    NODE -> 44.dp
                 }
     }
     data class Data(
@@ -126,16 +119,13 @@ class Render(
         var point: CopyOnWriteArrayList<Int>,
         var ruler: CopyOnWriteArrayList<Dp>,
         var stack: IntArray,
-        var vm: MutableList<ViewModel.Cycler.Item>,
+        var vm: MutableList<ViewItem>,
         var vmExpandable:MutableList<AnnotatedString?>,
         var vmMore:MutableList<Boolean?>,
         var vmXY:MutableList<ViewModel.Cycler.XY>
     ) {
         class Display(
-            val distance: Int = 0,
-            val drawable: Int,
             val ordinal: Int,
-            val title: String,
             var type: DisplayType,
             var height: Dp,
             var measure: Dp = 0.dp,
@@ -161,13 +151,10 @@ class Render(
     private fun ini1(ix: Int) {
         val item = list.getOrNull(ix) ?: return
         val displayType =
-            DisplayType.DEFAULT
+            if (item.description == null) DisplayType.NODE else DisplayType.DEFAULT
         data.display.add(
             Data.Display(
-                distance = 0,
-                drawable = 0,
                 height = displayType.height,
-                title = item.title!!,
                 ordinal = ordinal,
                 type = displayType
             )
@@ -176,6 +163,7 @@ class Render(
         ordinal += 1
     }
     private fun measure(ix: Int) {
+        if (list[ix].description == null) return
         val p = androidx.compose.ui.text.Paragraph(
             text = list[ix].description!!,
             style = typography.bodySmall,
@@ -251,10 +239,11 @@ class Render(
             (0 until list.size).map { vm(it) }
             return
         }
+        bind.measure(list.subList(start, limit).map { it.description } .toList())
 
 
-        vm.measure(list.subList(start, limit).map { it.description!! } .toList())
-
+        data.collapse[0] = 0 to 7
+        data.collapse[1] = 1 to 6
 
         qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
@@ -272,7 +261,6 @@ class Render(
                         delay(1L)
                         renderX(it)
                     }
-
                 LIST ->
                     (start until limit).map {
                         vm(data.point[it])
@@ -280,28 +268,18 @@ class Render(
                         renderYSync(it)
                     }
             }
-            delay(50)
-           // activity.runOnUiThread {
-                callback?.invoke()
-                //val t = System.currentTimeMillis()
-                (data.display.size until list.size).map {
-                    ini(it)
-                    ms.invoke(it)
-                }
-                ruler(false)
-                val l = mutableListOf<String>()
-                data.vm.withIndex().filter { it.value.title == "" }.map {
-                    //qqq("+ "+it.index+list[it.index].description!!)
-                    l.add(list[it.index].description!!)
-                    vm(it.index)
-                }
-                vm.measure(l)
-
-
-          //  vm.clear()
-               // qqq("job ms:${(System.currentTimeMillis() - t)} pos:$position start:$start limit:$limit ruler:${data.ruler.size} static:$isStatic")
-         //   }
-
+            callback?.invoke()
+            (data.display.size until list.size).map {
+                ini(it)
+                ms.invoke(it)
+            }
+            ruler(false)
+            val l = mutableListOf<String?>()
+            data.vm.withIndex().filter { it.value.title == "" }.map {
+                l.add(list[it.index].description)
+                vm(it.index)
+            }
+            bind.measure(l)
         }
     }
     fun display(display: Settings.Display) {
@@ -348,7 +326,7 @@ class Render(
         this.list = list
         ordinal = 0
         handler = handler.set(display == MAP)
-        data.vm = MutableList(this@Render.list.size) { cycler.item }
+        data.vm = MutableList(this@Render.list.size) { cycler.viewItem }
         data.vmExpandable = MutableList(this@Render.list.size) { null }
         data.vmXY = MutableList(this@Render.list.size) {
             ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)
@@ -382,6 +360,7 @@ class Render(
                             && c.value.first + c.value.second.unaryMinus() > it.ordinal
                 }
         }
+        qqq("FIL "+filter.size + " "+data.ruler.size)
         val list = filter.subList(data.ruler.size, filter.size)
 
         if (getSettings().display == D3) {
@@ -399,6 +378,7 @@ class Render(
                 data.point.add(d.ordinal)
                 data.ruler.add(height)
                 height += d.height + 8.dp
+                qqq(">>>>> " +d.ordinal + " "+height)
             }
             if (display == MAP) {
                 bind.w.postValue((screenWidth - 90.dp) * data.ruler.size)
@@ -471,7 +451,7 @@ class Render(
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].h  + data.vmMore[index])
+        qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].y  + data.vmMore[index])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vmExpandable[point])
         cycler.updateItem(index, data.vm[point])
@@ -512,8 +492,7 @@ class Render(
             }
         }
         val disp = data.display.find { it.ordinal == index } ?: return
-        qqq("E "+index+ " "+disp.title+"-"+list[index].title + " "+disp.title + " "+disp.measure+data.vmMore[index]!!)
-        //val to = min(index + batch / 2, list.size)
+        //qqq("E "+index+" "+list[index].title + " "+disp.title + " "+disp.measure+data.vmMore[index]!!)
         if (data.vmMore[index]!!) disp.height -= disp.measure
         else disp.height += disp.measure
         height = 0.dp
@@ -529,10 +508,39 @@ class Render(
             .map { vm1(it, data.vmMore.getOrNull(it) ?: false) }
 
     }
+    fun collapse(ix: Int) {
+        val point = data.point[data.stack[ix]]
+        fun go(key: Int, v: Pair<Int, Int>) {
+            data.collapse[key] = data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
+        }
+        data.collapse.entries.find { c ->
+            c.key != point && c.value == data.collapse[point]
+        }?.also { c -> go(c.key, c.value) }
+
+        qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
+        go(point, data.collapse[point]!!)
+     //   vmm.toolbar.items.last().position = data.vm[point].header.value!!.toggle!! to 0
+        ruler()
+     //   resume()
+
+        var start = max(min(data.ruler.size, 0) - offset, 0)
+        val end = min(data.ruler.size, start + batch)
+        (start until end).map {
+//            qqq("M " + it + " " + data.point[it] + " "+data.ruler[it]+ " "+data.ruler[data.stack[it]])
+            data.vmXY[data.point[it]] = ViewModel.Cycler.XY(
+                x = 0.dp,
+                y = data.ruler[it] ?: 0.dp,
+                w = screenWidth,
+                h = data.display[it].height,
+            )
+            renderYSync(it)
+        }
+    }
     fun calibrate() {
         qqq("ca")
 return
-        data.vm = MutableList(batch) { cycler.item }
+        /*
+        data.vm = MutableList(batch) { cycler.viewItem }
         val l = mutableListOf<ListInterface>()
         (0 until batch).map {
             l += object : ListInterface {
@@ -541,6 +549,8 @@ return
                 override val description: String = ""
                 override val drawable: Int = 0
                 override val id: String = ""
+                override val level: Int?
+                    get() = TODO("Not yet implemented")
             }
             data.display.add(
                 Data.Display(
@@ -559,23 +569,25 @@ return
             cycler.updateItem(it, data.vm[it])
         }
 
+*/
     }
 
     private fun vm(ix: Int, more: Boolean? = null) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-      //  qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title)
+        qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+data.ruler.getOrNull(ix))
         val vm =
-            ViewModel.Cycler.Item(
+            ViewItem(
                 id = item.id!!,
                 title = item.title!!,
-                subtitle = item.origin,
+                origin = item.origin,
                 description = item.description?.trim(),
-                drawable = item.drawable
+                drawable = item.drawable,
+                level = item.level
             )
         data.vmXY[ix] = ViewModel.Cycler.XY(
             x = if (display == MAP) (screenWidth - 90.dp) * disp.ordinal else 0.dp,
-            y = if (display == MAP) 0.dp else data.ruler.getOrNull(ix) ?: 0.dp,
+            y = if (display == MAP) 0.dp else data.ruler[ix] ?: 0.dp,
             w = screenWidth - if (display == MAP) 90.dp else 0.dp,
             h = disp.height,
         )

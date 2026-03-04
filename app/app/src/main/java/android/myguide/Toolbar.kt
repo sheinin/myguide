@@ -5,12 +5,14 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
+import java.time.temporal.TemporalAdjusters.next
 
 class Toolbar {
     interface ScreenTools {
         fun build(
             id: String? = null,
             display: Settings.Display = Settings.Display.LIST,
+            viewItem: ViewItem? = null,
             queryType: QueryType = QueryType.SHOPS,
         )
         fun callback(i: Int, a: AnnotatedString)
@@ -22,13 +24,14 @@ class Toolbar {
     class Item(
         var id: String?,
         val queryType: QueryType,
-        val slide: Boolean?,
+        val viewItem: ViewItem?,
         val title: String,
         var ident: Boolean,
         var display: Settings.Display,
         var position: Dp
     )
     private lateinit var activity: MainActivity
+    private var next: Screen? = null
     private var tracker = true
     var items = mutableListOf<Item>()
     val crumbs = mapOf(
@@ -41,26 +44,12 @@ class Toolbar {
     )
     fun back(vi: View? = null) {
         val i = items.lastIndex.dec()
-        if (i == -1) vm.showSplash.value = true//activity.showSplash()
+        if (i == -1) vm.showSplash.value = true
         else if (vi == null) goto(i)
         else goto(i)
     }
     fun ellipsis(ix: Int) {
-        qqq("EEE" +ix)
         activity.screen[items.last().ident]!!.render.ellipsis(ix)
-    }
-    fun blank() {
-        vm.toolbar.items.add(
-            Item(
-                id = null,
-                ident = false,
-                display = Settings.Display.LIST,
-                title = "",
-                position = 0.dp,
-                queryType = QueryType.SHOPS,
-                slide = null
-            )
-        )
     }
     fun clear() {
         items.clear()
@@ -74,7 +63,6 @@ class Toolbar {
             else -> goto(ix)
         }
     }
-    fun positionGet(): Dp? = if (items.isNotEmpty()) items.last().position else null
     fun init(activity: MainActivity) { this.activity = activity }
     val last: ScreenTools?
         get() =
@@ -83,8 +71,8 @@ class Toolbar {
     fun navigate(
         id: String? = null,
         display: Settings.Display = Settings.Display.LIST,
+        viewItem: ViewItem? = null,
         queryType: QueryType = QueryType.SHOPS,
-        slide: Boolean? = null,
         title: String
     ) {
         qqq("NAVIGATE id:"+id+" title:"+title+" query:"+queryType)
@@ -101,12 +89,12 @@ class Toolbar {
                 id = id,
                 ident = tracker,
                 display = display,
+                viewItem = viewItem,
                 title = title,
                 position = 0.dp,
-                queryType = queryType,
-                slide = slide
+                queryType = queryType
             )
-        val next = activity.screen[tracker]!!
+        next = activity.screen[tracker]!!
         crumbs[tracker]!!.value =
             listOf(
                 items.getOrNull(0)?.title ?: "",
@@ -116,21 +104,28 @@ class Toolbar {
         this.title[tracker]!!.value = title
         cached = true
         items.add(item)
-        vm.current.value = next.ident
-    //    if (slide != null) {
-        next.build(
+        vm.current.value = next!!.ident
+        next!!.build(
             id = id,
             display = display,
+            viewItem = viewItem,
             queryType = queryType,
         )
         current!!.reset()
-    //    sleep(10) {
-            next.query()
+      //  sleep(1000) {
+         //   next.query()
            // if (slide) slideIn(current.root, next.root) { next.query() }
            // else animCross(current.root, next.root) { next.query() }
-     //   }
+        //}
       //  }
     }
+    fun pending() {
+        sleep {
+            next?.query()
+            next = null
+        }
+    }
+
     fun splash() {
 
         //activity.showSplash()

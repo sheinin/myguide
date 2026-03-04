@@ -1,8 +1,6 @@
 package android.myguide
 
-import android.R.attr.scheme
-import android.R.attr.x
-import android.R.attr.y
+import android.R.attr.text
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -27,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -36,7 +36,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,24 +45,27 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -73,8 +75,6 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.platform.LocalDensity
 
 @Composable
 fun Main(
@@ -87,7 +87,9 @@ fun Main(
     val display by vm.screen[screen.ident]!!.display.observeAsState()
     Box(
         modifier
-            .fillMaxSize()
+            .fillMaxSize().onPlaced {
+                vm.toolbar.pending()
+            }
     ) {
         val singapore = LatLng(1.35, 103.86)
         val cameraPositionState = rememberCameraPositionState {
@@ -137,11 +139,6 @@ fun Main(
                                 }
                             )
                             .background(colorScheme.secondary, shape = CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = colorScheme.tertiary,
-                                shape = CircleShape
-                            )
                             .padding(5.dp)
                     )
                     Text(
@@ -237,6 +234,59 @@ fun Main(
 
                     }
             ) {
+                val viewItem by bind.item.observeAsState()
+                if (display != Settings.Display.MAP && viewItem != null)
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            viewItem!!.title,
+                            style = typography.bodyLarge,
+                            color = colorScheme.secondary
+                        )
+                        Text(
+                            viewItem!!.origin!!,
+                            fontStyle = FontStyle.Italic,
+                            style = typography.bodyMedium,
+                            color = colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                        val lines = 3
+                        val textMeasurer = rememberTextMeasurer()
+                        val c = Constraints(maxWidth = (screenWidth - 58.dp - 24.dp).toPx().toInt())
+                        val measurements = remember(viewItem!!.description!!) {
+                            textMeasurer.measure(
+                                text = viewItem!!.description!!,
+                                style = typography.bodySmall,
+                                constraints = c
+                            )
+                        }
+                        qqq("LC "+measurements.lineCount)
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Image(
+                                painterResource(viewItem!!.drawable!!),
+                                "item icon",
+                                modifier = Modifier
+                                    .size(58.dp, 62.dp)
+                                    .padding(bottom = 4.dp)
+                                    .background(color = colorScheme.surface)
+                            )
+                            Text(
+                                if (measurements.lineCount <= lines) viewItem!!.description!!
+                                else viewItem!!.description!!.take(measurements.getLineEnd(lines)),
+                                style = typography.bodySmall,
+                                color = colorScheme.secondary,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                        if (measurements.lineCount > lines)
+                        Text(
+                            viewItem!!.description!!.substring(measurements.getLineEnd(lines)),
+                            style = typography.bodySmall,
+                            color = colorScheme.secondary
+                        )
+
+                    }
+
+
                 if (display != Settings.Display.MAP)
                     Control(screen)
                 val scrollStateX = rememberScrollState()
@@ -276,13 +326,13 @@ fun Main(
                         repeat(batch) { index ->
                             val item = items[index]
                             if (
-                                item.title.isNotEmpty() &&
-                                expandable[index]?.isNotEmpty() == true
+                                item.title.isNotEmpty() //&&
+                           //     expandable[index]?.isNotEmpty() == true
                             )
                                 RenderItem(
                                     index = index,
                                     screen = screen,
-                                    item = item,
+                                    viewItem = item,
                                     x = scrollStateX,
                                     y = scrollStateY
                                 )
@@ -300,7 +350,7 @@ fun Main(
 fun RenderItem(
     index: Int,
     screen: Screen,
-    item: ViewModel.Cycler.Item,
+    viewItem: ViewItem,
     x: ScrollState,
     y: ScrollState
 ) {
@@ -308,20 +358,22 @@ fun RenderItem(
     val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
     val display by vm.screen[screen.ident]!!.display.observeAsState()
-    //qqq("TITLE " + " "+ item.more+  " " +item?.title  +" "+item.description)
+    qqq("TITLE " + " "+ xy[index].y+  " " +viewItem?.title)
     val h by remember(xy[index].h) { mutableStateOf(xy[index].h) }
     Row(
         modifier = Modifier
             .offset(xy[index].x, xy[index].y)
-            .size(xy[index].w, h)
+            .size(xy[index].w, xy[index].h)
             .clickable(
                 onClick = {
+                    if (viewItem.description == null) return@clickable
                     vm.toolbar.items.last().position =
                         if (display == Settings.Display.MAP) x.value.toDp()
                         else y.value.toDp()
                     vm.toolbar.navigate(
-                        id = item.id,
-                        title = item.title,
+                        id = viewItem.id,
+                        viewItem = viewItem,
+                        title = viewItem.title,
                         queryType =
                             if (
                                 screen.queryType == QueryType.SHOP
@@ -331,115 +383,129 @@ fun RenderItem(
                     )
                 }
             )
-            .padding(8.dp, 0.dp, 8.dp, 0.dp)
+            .padding(
+                8.dp * viewItem.level.inc(),
+                0.dp,
+                8.dp,
+                0.dp
+            )
             .background(
-                color = colorScheme.surface,
-                shape = RoundedCornerShape(8.dp)
+                color = colorScheme.surfaceContainer
             )
-            .border(
-                width = 1.dp,
-                color = colorScheme.outline,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(8.dp)
+            .padding(if (viewItem.description == null) 0.dp else 2.dp)
     ) {
-        if (display != Settings.Display.MAP && item.drawable != null)
+        if (display != Settings.Display.MAP && viewItem.drawable != null)
             Image(
-                painterResource(item.drawable),
+                painterResource(viewItem.drawable),
                 "item icon",
                 modifier = Modifier
                     .size(90.dp)
                     .background(
-                        color = colorScheme.surface,
-                        shape = RoundedCornerShape(8.dp)
+                        color = colorScheme.surface
                     )
-                    .border(
-                        width = 1.dp,
-                        color = colorScheme.outline,
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .clip(RoundedCornerShape(8.dp))
             )
         Column(
             modifier = Modifier.padding(8.dp).fillMaxWidth()
         ) {
-            Text(
-                item.title,
-                color = colorScheme.secondary,
-                style = typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (item.subtitle?.isNotEmpty() == true)
+            Row {
                 Text(
-                    item.subtitle,
+                    viewItem.title,
                     color = colorScheme.secondary,
-                    style = typography.bodyMedium,
+                    style = typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            val display by vm.screen[screen.ident]!!.display.observeAsState()
-            val txt=// by remember(more[index], item.description) { mutableStateOf(
-                    buildAnnotatedString {
-                        withStyle(
-                            style = SpanStyle(
-                                color = colorScheme.secondary,
-                                fontSize = typography.bodySmall.fontSize,
+                if (viewItem.description == null) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Image(
+                        painter = painterResource(R.drawable.back),
+                        contentDescription = "",
+                        colorFilter = ColorFilter.tint(colorScheme.secondary),
+                        modifier = Modifier
+                            .clickable(
+                                onClick = {
+                                    screen.render.collapse(index)
+                                }
                             )
-                        ) { append(item.description!!) }
-                        if (more[index] == true && display != Settings.Display.MAP) {
+                    )
+                }
+            }
+            if (viewItem.origin != null)
+                Text(
+                    viewItem.origin,
+                    color = colorScheme.secondary,
+                    style = typography.bodyMedium,
+                    fontStyle = FontStyle.Italic,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            if (viewItem.description != null) {
+                val display by vm.screen[screen.ident]!!.display.observeAsState()
+                val txt by
+                remember(more[index], viewItem.description) {
+                    mutableStateOf(
+                        buildAnnotatedString {
                             withStyle(
                                 style = SpanStyle(
-                                    color = Color.Transparent,
-                                    textDecoration = TextDecoration.None,
+                                    color = colorScheme.secondary,
                                     fontSize = typography.bodySmall.fontSize,
                                 )
-                            ) { append(".") }
-                            withLink(
-                                LinkAnnotation.Clickable(
-                                    tag = "lastThree",
-                                    linkInteractionListener = {
-                                        screen.render.ellipsis(screen.render.data.stack[index])
-                                    }
-                                )
-                            ) {
+                            ) { append(viewItem.description) }
+                            if (more[index] == true && display != Settings.Display.MAP) {
                                 withStyle(
                                     style = SpanStyle(
+                                        color = Color.Transparent,
                                         textDecoration = TextDecoration.None,
-                                        color = colorScheme.primary,
-                                        fontSize = typography.bodySmall.fontSize
+                                        fontSize = typography.bodySmall.fontSize,
                                     )
-                                ) { append("...") }
+                                ) { append(".") }
+                                withLink(
+                                    LinkAnnotation.Clickable(
+                                        tag = "lastThree",
+                                        linkInteractionListener = {
+                                            screen.render.ellipsis(screen.render.data.stack[index])
+                                        }
+                                    )
+                                ) {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            textDecoration = TextDecoration.None,
+                                            color = colorScheme.primary,
+                                            fontSize = typography.bodySmall.fontSize
+                                        )
+                                    ) { append("...") }
+                                }
                             }
                         }
-                    }
-           // )}
-            var desc by remember(more[index], item.description, display, expandable[index]) {
-                mutableStateOf(
-                    if (more[index] == true) txt
-                    else (expandable[index] ?: txt)
+                    )
+                }
+                var desc by remember(
+                    more[index],
+                    viewItem.description,
+                    display,
+                    expandable[index]
+                ) {
+                    mutableStateOf(
+                        if (display == Settings.Display.MAP || more[index] == true) txt
+                        else (expandable[index] ?: txt)
+                    )
+                }
+                //qqq("D "+index+more[index]+item.title+ "--"+expandable[index])
+                Text(
+                    desc,
+                    onTextLayout = { textLayoutResult ->
+                        // The width is available in pixels (px), convert to Dp for use in modifiers
+                        val widthInPixels = textLayoutResult.size.width
+                        // qqq("W " +with(density) { widthInPixels.toDp() })
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    style = typography.bodySmall,
+                    maxLines =
+                        if (display == Settings.Display.MAP || expandable[index] == null) 2
+                        else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            //qqq("D "+index+more[index]+item.title+ "--"+expandable[index])
-            Text(
-                desc,
-                onTextLayout = { textLayoutResult ->
-                    // The width is available in pixels (px), convert to Dp for use in modifiers
-                    val widthInPixels = textLayoutResult.size.width
-                   // qqq("W " +with(density) { widthInPixels.toDp() })
-                },
-                modifier = Modifier
-                    //.alpha(alpha)
-                    .fillMaxWidth(),
-                style = typography.bodySmall,
-                maxLines =
-                    if (display == Settings.Display.MAP || expandable[index] == null) 2
-                    else Int.MAX_VALUE,
-                overflow =
-                 //   if (display == Settings.Display.MAP || expandable[index] == null)
-                        TextOverflow.Ellipsis
-                  //  else TextOverflow.Clip
-            )
         }
     }
 }
@@ -552,7 +618,6 @@ fun Control(screen: Screen) {
             style = typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
-                .padding(8.dp, 0.dp)
                 .fillMaxWidth()
                 .weight(1f)
         )

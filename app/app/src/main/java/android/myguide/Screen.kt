@@ -1,19 +1,16 @@
 package android.myguide
 
-import android.R.attr.data
-import android.myguide.QueryType.*
-import android.system.Os.listen
-import android.util.Log.i
-import androidx.compose.runtime.snapshots.Snapshot.Companion.observe
+import android.myguide.QueryType.ITEM
+import android.myguide.QueryType.ITEMS
+import android.myguide.QueryType.SHOP
+import android.myguide.QueryType.SHOPS
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 
 class Screen(
     val activity: MainActivity,
-    override val ident: Boolean,
- //   val binding: ScreenBinding
+    override val ident: Boolean
 ) : Toolbar.ScreenTools {
     private val bind = vm.screen[ident]!!
     private fun getSettings(): Settings {
@@ -33,14 +30,12 @@ class Screen(
     ).also {
     //    it.calibrate(realm.query(Activity::class).find().subList(0, cyclerBatch).toMutableList())
     }
-
     private var id: String? = null
     var queryType: QueryType? = null
-
-
     override fun build(
         id: String?,
         display: Settings.Display,
+        viewItem: ViewItem?,
         queryType: QueryType,
     ) {
         this.id = id
@@ -52,10 +47,13 @@ class Screen(
                     + " display:" + display
             + " position:" + vm.toolbar.items.last().position
         )
+        bind.item.value = viewItem
         bind.cycler.isMap.value = display.isMap
         bind.display.value = display
         bind.position.value = 0.dp
+        bind.clear()
         render.reset()
+        qqq("end")
     }
     override fun callback(i: Int, a: AnnotatedString) {
         render.data.vmExpandable[i] = a
@@ -73,12 +71,12 @@ class Screen(
         bind.cycler.reset()
         when (queryType) {
             ITEM -> vm.fetchShops(id!!, ::callback)
-            ITEMS -> vm.fetchItems(::callback)
+            ITEMS -> vm.fetchTree(::callback)//
+            // vm.fetchItems(::callback)
             SHOP -> vm.fetchItems(id!!, ::callback)
             SHOPS -> vm.fetchShops(::callback)
             else -> {}
         }
-        // qqq("SCREEN QUERY " + ident + " " +screen)
     }
 
     override fun reset() {
@@ -123,8 +121,8 @@ enum class QueryType {
     SHOPS;
     val title: String
         get() = when (this) {
-            ITEM -> "Available at These Locations:"
-            ITEMS -> "All Available Items:"
+            ITEM -> "Available at These Shops:"
+            ITEMS -> "All Items:"
             SHOP -> "Available Items:"
             SHOPS -> "All Shops:"
         }
