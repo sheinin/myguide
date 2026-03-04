@@ -1,6 +1,8 @@
 package android.myguide
 
+import android.R.attr.data
 import android.myguide.Settings.Display.*
+import android.myguide.vm
 import android.view.ViewTreeObserver
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Constraints
@@ -49,7 +51,6 @@ class Render(
         MAP,
         NONE;
         fun set(map: Boolean): Handlers {
-            qqq("set "+map)
             return if (map) MAP
             else FULL
         }
@@ -252,28 +253,8 @@ class Render(
         }
 
 
-        var c = 0
-        fun callback(i: Int, a: AnnotatedString?) {
-          //  if (screen.ident != vm.toolbar.items.lastOrNull()?.ident) return
-            data.vmExpandable[i] = a
-            bind.cycler.updateExpandable(i, a)
-            c++
-            if (c < list.size)
-                vm.measure(
-                    Triple(
-                        list[c].description!!,
-                        c,
-                        ::callback
-                    )
-                )
-        }
-        vm.measure(
-            Triple(
-                list[c].description!!,
-                c,
-                ::callback
-            )
-        )
+        vm.measure(list.subList(start, limit).map { it.description!! } .toList())
+
 
         qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
@@ -300,7 +281,7 @@ class Render(
                     }
             }
             delay(50)
-            activity.runOnUiThread {
+           // activity.runOnUiThread {
                 callback?.invoke()
                 //val t = System.currentTimeMillis()
                 (data.display.size until list.size).map {
@@ -308,9 +289,18 @@ class Render(
                     ms.invoke(it)
                 }
                 ruler(false)
-                data.vm.withIndex().filter { it.value.title == "" }.map { vm(it.index) }
+                val l = mutableListOf<String>()
+                data.vm.withIndex().filter { it.value.title == "" }.map {
+                    //qqq("+ "+it.index+list[it.index].description!!)
+                    l.add(list[it.index].description!!)
+                    vm(it.index)
+                }
+                vm.measure(l)
+
+
+          //  vm.clear()
                // qqq("job ms:${(System.currentTimeMillis() - t)} pos:$position start:$start limit:$limit ruler:${data.ruler.size} static:$isStatic")
-            }
+         //   }
 
         }
     }
@@ -353,6 +343,7 @@ class Render(
         }
     }
     fun load(list: List<ListInterface>, callback: (() -> Unit)? = null) {
+        qqq("LOAD "+list.size)
         this.display = bind.display.value!!
         this.list = list
         ordinal = 0
@@ -480,7 +471,7 @@ class Render(
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].h  + data.vmMore[index])
+        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].h  + data.vmMore[index])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vmExpandable[point])
         cycler.updateItem(index, data.vm[point])
@@ -503,10 +494,10 @@ class Render(
         spinners[index] = ix
     }
     fun ellipsis(index: Int) {
-        data.display.map { qqq("D"+it.title) }
+        //data.display.map { qqq("D"+it.title) }
         fun vm1(ix: Int, more: Boolean) {
             val disp = data.display.find { it.ordinal == ix } ?: return
-            qqq("VM1 "+ix +more+disp.title + "  "+disp.height + screen.ident)
+            //qqq("VM1 "+ix +more+disp.title + "  "+disp.height + screen.ident)
             data.vmXY[ix] = ViewModel.Cycler.XY(
                 x = if (display == MAP) (screenWidth - 90.dp) * disp.ordinal else 0.dp,
                 y = if (display == MAP) 0.dp else data.ruler.getOrNull(ix) ?: 0.dp,
@@ -580,7 +571,6 @@ return
                 title = item.title!!,
                 subtitle = item.origin,
                 description = item.description?.trim(),
-                expandable = null,
                 drawable = item.drawable
             )
         data.vmXY[ix] = ViewModel.Cycler.XY(

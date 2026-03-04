@@ -1,8 +1,11 @@
 package android.myguide
 
+import android.R.attr.data
 import android.myguide.QueryType.*
 import android.system.Os.listen
+import android.util.Log.i
 import androidx.compose.runtime.snapshots.Snapshot.Companion.observe
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -32,7 +35,6 @@ class Screen(
     }
 
     private var id: String? = null
-    //var display: Settings.Display? = null
     var queryType: QueryType? = null
 
 
@@ -55,11 +57,10 @@ class Screen(
         bind.position.value = 0.dp
         render.reset()
     }
-
-    override fun getPosition(): Dp {
-        return 0.dp//screen!!.getPosition()
+    override fun callback(i: Int, a: AnnotatedString) {
+        render.data.vmExpandable[i] = a
+        bind.cycler.updateExpandable(i, a)
     }
-
     override fun query() {
         fun callback(list: List<ListInterface>) {
             val l = mutableListOf<ListInterface>()
@@ -82,13 +83,10 @@ class Screen(
 
     override fun reset() {
         render.listen(false)
-     //   if (!binding.vm!!.isMap.value!!) activity.markers.clear()
-       // screen?.reset()
     }
 
     override fun update() {
         qqq("UPDATE SCREEN " + ident + " " + vm.toolbar.items.last().position)
-        //observe(disp)
         bind.position.postValue(vm.toolbar.items.last().position)
         render.listen(true)
     }

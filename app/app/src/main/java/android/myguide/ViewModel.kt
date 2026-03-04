@@ -1,14 +1,18 @@
 package android.myguide
 
 import android.myguide.ViewModel.Cycler.XY
+import android.util.Log.v
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlin.collections.plus
 import kotlin.math.exp
 
@@ -28,7 +32,6 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             val title: String,
             val subtitle: String?,
             val description: String?,
-            val expandable:  AnnotatedString?,
             val drawable: Int?,
         )
         val item =
@@ -37,7 +40,6 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                 title = "",
                 subtitle = null,
                 description = null,
-                expandable = null,
                 drawable = null,
             )
         private val _expandable = MutableStateFlow<List<AnnotatedString?>>(emptyList())
@@ -121,12 +123,21 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     }
     val current = MutableLiveData<Boolean?>(null)
 
-    private val _measure = MutableStateFlow<Triple<String, Int, (Int, AnnotatedString?) -> Unit>>(
-        Triple("", 0) { _, _ -> })
-    val measure = _measure.asStateFlow()
-    fun measure(measure: Triple<String, Int, (Int, AnnotatedString?) -> Unit>) {
-        _measure.value = measure
+    private val _measures = MutableStateFlow<List<String>>(emptyList())
+    val measures = _measures.asStateFlow()
+    fun measure(list: List<String>) {
+        qqq("M"+list)
+        //_measures.update { emptyList() }
+        list.map { l -> _measures.update { it + l } }
     }
+    fun callback(i: Int, a: AnnotatedString) {
+        toolbar.last?.callback(i, a)
+    }
+    fun clear() {
+        _measures.update { emptyList() }
+    }
+
+
     //val measure = MutableLiveData<Triple<String, Int, (Int, AnnotatedString?) -> Unit>>()
     val toolbar = Toolbar()
     val showSplash = MutableLiveData(true)

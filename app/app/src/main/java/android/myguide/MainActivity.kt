@@ -1,5 +1,7 @@
 package android.myguide
 
+import android.R.attr.maxLines
+import android.R.attr.text
 import android.app.ProgressDialog.show
 import android.myguide.ui.theme.MyGuideTheme
 import android.os.Bundle
@@ -12,29 +14,39 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -52,10 +64,12 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.flow.Flow
 
 const val batch = 21
 var screenHeight = 0.dp
 var screenWidth = 0.dp
+lateinit var characters: Map<Char, Dp>
 lateinit var colorScheme: ColorScheme
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
@@ -116,18 +130,33 @@ class MainActivity : ComponentActivity() {
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
             typography = MaterialTheme.typography
-
             GetScreenSize()
             MyGuideTheme {
-                val constraints = Constraints(maxWidth = 222.dp.toPx().toInt())//screenWidth - 138.dp
-
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.fillMaxWidth()) {
+/*
+                        val measurer = rememberTextMeasurer()
+                        val m = mutableMapOf<Char, Dp>()
+                        for (char in " åö0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!\"#\$%&'()*+,-./:;<=>?@[\\]^_{|}~`") {
+                            val result = measurer.measure(
+                                char.toString(),
+                                style = typography.bodySmall
+                            )
+                          //  qqq("LR "+ char + " "+ result.size.width.toDp())
+                            m[char] = result.size.width.toDp() - 1.dp
+                        }
+                        characters = m
+
+
+ */
+                        MeasuredFlowList()
+/*
                         val measure by vm.measure.collectAsStateWithLifecycle()
-                        val textMeasurer = rememberTextMeasurer()
+                        val textMeasurer = rememberTextMeasurer(50)
                         val count = measure.second
                         val text = measure.first
+                        val constraints = Constraints(maxWidth = 222.dp.toPx().toInt())//screenWidth - 138.dp
                         val layoutResult = textMeasurer.measure(
                             text,
                             style = typography.bodySmall,
@@ -136,16 +165,6 @@ class MainActivity : ComponentActivity() {
                             maxLines = 2
                         )
                         val str = if (layoutResult.lineCount > 1 && layoutResult.isLineEllipsized(1)) {
-                           // val endIndex = res.getLineEnd(1)
-                          /*  val layoutResult = textMeasurer.measure(
-                                measure.first.substring(0, res.getLineEnd(1)),// + "...",
-                                style = typography.bodySmall,
-                                constraints = constraints,
-                                overflow = TextOverflow.Ellipsis,
-                                maxLines = 2
-                            )
-
-                           */
                             val s = measure.first.substring(0, layoutResult.getLineEnd(1, true))
                            // qqq("S "+layoutResult.lineCount+" " +s + "=="+ s.take(s.length.dec()))// +measure.first.substring(0, layoutResult.getLineEnd(1).dec())+ "---" +s)
                             buildAnnotatedString {
@@ -179,11 +198,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         } else null
-                        //qqq("i "+count + " "+str + " "+measure.first)
+                       // qqq("i "+count + " "+str + " "+measure.first)
                         measure.third.invoke(
                             count,
                             str
                         )
+                        */
                         val show = vm.showSplash.observeAsState()
                         if (show.value!!)
                             Splash(Modifier.padding(innerPadding))
@@ -270,4 +290,109 @@ fun Int.toDp(): Dp {
     return with(density) {
         this@toDp.toDp()
     }
+}
+
+@Composable
+fun MeasureStringList(
+    strings: List<String>,
+    modifier: Modifier = Modifier
+) {
+    val textMeasurer = rememberTextMeasurer()
+
+    BoxWithConstraints(modifier.width(222.dp)) {
+        val maxWidth = constraints.maxWidth
+        val c = Constraints(maxWidth = 222.dp.toPx().toInt())//screenWidth - 138.dp
+
+        // Measure all strings once per (strings, maxWidth, style) change
+        val measurements = remember(strings, maxWidth, typography.bodySmall) {
+            strings.associateWith { text ->
+                textMeasurer.measure(
+                    text = AnnotatedString(text),
+                    style = typography.bodySmall,
+                    constraints = c,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2
+                )
+            }
+        }
+
+
+        var count = 0
+        strings.forEach { text ->
+            val result = measurements[text]!!
+
+            val x = count
+            val str = if (result.lineCount > 1 && result.isLineEllipsized(1)) {
+                val s = text.take(result.getLineEnd(1, true))
+                // qqq("S "+layoutResult.lineCount+" " +s + "=="+ s.take(s.length.dec()))// +measure.first.substring(0, layoutResult.getLineEnd(1).dec())+ "---" +s)
+                buildAnnotatedString {
+                    val startIndex = s.length
+                    withStyle(
+                        style = SpanStyle(
+                            color = colorScheme.secondary,
+                            textDecoration = TextDecoration.None,
+                            fontSize = typography.bodySmall.fontSize,
+                        )
+                    ) { append(s.take(startIndex.dec()).trim()) }
+                    withStyle(
+                        style = SpanStyle(
+                            color = Color.Transparent,
+                            textDecoration = TextDecoration.None,
+                            fontSize = typography.bodySmall.fontSize,
+                        )
+                    ) { append(".") }
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = "lastThree",
+                            linkInteractionListener = {
+                                vm.toolbar.ellipsis(x)
+                            }
+                        )
+                    ) {
+                        withStyle(
+                            style = SpanStyle(
+                                textDecoration = TextDecoration.None,
+                                color = colorScheme.primary,
+                                fontSize = typography.bodySmall.fontSize,
+                            )
+                        ) {
+                            append("...")
+                        }
+                    }
+                }
+            } else
+                buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            color = colorScheme.secondary,
+                            textDecoration = TextDecoration.None,
+                            fontSize = typography.bodySmall.fontSize,
+                        )
+                    ) {
+                        append(text)
+                    }
+                }
+            vm.callback(
+                count,
+                str
+            )
+            count += 1
+            qqq("...")
+        }
+    }
+}
+
+
+
+@Composable
+fun MeasuredFlowList() {
+    val strings by vm.measures.collectAsState()
+
+    qqq("!")
+    MeasureStringList(
+        strings = strings,
+        modifier = Modifier.fillMaxWidth()
+    )
+
+    qqq("!!")
 }

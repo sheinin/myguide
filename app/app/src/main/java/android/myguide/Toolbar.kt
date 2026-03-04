@@ -1,6 +1,7 @@
 package android.myguide
 
 import android.view.View
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
@@ -12,7 +13,7 @@ class Toolbar {
             display: Settings.Display = Settings.Display.LIST,
             queryType: QueryType = QueryType.SHOPS,
         )
-        fun getPosition(): Dp
+        fun callback(i: Int, a: AnnotatedString)
         fun query()
         fun reset()
         fun update()

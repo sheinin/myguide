@@ -272,9 +272,13 @@ fun Main(
                             .size(w.value!!, h.value!!)
                     ) {
                         val items by bind.cycler.items.collectAsStateWithLifecycle()
+                        val expandable by bind.cycler.expandable.collectAsStateWithLifecycle()
                         repeat(batch) { index ->
                             val item = items[index]
-                            if (item.title.isNotEmpty())
+                            if (
+                                item.title.isNotEmpty() &&
+                                expandable[index]?.isNotEmpty() == true
+                            )
                                 RenderItem(
                                     index = index,
                                     screen = screen,
@@ -383,7 +387,14 @@ fun RenderItem(
                                 fontSize = typography.bodySmall.fontSize,
                             )
                         ) { append(item.description!!) }
-                        if (more[index] == true && display != Settings.Display.MAP)
+                        if (more[index] == true && display != Settings.Display.MAP) {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color.Transparent,
+                                    textDecoration = TextDecoration.None,
+                                    fontSize = typography.bodySmall.fontSize,
+                                )
+                            ) { append(".") }
                             withLink(
                                 LinkAnnotation.Clickable(
                                     tag = "lastThree",
@@ -395,11 +406,12 @@ fun RenderItem(
                                 withStyle(
                                     style = SpanStyle(
                                         textDecoration = TextDecoration.None,
-                                        color =     colorScheme.primary,
+                                        color = colorScheme.primary,
                                         fontSize = typography.bodySmall.fontSize
                                     )
-                                ) { append("...") }//" \u25B2") }
+                                ) { append("...") }
                             }
+                        }
                     }
            // )}
             var desc by remember(more[index], item.description, display, expandable[index]) {
