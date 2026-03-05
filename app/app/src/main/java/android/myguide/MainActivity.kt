@@ -72,7 +72,6 @@ import kotlinx.coroutines.flow.Flow
 const val batch = 21
 var screenHeight = 0.dp
 var screenWidth = 0.dp
-lateinit var characters: Map<Char, Dp>
 lateinit var colorScheme: ColorScheme
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver

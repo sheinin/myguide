@@ -1,6 +1,5 @@
 package android.myguide
 
-import android.R.attr.text
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -25,8 +24,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.onPlaced
@@ -50,10 +46,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -65,7 +58,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -321,21 +313,13 @@ fun Main(
                         modifier = Modifier
                             .size(w.value!!, h.value!!)
                     ) {
-                        val items by bind.cycler.items.collectAsStateWithLifecycle()
-                        val expandable by bind.cycler.expandable.collectAsStateWithLifecycle()
-                        repeat(batch) { index ->
-                            val item = items[index]
-                            if (
-                                item.title.isNotEmpty() //&&
-                           //     expandable[index]?.isNotEmpty() == true
+                        repeat(batch) {
+                            RenderItem(
+                                index = it,
+                                screen = screen,
+                                x = scrollStateX,
+                                y = scrollStateY
                             )
-                                RenderItem(
-                                    index = index,
-                                    screen = screen,
-                                    viewItem = item,
-                                    x = scrollStateX,
-                                    y = scrollStateY
-                                )
                         }
                     }
                 }
@@ -350,29 +334,30 @@ fun Main(
 fun RenderItem(
     index: Int,
     screen: Screen,
-    viewItem: ViewItem,
     x: ScrollState,
     y: ScrollState
 ) {
-    val expandable by vm.screen[screen.ident]!!.cycler.expandable.collectAsStateWithLifecycle()
+    val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
+    val display by vm.screen[screen.ident]!!.display.observeAsState()
+    val expand by vm.screen[screen.ident]!!.cycler.expand.collectAsStateWithLifecycle()
     val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
-    val display by vm.screen[screen.ident]!!.display.observeAsState()
   //  qqq("TITLE " + " "+ xy[index].y+  " " +viewItem?.title)
+    if (details[index].title.isNotEmpty() && xy[index] != ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
     Row(
         modifier = Modifier
             .offset(xy[index].x, xy[index].y)
             .size(xy[index].w, xy[index].h)
             .clickable(
                 onClick = {
-                    if (viewItem.description == null) return@clickable
+                    if (details[index].description == null) return@clickable
                     vm.toolbar.items.last().position =
                         if (display == Settings.Display.MAP) x.value.toDp()
                         else y.value.toDp()
                     vm.toolbar.navigate(
-                        id = viewItem.id,
-                        viewItem = viewItem,
-                        title = viewItem.title,
+                        id = details[index].id,
+                        details = details[index],
+                        title = details[index].title,
                         queryType =
                             if (
                                 screen.queryType == QueryType.SHOP
@@ -383,7 +368,7 @@ fun RenderItem(
                 }
             )
             .padding(
-                8.dp + 16.dp * viewItem.level,
+                8.dp + 16.dp * details[index].level,
                 0.dp,
                 8.dp,
                 0.dp
@@ -391,11 +376,11 @@ fun RenderItem(
             .background(
                 color = colorScheme.surfaceContainer
             )
-            .padding(if (viewItem.description == null) 0.dp else 2.dp)
+            .padding(if (details[index].description == null) 0.dp else 2.dp)
     ) {
-        if (display != Settings.Display.MAP && viewItem.drawable != null)
+        if (display != Settings.Display.MAP && details[index].drawable != null)
             Image(
-                painterResource(viewItem.drawable),
+                painterResource(details[index].drawable ?: 0),
                 "item icon",
                 modifier = Modifier
                     .size(90.dp)
@@ -408,13 +393,13 @@ fun RenderItem(
         ) {
             Row {
                 Text(
-                    viewItem.title,
+                    details[index].title,
                     color = colorScheme.secondary,
                     style = typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (viewItem.description == null) {
+                if (details[index].description == null) {
                     Spacer(modifier = Modifier.weight(1f))
                     Image(
                         painter = painterResource(R.drawable.back),
@@ -429,19 +414,19 @@ fun RenderItem(
                     )
                 }
             }
-            if (viewItem.origin != null)
+            if (details[index].origin != null)
                 Text(
-                    viewItem.origin,
+                    details[index].origin ?: "",
                     color = colorScheme.secondary,
                     style = typography.bodyMedium,
                     fontStyle = FontStyle.Italic,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            if (viewItem.description != null) {
+            if (details[index].description != null) {
                 val display by vm.screen[screen.ident]!!.display.observeAsState()
                 val txt by
-                remember(more[index], viewItem.description) {
+                remember(more[index], details[index].description) {
                     mutableStateOf(
                         buildAnnotatedString {
                             withStyle(
@@ -449,7 +434,7 @@ fun RenderItem(
                                     color = colorScheme.secondary,
                                     fontSize = typography.bodySmall.fontSize,
                                 )
-                            ) { append(viewItem.description) }
+                            ) { append(details[index].description) }
                             if (more[index] == true && display != Settings.Display.MAP) {
                                 withStyle(
                                     style = SpanStyle(
@@ -480,13 +465,13 @@ fun RenderItem(
                 }
                 var desc by remember(
                     more[index],
-                    viewItem.description,
+                    details[index].description,
                     display,
-                    expandable[index]
+                    expand[index]
                 ) {
                     mutableStateOf(
                         if (display == Settings.Display.MAP || more[index] == true) txt
-                        else (expandable[index] ?: txt)
+                        else expand[index] ?: txt
                     )
                 }
                 //qqq("D "+index+more[index]+item.title+ "--"+expandable[index])
@@ -495,12 +480,12 @@ fun RenderItem(
                     onTextLayout = { textLayoutResult ->
                         // The width is available in pixels (px), convert to Dp for use in modifiers
                         val widthInPixels = textLayoutResult.size.width
-                        // qqq("W " +with(density) { widthInPixels.toDp() })
+                    //     qqq("W " +with(density) { widthInPixels.toDp() })
                     },
                     modifier = Modifier.fillMaxWidth(),
                     style = typography.bodySmall,
                     maxLines =
-                        if (display == Settings.Display.MAP || expandable[index] == null) 2
+                        if (display == Settings.Display.MAP || expand[index] == null) 2
                         else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis
                 )

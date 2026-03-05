@@ -5,18 +5,18 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
-import java.time.temporal.TemporalAdjusters.next
 
 class Toolbar {
     interface ScreenTools {
         fun build(
             id: String? = null,
             display: Settings.Display = Settings.Display.LIST,
-            viewItem: ViewItem? = null,
+            details: Details? = null,
             queryType: QueryType = QueryType.SHOPS,
         )
         fun callback(i: Int, a: AnnotatedString)
         fun query()
+        fun start()
         fun reset()
         fun update()
         val ident: Boolean
@@ -24,7 +24,7 @@ class Toolbar {
     class Item(
         var id: String?,
         val queryType: QueryType,
-        val viewItem: ViewItem?,
+        val details: Details?,
         val title: String,
         var ident: Boolean,
         var display: Settings.Display,
@@ -71,7 +71,7 @@ class Toolbar {
     fun navigate(
         id: String? = null,
         display: Settings.Display = Settings.Display.LIST,
-        viewItem: ViewItem? = null,
+        details: Details? = null,
         queryType: QueryType = QueryType.SHOPS,
         title: String
     ) {
@@ -89,7 +89,7 @@ class Toolbar {
                 id = id,
                 ident = tracker,
                 display = display,
-                viewItem = viewItem,
+                details = details,
                 title = title,
                 position = 0.dp,
                 queryType = queryType
@@ -108,7 +108,7 @@ class Toolbar {
         next!!.build(
             id = id,
             display = display,
-            viewItem = viewItem,
+            details = details,
             queryType = queryType,
         )
         current!!.reset()

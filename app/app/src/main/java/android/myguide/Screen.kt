@@ -4,7 +4,6 @@ import android.myguide.QueryType.ITEM
 import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
-import android.util.Log.i
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 
@@ -36,7 +35,7 @@ class Screen(
     override fun build(
         id: String?,
         display: Settings.Display,
-        viewItem: ViewItem?,
+        details: Details?,
         queryType: QueryType,
     ) {
         this.id = id
@@ -48,49 +47,32 @@ class Screen(
                     + " display:" + display
             + " position:" + vm.toolbar.items.last().position
         )
-        bind.item.value = viewItem
+        bind.item.value = details
         bind.cycler.isMap.value = display.isMap
         bind.display.value = display
         bind.position.value = 0.dp
         bind.clear()
         render.reset()
-        qqq("end")
     }
     override fun callback(i: Int, a: AnnotatedString) {
-        render.data.vmExpandable[i] = a
+        render.data.vm.expand[i] = a
         bind.cycler.updateExpandable(i, a)
     }
     override fun query() {
         fun callback(list: List<ListInterface>) {
-
-            var level = -1
             var count = 0
             while (count <= list.lastIndex) {
-                //qqq("C "+count+ " "+list[count].title + " "+list[count].level+ " "+level + " "+(list.getOrNull(count.inc())?.level ?: -1))
-                if ((list.getOrNull(count.inc())?.level ?: -1) > list[count].level) {
-                    var i = list.withIndex().indexOfFirst { (ix, it) ->
-                        ix > count &&
-                        it.level <= list[count].level || ix == list.size
-                    }
-                    if (i == -1) {
-                        qqq(">"+list[count].title)
-                       i = list.size
-                    }
-                    if (i != -1) {
-                        qqq(
-                            "A " + list[count].level + " " + level + " c:" + count + " ?:" +
-                                    i + " " + list[count].title + " ??" + (count to i - count)
-                        )
-                        level = list[count].level.inc()
-                        render.data.collapse[count] = count to i - count
-                    }
+                 if ((list.getOrNull(count.inc())?.level ?: -1) > list[count].level) {
+                    var i =
+                        list.withIndex().indexOfFirst { (ix, it) ->
+                            ix > count &&
+                            it.level <= list[count].level || ix == list.size
+                        }
+                    if (i == -1) i = list.size
+                    render.data.collapse[count] = count to i - count
                 }
                 count++
             }
-
-        //    render.data.collapse[0] = 0 to 7
-        //    render.data.collapse[1] = 1 to 6
-
             val l = mutableListOf<ListInterface>()
             repeat(1) {
                 l.addAll(list)
@@ -112,6 +94,9 @@ class Screen(
         render.listen(false)
     }
 
+    override fun start() {
+        render.start()
+    }
     override fun update() {
         qqq("UPDATE SCREEN " + ident + " " + vm.toolbar.items.last().position)
         bind.position.postValue(vm.toolbar.items.last().position)

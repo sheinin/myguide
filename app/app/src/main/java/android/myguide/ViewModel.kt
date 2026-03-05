@@ -21,56 +21,54 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             var w: Dp,
             var h: Dp
         )
-        val viewItem =
-            ViewItem(
-                id = "",
-                title = "",
-                origin = null,
-                description = null,
-                drawable = null,
-                level = 0
-            )
-        private val _expandable = MutableStateFlow<List<AnnotatedString?>>(emptyList())
-        val expandable = _expandable.asStateFlow()
+        private val _expand = MutableStateFlow<List<AnnotatedString?>>(emptyList())
+        val expand = _expand.asStateFlow()
         private val _more = MutableStateFlow<List<Boolean?>>(emptyList())
         val more = _more.asStateFlow()
-        private val _items = MutableStateFlow<List<ViewItem>>(emptyList())
-        val items = _items.asStateFlow()
+        private val _details = MutableStateFlow<List<Details>>(emptyList())
+        val details = _details.asStateFlow()
         private val _xy = MutableStateFlow<List<XY>>(emptyList())
         val xy = _xy.asStateFlow()
         init { reset() }
         fun reset() {
-            _expandable.value = emptyList()
-            _items.value = emptyList()
+            _expand.value = emptyList()
+            _details.value = emptyList()
             _more.value = emptyList()
             _xy
             repeat(batch) {
-                _expandable.value += null
-                _items.value += viewItem
+                _expand.value += null
+                _details.value +=
+                    Details(
+                        id = "",
+                        title = "",
+                        origin = null,
+                        description = null,
+                        drawable = null,
+                        level = 0
+                    )
                 _more.value += null
                 _xy.value += XY(0.dp, 0.dp, 0.dp, 0.dp)
             }
         }
         fun updateExpandable(index: Int, e: AnnotatedString?) {
-            _expandable.update {
-              //  qqq("UE "+index+" "+e)
+            _expand.update {
                 it.mapIndexed { ix, it ->
                     if (ix == index) e
                     else it
                 }
             }
         }
-        fun updateItem(index: Int, viewItem: ViewItem) {
-            _items.update {
+        fun updateItem(index: Int, details: Details) {
+            _details.update {
                 it.mapIndexed { ix, it ->
                     if (ix == index)
                         it.copy(
-                            id = viewItem.id,
-                            title = viewItem.title,
-                            origin = viewItem.origin,
-                            description = viewItem.description,
-                            drawable = viewItem.drawable,
-                            level = viewItem.level
+                            id = details.id,
+                            title = details.title,
+                            origin = details.origin,
+                            description = details.description,
+                            drawable = details.drawable,
+                            level = details.level
                         )
                     else it
                 }
@@ -105,15 +103,14 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val dialog = MutableLiveData(false)
         val cycler = Cycler()
         val position = MutableLiveData(0.dp)
-        val x = MutableLiveData(0.dp)
-        val y = MutableLiveData(0.dp)
         val w = MutableLiveData(0.dp)
         val h = MutableLiveData(0.dp)
-        val item = MutableLiveData<ViewItem>()
+        val item = MutableLiveData<Details>()
         private val _measures = MutableStateFlow<List<String?>>(emptyList())
         val measures = _measures.asStateFlow()
-        fun measure(list: List<String?>) {
-            list.map { l -> _measures.update { it + l } }
+        fun measure(strings: List<String?>) {
+            strings.map { l -> _measures.update { it + l } }
+            qqq("updated")
         }
         fun clear() { _measures.update { emptyList() } }
 
@@ -122,6 +119,9 @@ class ViewModel(private val repository: Repository) : ViewModel() {
 
     fun callback(i: Int, a: AnnotatedString) {
         toolbar.last?.callback(i, a)
+    }
+    fun start() {
+        toolbar.last?.start()
     }
     val toolbar = Toolbar()
     val showSplash = MutableLiveData(true)
@@ -177,7 +177,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     }
 }
 
-data class ViewItem(
+data class Details(
     val id: String,
     val title: String,
     val origin: String?,

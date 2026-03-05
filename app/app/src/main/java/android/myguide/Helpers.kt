@@ -1,5 +1,6 @@
 package android.myguide
 
+import android.R.attr.maxLines
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -20,10 +21,12 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MeasureStringList(strings: List<String?>) {
+    //qqq("MeasureStringList"+strings)
     val textMeasurer = rememberTextMeasurer()
-    val c = Constraints(maxWidth = 222.dp.toPx().toInt())
+    val c = Constraints(maxWidth = 234.dp.toPx().toInt())
     val measurements = remember(strings) {
         strings.associateWith { text ->
+            //if (text == null) return@associateWith null
             textMeasurer.measure(
                 text = AnnotatedString(text ?: ""),
                 style = typography.bodySmall,
@@ -33,14 +36,12 @@ fun MeasureStringList(strings: List<String?>) {
             )
         }
     }
-    var count = 0
-    strings.forEach { text ->
+    strings.mapIndexedNotNull { ix, text ->
+       // qqq("count"+ix+text)
         val result = measurements[text]!!
-        val x = count
         val str =
-            if (text == null) null
-            else if (result.lineCount > 1 && result.isLineEllipsized(1)) {
-                val s = text.take(result.getLineEnd(1, true))
+            if (result.lineCount > 1 && result.isLineEllipsized(1)) {
+                val s = text!!.take(result.getLineEnd(1, true))
                 // qqq("S "+layoutResult.lineCount+" " +s + "=="+ s.take(s.length.dec()))// +measure.first.substring(0, layoutResult.getLineEnd(1).dec())+ "---" +s)
                 buildAnnotatedString {
                     val startIndex = s.length
@@ -62,7 +63,7 @@ fun MeasureStringList(strings: List<String?>) {
                         LinkAnnotation.Clickable(
                             tag = "lastThree",
                             linkInteractionListener = {
-                                vm.toolbar.ellipsis(x)
+                                vm.toolbar.ellipsis(ix)
                             }
                         )
                     ) {
@@ -89,17 +90,16 @@ fun MeasureStringList(strings: List<String?>) {
                         append(text)
                     }
                 }
-        if (str != null)
         vm.callback(
-            count,
+            ix,
             str
         )
-        count += 1
     }
+    vm.start()
 }
 
 @Composable
 fun MeasuredFlowList(ident: Boolean) {
     val strings by vm.screen[ident]!!.measures.collectAsState()
-    MeasureStringList(strings = strings)
+    if (strings.isNotEmpty()) MeasureStringList(strings = strings)
 }
