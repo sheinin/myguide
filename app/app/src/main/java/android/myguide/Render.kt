@@ -120,9 +120,9 @@ class Render(
         var ruler: CopyOnWriteArrayList<Dp>,
         var stack: IntArray,
         var vm: MutableList<ViewItem>,
-        var vmExpandable:MutableList<AnnotatedString?>,
-        var vmMore:MutableList<Boolean?>,
-        var vmXY:MutableList<ViewModel.Cycler.XY>
+        var vmExpandable: MutableList<AnnotatedString?>,
+        var vmMore: MutableList<Boolean?>,
+        var vmXY: MutableList<ViewModel.Cycler.XY>
     ) {
         class Display(
             val ordinal: Int,
@@ -242,8 +242,6 @@ class Render(
         bind.measure(list.subList(start, limit).map { it.description } .toList())
 
 
-        data.collapse[0] = 0 to 7
-        data.collapse[1] = 1 to 6
 
         qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
@@ -360,7 +358,7 @@ class Render(
                             && c.value.first + c.value.second.unaryMinus() > it.ordinal
                 }
         }
-        qqq("FIL "+filter.size + " "+data.ruler.size)
+        qqq("FIL "+filter.size + " "+data.ruler.size + " "+ list.size)
         val list = filter.subList(data.ruler.size, filter.size)
 
         if (getSettings().display == D3) {
@@ -378,7 +376,7 @@ class Render(
                 data.point.add(d.ordinal)
                 data.ruler.add(height)
                 height += d.height + 8.dp
-                qqq(">>>>> " +d.ordinal + " "+height)
+                //qqq(">>>>> " +d.ordinal + " "+height)
             }
             if (display == MAP) {
                 bind.w.postValue((screenWidth - 90.dp) * data.ruler.size)
@@ -451,7 +449,7 @@ class Render(
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].y  + data.vmMore[index])
+        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].y  + data.vmMore[index])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vmExpandable[point])
         cycler.updateItem(index, data.vm[point])
@@ -516,25 +514,20 @@ class Render(
         data.collapse.entries.find { c ->
             c.key != point && c.value == data.collapse[point]
         }?.also { c -> go(c.key, c.value) }
-
         qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
         go(point, data.collapse[point]!!)
-     //   vmm.toolbar.items.last().position = data.vm[point].header.value!!.toggle!! to 0
         ruler()
-     //   resume()
-
-        var start = max(min(data.ruler.size, 0) - offset, 0)
+        val start = max(min(data.ruler.size, 0) - offset, 0)
         val end = min(data.ruler.size, start + batch)
-        (start until end).map {
-//            qqq("M " + it + " " + data.point[it] + " "+data.ruler[it]+ " "+data.ruler[data.stack[it]])
+        data.ruler.indices.map {
             data.vmXY[data.point[it]] = ViewModel.Cycler.XY(
                 x = 0.dp,
                 y = data.ruler[it] ?: 0.dp,
                 w = screenWidth,
-                h = data.display[it].height,
+                h = data.display[data.point[it]].height,
             )
-            renderYSync(it)
         }
+        (start until end).map { renderYSync(it) }
     }
     fun calibrate() {
         qqq("ca")
@@ -575,7 +568,7 @@ return
     private fun vm(ix: Int, more: Boolean? = null) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-        qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+data.ruler.getOrNull(ix))
+        //qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+data.ruler.getOrNull(ix))
         val vm =
             ViewItem(
                 id = item.id!!,

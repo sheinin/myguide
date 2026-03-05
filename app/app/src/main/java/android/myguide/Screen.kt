@@ -4,6 +4,7 @@ import android.myguide.QueryType.ITEM
 import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
+import android.util.Log.i
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 
@@ -61,6 +62,36 @@ class Screen(
     }
     override fun query() {
         fun callback(list: List<ListInterface>) {
+
+            var level = -1
+            var count = 0
+            while (count < list.lastIndex) {
+               // qqq("C "+count+ " "+list[count].title + " "+list[count].level+ " "+level)
+                if (list[count.inc()].level > list[count].level) {
+                    val i = list.withIndex().indexOfFirst { (ix, it) ->
+                        ix > count &&
+                                it.level <= list[count].level
+                    }
+                    if (i != -1) {
+                        qqq(
+                            "A " + list[count].level + " " + level + " c:" + count + " ?:" +
+                                    i + " " + list[count].title + " ??" + (count to i.dec() - count)
+                        )
+                        level = list[count].level.inc()
+                        render.data.collapse[count] = count to i - count
+                    }
+                    //count = if (i == -1) list.size else i
+
+
+                }
+                //else
+                    count++
+
+            }
+
+        //    render.data.collapse[0] = 0 to 7
+        //    render.data.collapse[1] = 1 to 6
+
             val l = mutableListOf<ListInterface>()
             repeat(1) {
                 l.addAll(list)
@@ -71,8 +102,7 @@ class Screen(
         bind.cycler.reset()
         when (queryType) {
             ITEM -> vm.fetchShops(id!!, ::callback)
-            ITEMS -> vm.fetchTree(::callback)//
-            // vm.fetchItems(::callback)
+            ITEMS -> vm.fetchTree(::callback)
             SHOP -> vm.fetchItems(id!!, ::callback)
             SHOPS -> vm.fetchShops(::callback)
             else -> {}

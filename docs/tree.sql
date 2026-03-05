@@ -42,3 +42,15 @@ WHERE id in
     FROM ancestors
 )
 ORDER BY sort_path;
+
+
+
+
+select*
+ from items where id in (
+select parent
+--select distinct parent, pic, title, origin, description
+delete from items where id like '%-1' or id like '%-2' or id like '%-3' order by parent
+
+
+)

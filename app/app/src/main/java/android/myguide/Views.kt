@@ -384,7 +384,7 @@ fun RenderItem(
                 }
             )
             .padding(
-                8.dp * viewItem.level.inc(),
+                8.dp + 16.dp * viewItem.level,
                 0.dp,
                 8.dp,
                 0.dp
