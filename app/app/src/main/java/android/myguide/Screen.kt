@@ -65,28 +65,27 @@ class Screen(
 
             var level = -1
             var count = 0
-            while (count < list.lastIndex) {
-               // qqq("C "+count+ " "+list[count].title + " "+list[count].level+ " "+level)
-                if (list[count.inc()].level > list[count].level) {
-                    val i = list.withIndex().indexOfFirst { (ix, it) ->
+            while (count <= list.lastIndex) {
+                //qqq("C "+count+ " "+list[count].title + " "+list[count].level+ " "+level + " "+(list.getOrNull(count.inc())?.level ?: -1))
+                if ((list.getOrNull(count.inc())?.level ?: -1) > list[count].level) {
+                    var i = list.withIndex().indexOfFirst { (ix, it) ->
                         ix > count &&
-                                it.level <= list[count].level
+                        it.level <= list[count].level || ix == list.size
+                    }
+                    if (i == -1) {
+                        qqq(">"+list[count].title)
+                       i = list.size
                     }
                     if (i != -1) {
                         qqq(
                             "A " + list[count].level + " " + level + " c:" + count + " ?:" +
-                                    i + " " + list[count].title + " ??" + (count to i.dec() - count)
+                                    i + " " + list[count].title + " ??" + (count to i - count)
                         )
                         level = list[count].level.inc()
                         render.data.collapse[count] = count to i - count
                     }
-                    //count = if (i == -1) list.size else i
-
-
                 }
-                //else
-                    count++
-
+                count++
             }
 
         //    render.data.collapse[0] = 0 to 7
@@ -103,7 +102,7 @@ class Screen(
         when (queryType) {
             ITEM -> vm.fetchShops(id!!, ::callback)
             ITEMS -> vm.fetchTree(::callback)
-            SHOP -> vm.fetchItems(id!!, ::callback)
+            SHOP -> vm.fetchTree(id!!, ::callback)
             SHOPS -> vm.fetchShops(::callback)
             else -> {}
         }

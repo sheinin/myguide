@@ -102,7 +102,7 @@ class Repository(private val storeDao: StoreDao) {
             callback(storeDao.tree())
         }.start()
     }
-    fun getTree(id: String, callback: (List<Item>) -> Unit) {
+    fun getTree(id: String, callback: (List<ItemWithLevel>) -> Unit) {
         Thread {
             callback(storeDao.tree(id))
         }.start()
@@ -161,51 +161,62 @@ interface StoreDao {
         "ORDER BY sort_path;"
     )
     fun tree(): List<ItemWithLevel>
-    @Query("WITH RECURSIVE tree AS (\n" +
-            "    SELECT\n" +
-            "        id,\n" +
-            "        parent,\n" +
-            "        coalesce(title, id) as title,\n" +
-            "        0 AS level,\n" +
-            "        lower(id) AS sort_path       \n" +
-            "    FROM items\n" +
-            "    WHERE parent = 'ROOT'\n" +
-            "    UNION ALL\n" +
-            "    SELECT\n" +
-            "        n.id,\n" +
-            "        n.parent,\n" +
-            "        coalesce(n.title, n.id) as title,\n" +
-            "        tree.level + 1 AS level,\n" +
-            "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
-            "    FROM items AS n\n" +
-            "    JOIN tree ON n.parent = tree.id\n" +
-            ")\n" +
-            "SELECT\n" +
-            "    id,\n" +
-            "    parent,\n" +
-            "    title,\n" +
-            "    level\n" +
-            "FROM tree\n" +
-            "WHERE id in\n" +
-            "\t (\n" +
-            "\t WITH RECURSIVE ancestors AS (\n" +
-            "\t\tSELECT\n" +
-            "\t\t\tid,\n" +
-            "\t\t\tparent\n" +
-            "\t\tFROM items\n" +
-            "\t\tWHERE id in (select item from shop_items where shop = :id)\n" +
-            "\t\tUNION ALL\n" +
-            "\t\tSELECT\n" +
-            "\t\t\tn.id,\n" +
-            "\t\t\tn.parent\n" +
-            "\t\tFROM items AS n\n" +
-            "\t\tJOIN ancestors AS a ON n.id = a.parent\n" +
-            "\t)\n" +
-            "\tSELECT id\n" +
-            "    FROM ancestors\n" +
-            ")\n" +
-            "ORDER BY sort_path;")
-    fun tree(id: String): List<Item>
+    @Query(
+        "WITH RECURSIVE tree AS (\n" +
+        "    SELECT\n" +
+        "        id,\n" +
+        "        parent,\n" +
+        "        coalesce(title, id) as title,\n" +
+        "        description,\n" +
+        "        drawable,\n" +
+        "        origin,\n" +
+        "        0 AS level,\n" +
+        "        lower(id) AS sort_path       \n" +
+        "    FROM items\n" +
+        "    WHERE parent = 'ROOT'\n" +
+        "    UNION ALL\n" +
+        "    SELECT\n" +
+        "        n.id,\n" +
+        "        n.parent,\n" +
+        "        coalesce(n.title, n.id) as title,\n" +
+        "        n.description,\n" +
+        "        n.drawable,\n" +
+        "        n.origin,\n" +
+        "        tree.level + 1 AS level,\n" +
+        "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
+        "    FROM items AS n\n" +
+        "    JOIN tree ON n.parent = tree.id\n" +
+        ")\n" +
+        "SELECT\n" +
+        "    id,\n" +
+        "    parent,\n" +
+        "    title,\n" +
+        "    description,\n" +
+        "    origin,\n" +
+        "    drawable,\n" +
+        "    level\n" +
+        "FROM tree\n" +
+        "WHERE id in\n" +
+        "\t (\n" +
+        "\t WITH RECURSIVE ancestors AS (\n" +
+        "\t\tSELECT\n" +
+        "\t\t\tid,\n" +
+        "\t\t\tparent\n" +
+        "\t\tFROM items\n" +
+        "\t\tWHERE id in (select item from shop_items where shop = :id)\n" +
+        "\t\tUNION ALL\n" +
+        "\t\tSELECT\n" +
+        "\t\t\tn.id,\n" +
+        "\t\t\tn.parent\n" +
+        "\t\tFROM items AS n\n" +
+        "\t\tJOIN ancestors AS a ON n.id = a.parent\n" +
+        "\t)\n" +
+        "\tSELECT id\n" +
+        "    FROM ancestors\n" +
+        ")\n" +
+        "ORDER BY sort_path;"
+    )
+    fun tree(id: String): List<ItemWithLevel>
     @Query("UPDATE items SET drawable = :drawable WHERE pic = :pic")
     fun updateItem(drawable: Int, pic: String)
     @Query("UPDATE shops SET drawable = :drawable WHERE id = :id")

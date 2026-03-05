@@ -449,7 +449,7 @@ class Render(
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].y  + data.vmMore[index])
+        qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.getOrNull(point)?.title + " "+data.vmXY[point].y  + data.vmMore[index])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vmExpandable[point])
         cycler.updateItem(index, data.vm[point])
@@ -509,16 +509,15 @@ class Render(
     fun collapse(ix: Int) {
         val point = data.point[data.stack[ix]]
         fun go(key: Int, v: Pair<Int, Int>) {
-            data.collapse[key] = data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
+            data.collapse[key] =
+                data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
         }
-        data.collapse.entries.find { c ->
-            c.key != point && c.value == data.collapse[point]
-        }?.also { c -> go(c.key, c.value) }
+  //      data.collapse.entries.find { c ->
+    //        c.key != point && c.value == data.collapse[point]
+      //  }?.also { c -> go(c.key, c.value) }
         qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
         go(point, data.collapse[point]!!)
         ruler()
-        val start = max(min(data.ruler.size, 0) - offset, 0)
-        val end = min(data.ruler.size, start + batch)
         data.ruler.indices.map {
             data.vmXY[data.point[it]] = ViewModel.Cycler.XY(
                 x = 0.dp,
@@ -527,7 +526,8 @@ class Render(
                 h = data.display[data.point[it]].height,
             )
         }
-        (start until end).map { renderYSync(it) }
+       /// (0 until batch).map { cycler.updateItem(it, null) }
+        data.stack.filter { it != -1 }.map { renderYSync(it) }
     }
     fun calibrate() {
         qqq("ca")
@@ -568,7 +568,7 @@ return
     private fun vm(ix: Int, more: Boolean? = null) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
-        //qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+data.ruler.getOrNull(ix))
+        //qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+item.level+disp.type+data.ruler.getOrNull(ix))
         val vm =
             ViewItem(
                 id = item.id!!,
@@ -590,6 +590,6 @@ return
                 else more ?: (data.vmMore.getOrNull(ix) ?: false)
            // qqq(">"+item.id + " "+ix+" "+item.title  +  " "+data.vmMore.size+data.vmMore[ix])
         }
-        data.vm.getOrNull(ix)?.also { data.vm[ix] = vm }
+        data.vm[ix] = vm
     }
 }

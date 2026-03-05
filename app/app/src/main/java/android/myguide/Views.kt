@@ -358,8 +358,7 @@ fun RenderItem(
     val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
     val display by vm.screen[screen.ident]!!.display.observeAsState()
-    qqq("TITLE " + " "+ xy[index].y+  " " +viewItem?.title)
-    val h by remember(xy[index].h) { mutableStateOf(xy[index].h) }
+  //  qqq("TITLE " + " "+ xy[index].y+  " " +viewItem?.title)
     Row(
         modifier = Modifier
             .offset(xy[index].x, xy[index].y)
