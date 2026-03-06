@@ -106,9 +106,9 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val w = MutableLiveData(0.dp)
         val h = MutableLiveData(0.dp)
         val item = MutableLiveData<Details>()
-        private val _measures = MutableStateFlow<List<String?>>(emptyList())
+        private val _measures = MutableStateFlow<List<Pair<Int, String?>>>(emptyList())
         val measures = _measures.asStateFlow()
-        fun measure(strings: List<String?>) {
+        fun measure(strings: List<Pair<Int, String?>>) {
             strings.map { l -> _measures.update { it + l } }
             qqq("updated")
         }

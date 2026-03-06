@@ -109,7 +109,7 @@ class Render(
         val height: Dp
             get() =
                 when (this) {
-                    DEFAULT -> 108.dp
+                    DEFAULT -> measures.itemHeight
                     NODE -> 44.dp
                 }
     }
@@ -170,13 +170,13 @@ class Render(
         val p = androidx.compose.ui.text.Paragraph(
             text = list[ix].description!!,
             style = typography.bodySmall,
-            constraints = Constraints(maxWidth = (screenWidth - 138.dp).toPx().toInt()),
+            constraints = Constraints(maxWidth = (measures.descriptionWidth - measures.nodePadding * list[ix].level).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-        //qqq("MEASURE "+ list[ix].description + " "+p.lineCount+" "+(screenWidth - 138.dp))
+       // qqq("MEASURE "+p.getLineHeight(1).toInt().toDp() + list[ix].description + " "+p.lineCount+" "+(screenWidth - 138.dp))
         if (p.lineCount > 2)
-            data.display[ix].measure = p.getLineHeight(1).toInt().toDp() * p.lineCount.minus(2)
+            data.display[ix].measure = p.getLineHeight(1).toInt().toDp() * p.lineCount.minus(2)// * fontScale
     }
     private var limit = 0
     private var start = 0
@@ -234,7 +234,11 @@ class Render(
             (0 until list.size).map { vm(it) }
             return
         }
-        bind.measure(list.subList(start, limit).map { it.description } .toList())
+        bind.measure(
+            list.subList(start, limit).map {
+                it.level to it.description
+            } .toList()
+        )
 
 
 
@@ -271,11 +275,14 @@ class Render(
                 measure(it)
             }
             ruler(false)
-            val l = mutableListOf<String?>()
+            val l = mutableListOf<Pair<Int, String?>>()
             data.vm.details.withIndex().filter { it.value.title == "" }.map {
-                l.add(list[it.index].description)
+                l.add(list[it.index].level to list[it.index].description)
                 vm(it.index)
             }
+            list.subList(start, limit).map {
+                it.level to it.description
+            } .toList()
             bind.measure(l)
         }
     }
@@ -457,7 +464,7 @@ class Render(
         val point = data.point.getOrNull(ix) ?: return
         val disp = data.display.find { it.ordinal == point } ?: return
         val index = ix.mod(batch)
-        qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+data.vm.xy[point].y  + data.vm.more[index])
+        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+data.vm.xy[point].y  + data.vm.more[index])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vm.expand[point])
         cycler.updateItem(index, data.vm.details[point])

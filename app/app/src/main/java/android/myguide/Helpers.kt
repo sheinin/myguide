@@ -1,11 +1,15 @@
 package android.myguide
 
 import android.R.attr.maxLines
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -16,42 +20,55 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 
 @Composable
-fun MeasureStringList(strings: List<String?>) {
+fun MeasureStringList(strings: List<Pair<Int, String?>>) {
     //qqq("MeasureStringList"+strings)
     val textMeasurer = rememberTextMeasurer()
-    val c = Constraints(maxWidth = 234.dp.toPx().toInt())
     val measurements = remember(strings) {
-        strings.associateWith { text ->
-            //if (text == null) return@associateWith null
+        strings.associateWith {
+            val c = Constraints(maxWidth = (measures.descriptionWidth - measures.nodePadding * it.first).toPx().roundToInt())
             textMeasurer.measure(
-                text = AnnotatedString(text ?: ""),
+                text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            color = colorScheme.secondary,
+                            fontSize = typography.bodySmall.fontSize,
+                        )
+                    ) { append(it.second ?: "") }
+                },
                 style = typography.bodySmall,
                 constraints = c,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 2
+                density = density,
+                fontFamilyResolver = fontFamilyResolver,
+                maxLines = 2,
+                skipCache = true
             )
         }
     }
-    strings.mapIndexedNotNull { ix, text ->
-       // qqq("count"+ix+text)
+    strings.mapIndexed { ix, text ->
         val result = measurements[text]!!
+        val s = if (result.lineCount > 1) text.second!!.take(result.getLineEnd(1, true)) else (text.second ?: "")
         val str =
-            if (result.lineCount > 1 && result.isLineEllipsized(1)) {
-                val s = text!!.take(result.getLineEnd(1, true))
-                // qqq("S "+layoutResult.lineCount+" " +s + "=="+ s.take(s.length.dec()))// +measure.first.substring(0, layoutResult.getLineEnd(1).dec())+ "---" +s)
+            if (result.lineCount > 1 && s != text.second) {
+                val take = s.take(s.length - 1).trim()
+                qqq("S "+result.lineCount+" " +
+                        (measures.descriptionWidth  - measures.nodePadding * text.first) +" " +
+                        take + "=="+ text.second!!.take(result.getLineEnd(0, true)) + " == "+s)
                 buildAnnotatedString {
-                    val startIndex = s.length
                     withStyle(
                         style = SpanStyle(
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
                             fontSize = typography.bodySmall.fontSize,
                         )
-                    ) { append(s.take(startIndex.dec()).trim()) }
+                    ) { append(take) }
                     withStyle(
                         style = SpanStyle(
                             color = Color.Transparent,
@@ -87,7 +104,7 @@ fun MeasureStringList(strings: List<String?>) {
                             fontSize = typography.bodySmall.fontSize,
                         )
                     ) {
-                        append(text)
+                        append(text.second)
                     }
                 }
         vm.callback(
@@ -103,3 +120,46 @@ fun MeasuredFlowList(ident: Boolean) {
     val strings by vm.screen[ident]!!.measures.collectAsState()
     if (strings.isNotEmpty()) MeasureStringList(strings = strings)
 }
+
+
+
+
+
+fun qqq(q: String) { println("qqq $q") }
+
+
+@Composable
+fun GetScreenSize() {
+    with (LocalDensity.current) {
+        screenHeight = LocalWindowInfo.current.containerSize.height.toDp()
+        screenWidth = LocalWindowInfo.current.containerSize.width.toDp()
+    }
+}
+
+
+fun sleep(delay: Long = 0, callback: (() -> Unit)) { Handler(Looper.getMainLooper()).postDelayed({ callback.invoke() }, delay) }
+
+
+fun Dp.toPx(): Float {
+    return with(density) {
+        this@toPx.toPx()
+    }
+}
+
+fun Int.toDp(): Dp {
+    return with(density) {
+        this@toDp.toDp()
+    }
+}
+
+@Composable
+fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
+    sp.toDp()
+}
+
+class Measures(
+    val itemHeight: Dp,
+    val descriptionWidth: Dp,
+    val nodePadding: Dp,
+    val lineHeight: Dp
+)

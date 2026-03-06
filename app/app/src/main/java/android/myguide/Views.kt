@@ -1,5 +1,7 @@
 package android.myguide
 
+import android.R.attr.x
+import android.R.attr.y
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -13,12 +15,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -46,6 +50,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -67,6 +72,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlin.math.roundToInt
 
 @Composable
 fun Main(
@@ -309,16 +315,42 @@ fun Main(
                 ) {
                     val h = bind.h.observeAsState()
                     val w = bind.w.observeAsState()
+                    val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
+                    val display by vm.screen[screen.ident]!!.display.observeAsState()
+                    val expand by vm.screen[screen.ident]!!.cycler.expand.collectAsStateWithLifecycle()
+                    val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
+                    val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
                             .size(w.value!!, h.value!!)
                     ) {
+                        fun callback(index: Int) {
+                            if (details[index].description == null) return
+                            vm.toolbar.items.last().position =
+                                if (display == Settings.Display.MAP) scrollStateX.value.toDp()
+                                else scrollStateY.value.toDp()
+                            vm.toolbar.navigate(
+                                id = details[index].id,
+                                details = details[index],
+                                title = details[index].title,
+                                queryType =
+                                    if (
+                                        screen.queryType == QueryType.SHOP
+                                        || screen.queryType == QueryType.ITEMS
+                                    ) QueryType.ITEM
+                                    else QueryType.SHOP
+                            )
+                        }
                         repeat(batch) {
                             RenderItem(
                                 index = it,
                                 screen = screen,
-                                x = scrollStateX,
-                                y = scrollStateY
+                                details = details[it],
+                                display = display,
+                                expand = expand[it],
+                                more = more[it],
+                                xy = xy[it],
+                                callback = ::callback
                             )
                         }
                     }
@@ -334,41 +366,25 @@ fun Main(
 fun RenderItem(
     index: Int,
     screen: Screen,
-    x: ScrollState,
-    y: ScrollState
+    details: Details,
+    display: Settings.Display?,
+    expand: AnnotatedString?,
+    more: Boolean?,
+    xy: ViewModel.Cycler.XY,
+    callback: (Int) -> Unit
 ) {
-    val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
-    val display by vm.screen[screen.ident]!!.display.observeAsState()
-    val expand by vm.screen[screen.ident]!!.cycler.expand.collectAsStateWithLifecycle()
-    val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
-    val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
-  //  qqq("TITLE " + " "+ xy[index].y+  " " +viewItem?.title)
-    if (details[index].title.isNotEmpty() && xy[index] != ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
+
+  //  qqq("TITLE " + " "+ xy.y+  " " +viewItem?.title)
+    if (details.title.isNotEmpty() && xy != ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
     Row(
         modifier = Modifier
-            .offset(xy[index].x, xy[index].y)
-            .size(xy[index].w, xy[index].h)
+            .offset(xy.x, xy.y)
+            .size(xy.w, xy.h)
             .clickable(
-                onClick = {
-                    if (details[index].description == null) return@clickable
-                    vm.toolbar.items.last().position =
-                        if (display == Settings.Display.MAP) x.value.toDp()
-                        else y.value.toDp()
-                    vm.toolbar.navigate(
-                        id = details[index].id,
-                        details = details[index],
-                        title = details[index].title,
-                        queryType =
-                            if (
-                                screen.queryType == QueryType.SHOP
-                                || screen.queryType == QueryType.ITEMS
-                            ) QueryType.ITEM
-                            else QueryType.SHOP
-                    )
-                }
+                onClick = { callback(index) }
             )
             .padding(
-                8.dp + 16.dp * details[index].level,
+                8.dp + measures.nodePadding * details.level,
                 0.dp,
                 8.dp,
                 0.dp
@@ -376,30 +392,30 @@ fun RenderItem(
             .background(
                 color = colorScheme.surfaceContainer
             )
-            .padding(if (details[index].description == null) 0.dp else 2.dp)
     ) {
-        if (display != Settings.Display.MAP && details[index].drawable != null)
+        if (display != Settings.Display.MAP && details.drawable != null)
             Image(
-                painterResource(details[index].drawable ?: 0),
+                painterResource(details.drawable),
                 "item icon",
                 modifier = Modifier
-                    .size(90.dp)
+                    .size(measures.itemHeight)
                     .background(
                         color = colorScheme.surface
                     )
             )
         Column(
-            modifier = Modifier.padding(8.dp).fillMaxWidth()
+            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.Center
         ) {
             Row {
                 Text(
-                    details[index].title,
+                    details.title,
                     color = colorScheme.secondary,
                     style = typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                if (details[index].description == null) {
+                if (details.description == null) {
                     Spacer(modifier = Modifier.weight(1f))
                     Image(
                         painter = painterResource(R.drawable.back),
@@ -414,19 +430,19 @@ fun RenderItem(
                     )
                 }
             }
-            if (details[index].origin != null)
+            if (details.origin != null)
                 Text(
-                    details[index].origin ?: "",
+                    details.origin,
                     color = colorScheme.secondary,
                     style = typography.bodyMedium,
                     fontStyle = FontStyle.Italic,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            if (details[index].description != null) {
+            if (details.description != null) {
                 val display by vm.screen[screen.ident]!!.display.observeAsState()
                 val txt by
-                remember(more[index], details[index].description) {
+                remember(more, details.description) {
                     mutableStateOf(
                         buildAnnotatedString {
                             withStyle(
@@ -434,8 +450,8 @@ fun RenderItem(
                                     color = colorScheme.secondary,
                                     fontSize = typography.bodySmall.fontSize,
                                 )
-                            ) { append(details[index].description) }
-                            if (more[index] == true && display != Settings.Display.MAP) {
+                            ) { append(details.description) }
+                            if (more == true && display != Settings.Display.MAP) {
                                 withStyle(
                                     style = SpanStyle(
                                         color = Color.Transparent,
@@ -464,30 +480,45 @@ fun RenderItem(
                     )
                 }
                 var desc by remember(
-                    more[index],
-                    details[index].description,
+                    more,
+                    details.description,
                     display,
-                    expand[index]
+                    expand
                 ) {
                     mutableStateOf(
-                        if (display == Settings.Display.MAP || more[index] == true) txt
-                        else expand[index] ?: txt
+                        if (display == Settings.Display.MAP || more == true) txt
+                        else expand ?: txt
                     )
                 }
-                //qqq("D "+index+more[index]+item.title+ "--"+expandable[index])
+                //qqq("D "+index+more+item.title+ "--"+expandable)
+
+                val c = Constraints(maxWidth = (measures.descriptionWidth - 1.dp -measures.nodePadding * details.level).toPx().roundToInt())
+
+                val textMeasurer = rememberTextMeasurer()
+                val r = textMeasurer.measure(
+                    text = AnnotatedString(details.description),
+                    style = typography.bodySmall,
+                    constraints = c,
+                    overflow = TextOverflow.Clip,
+                    density = density,
+                    fontFamilyResolver = fontFamilyResolver,
+                    maxLines = 2,
+                    skipCache = true
+                )
+                qqq("r"+details.description.take(r.getLineEnd(0, true)))
                 Text(
                     desc,
                     onTextLayout = { textLayoutResult ->
                         // The width is available in pixels (px), convert to Dp for use in modifiers
                         val widthInPixels = textLayoutResult.size.width
-                    //     qqq("W " +with(density) { widthInPixels.toDp() })
+                         qqq("W " +with(density) { widthInPixels.toDp() } + desc)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.width(measures.descriptionWidth - measures.nodePadding * details.level),
                     style = typography.bodySmall,
                     maxLines =
-                        if (display == Settings.Display.MAP || expand[index] == null) 2
+                        if (display == Settings.Display.MAP || more != true) 2
                         else Int.MAX_VALUE,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Clip,
                 )
             }
         }
@@ -660,9 +691,7 @@ fun Control(screen: Screen) {
 @Composable
 fun MyDialog(screen: Screen) {
     Dialog(
-        onDismissRequest = {
-            qqq("dis")
-            vm.screen[screen.ident]!!.dialog.postValue(false) },
+        onDismissRequest = { vm.screen[screen.ident]!!.dialog.postValue(false) },
         properties = DialogProperties(
 
             usePlatformDefaultWidth = false // Important for custom alignment/width control
