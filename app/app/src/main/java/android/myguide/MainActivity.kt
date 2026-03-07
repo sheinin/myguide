@@ -1,6 +1,8 @@
 package android.myguide
 
+import android.content.Context
 import android.myguide.ui.theme.MyGuideTheme
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -67,15 +70,15 @@ var screenWidth = 0.dp
 lateinit var colorScheme: ColorScheme
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
-var fontScale by Delegates.notNull<Float>()
 lateinit var measures: Measures
 lateinit var vm: ViewModel
 lateinit var typography: Typography
+var fontScale by Delegates.notNull<Float>()
+var ratio by Delegates.notNull<Float>()
 
-
+lateinit var screen: Map<Boolean, Screen>
 
 class MainActivity : ComponentActivity() {
-    lateinit var screen: Map<Boolean, Screen>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -124,25 +127,36 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             GetScreenSize()
-            density = LocalDensity.current
+           // density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
             fontScale =  resources.configuration.fontScale
+            ratio = (screenWidth / 360.0.dp + 820.0.dp / screenHeight) / 2
             typography = MaterialTheme.typography
-            val h =
-                (getLineHeightDp(typography.bodyLarge.lineHeight) +
-                        getLineHeightDp(typography.bodyMedium.lineHeight) +
-                        getLineHeightDp(typography.bodySmall.lineHeight) * 2 +
-                        16.dp) * fontScale
-            val w = screenWidth - h - 32.dp// * fontScale
-            qqq("WWW "+getLineHeightDp(typography.bodySmall.lineHeight)+" "+typography.bodySmall.lineHeight+ ": "+h + " "+w + " "+resources.configuration.fontScale)
-            measures = Measures(
-                descriptionWidth = w,
-                itemHeight = h,
-                nodePadding = 16.dp,// * fontScale,
-                lineHeight = getLineHeightDp(typography.bodySmall.lineHeight)
-            )
+
             MyGuideTheme {
+                density = object : Density by Density(
+                    density = LocalDensity.current.density,
+                    fontScale = ratio
+                ) {
+                    override val fontScale: Float = android.myguide.fontScale
+                }
                 colorScheme = MaterialTheme.colorScheme
+                val r = 1
+                val h =
+                    (getLineHeightDp(typography.bodyLarge.lineHeight) +
+                            getLineHeightDp(typography.bodyMedium.lineHeight) +
+                            getLineHeightDp(typography.bodySmall.lineHeight) * 2) *
+                            1 * ratio + 8.dp
+                val w = screenWidth - h - 32.dp
+                qqq("WWW "+ratio+" "+fontScale+ ": "+h + " "+w + " "+resources.configuration.fontScale + " "+screenWidth + " "+screenHeight)
+                measures = Measures(
+                    descriptionWidth = w * r,
+                    itemHeight = h * r,
+                    nodePadding = 16.dp * r,// * fontScale,
+                    lineHeight = getLineHeightDp(typography.bodySmall.lineHeight)
+                )
+                CompositionLocalProvider(LocalDensity provides density) {
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.fillMaxWidth()) {
                         MeasuredFlowList(false)
@@ -177,7 +191,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                     }
-                }
+                }}
             }
         }
     }

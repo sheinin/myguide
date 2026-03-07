@@ -15,11 +15,13 @@ import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -27,17 +29,18 @@ import kotlin.math.roundToInt
 
 
 @Composable
-fun MeasureStringList(strings: List<Pair<Int, String?>>) {
+fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
     //qqq("MeasureStringList"+strings)
     val textMeasurer = rememberTextMeasurer()
     val measurements = remember(strings) {
         strings.associateWith {
-            val c = Constraints(maxWidth = (measures.descriptionWidth - measures.nodePadding * it.first).toPx().roundToInt())
+            val c = Constraints(maxWidth = (((measures.descriptionWidth - measures.nodePadding * it.first) / fontScale * ratio).toPx()).roundToInt())
             textMeasurer.measure(
                 text = buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
                             color = colorScheme.secondary,
+                            fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
                         )
                     ) { append(it.second ?: "") }
@@ -57,15 +60,16 @@ fun MeasureStringList(strings: List<Pair<Int, String?>>) {
         val s = if (result.lineCount > 1) text.second!!.take(result.getLineEnd(1, true)) else (text.second ?: "")
         val str =
             if (result.lineCount > 1 && s != text.second) {
-                val take = s.take(s.length - 1).trim()
+                val take = s.dropLast(1)//.trim()
                 qqq("S "+result.lineCount+" " +
-                        (measures.descriptionWidth  - measures.nodePadding * text.first) +" " +
+                        ((measures.descriptionWidth - measures.nodePadding * text.first)) +" " +
                         take + "=="+ text.second!!.take(result.getLineEnd(0, true)) + " == "+s)
                 buildAnnotatedString {
                     withStyle(
                         style = SpanStyle(
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
+                            fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
                         )
                     ) { append(take) }
@@ -73,9 +77,10 @@ fun MeasureStringList(strings: List<Pair<Int, String?>>) {
                         style = SpanStyle(
                             color = Color.Transparent,
                             textDecoration = TextDecoration.None,
+                            fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
                         )
-                    ) { append(".") }
+                    ) { append("\u200A") }
                     withLink(
                         LinkAnnotation.Clickable(
                             tag = "lastThree",
@@ -88,10 +93,12 @@ fun MeasureStringList(strings: List<Pair<Int, String?>>) {
                             style = SpanStyle(
                                 textDecoration = TextDecoration.None,
                                 color = colorScheme.primary,
+                                fontStyle = typography.bodySmall.fontStyle,
                                 fontSize = typography.bodySmall.fontSize,
+                                baselineShift = BaselineShift.Subscript
                             )
                         ) {
-                            append("...")
+                            append("\u2026")
                         }
                     }
                 }
@@ -107,18 +114,18 @@ fun MeasureStringList(strings: List<Pair<Int, String?>>) {
                         append(text.second)
                     }
                 }
-        vm.callback(
+        screen[ident]!!.callback(
             ix,
             str
         )
     }
-    vm.start()
+    screen[ident]!!.start()
 }
 
 @Composable
 fun MeasuredFlowList(ident: Boolean) {
     val strings by vm.screen[ident]!!.measures.collectAsState()
-    if (strings.isNotEmpty()) MeasureStringList(strings = strings)
+    if (strings.isNotEmpty()) MeasureStringList(ident = ident, strings = strings)
 }
 
 

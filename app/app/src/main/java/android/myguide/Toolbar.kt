@@ -14,7 +14,6 @@ class Toolbar {
             details: Details? = null,
             queryType: QueryType = QueryType.SHOPS,
         )
-        fun callback(i: Int, a: AnnotatedString)
         fun query()
         fun start()
         fun reset()
@@ -49,7 +48,10 @@ class Toolbar {
         else goto(i)
     }
     fun ellipsis(ix: Int) {
-        activity.screen[items.last().ident]!!.render.ellipsis(ix)
+        screen[items.last().ident]!!.render.ellipsis(ix)
+    }
+    fun callback(ident: Boolean, i: Int, a: AnnotatedString) {
+        screen[ident]!!.callback(i, a)
     }
     fun clear() {
         items.clear()
@@ -67,7 +69,7 @@ class Toolbar {
     val last: ScreenTools?
         get() =
             if (items.isEmpty()) null
-            else activity.screen[items.last().ident]
+            else screen[items.last().ident]
     fun navigate(
         id: String? = null,
         display: Settings.Display = Settings.Display.LIST,
@@ -82,7 +84,7 @@ class Toolbar {
                 return
             }
         }
-        val current = activity.screen[tracker]
+        val current = screen[tracker]
         tracker = !tracker
         val item =
             Item(
@@ -94,7 +96,7 @@ class Toolbar {
                 position = 0.dp,
                 queryType = queryType
             )
-        next = activity.screen[tracker]!!
+        next = screen[tracker]!!
         crumbs[tracker]!!.value =
             listOf(
                 items.getOrNull(0)?.title ?: "",
@@ -132,9 +134,9 @@ class Toolbar {
     }
     private var cached = true
     fun goto(ix: Int) {
-        val current = activity.screen[tracker]!!
+        val current = screen[tracker]!!
         val item = items[ix]
-        val next = activity.screen[!tracker]!!
+        val next = screen[!tracker]!!
         qqq("GOTO ix:" +ix+" current:" + current.ident +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()

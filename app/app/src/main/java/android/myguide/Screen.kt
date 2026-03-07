@@ -54,7 +54,7 @@ class Screen(
         bind.clear()
         render.reset()
     }
-    override fun callback(i: Int, a: AnnotatedString) {
+    fun callback(i: Int, a: AnnotatedString) {
         render.data.vm.expand[i] = a
         bind.cycler.updateExpandable(i, a)
     }

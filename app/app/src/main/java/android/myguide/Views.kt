@@ -1,5 +1,6 @@
 package android.myguide
 
+import android.R.attr.maxLines
 import android.R.attr.x
 import android.R.attr.y
 import android.view.ViewTreeObserver
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -137,7 +139,7 @@ fun Main(
                                 }
                             )
                             .background(colorScheme.secondary, shape = CircleShape)
-                            .padding(5.dp)
+                            .padding(6.dp)
                     )
                     Text(
                         vm.toolbar.title[screen.ident]!!.value!!,
@@ -159,12 +161,7 @@ fun Main(
                                 onClick = { vm.toolbar.back() }
                             )
                             .background(colorScheme.secondary, shape = CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = colorScheme.tertiary,
-                                shape = CircleShape
-                            )
-                            .padding(5.dp)
+                            .padding(6.dp)
                     )
                 }
                 if (vm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
@@ -373,9 +370,8 @@ fun RenderItem(
     xy: ViewModel.Cycler.XY,
     callback: (Int) -> Unit
 ) {
-
   //  qqq("TITLE " + " "+ xy.y+  " " +viewItem?.title)
-    if (details.title.isNotEmpty() && xy != ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
+    if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
         modifier = Modifier
             .offset(xy.x, xy.y)
@@ -448,6 +444,7 @@ fun RenderItem(
                             withStyle(
                                 style = SpanStyle(
                                     color = colorScheme.secondary,
+                                    fontStyle = typography.bodySmall.fontStyle,
                                     fontSize = typography.bodySmall.fontSize,
                                 )
                             ) { append(details.description) }
@@ -456,9 +453,10 @@ fun RenderItem(
                                     style = SpanStyle(
                                         color = Color.Transparent,
                                         textDecoration = TextDecoration.None,
+                                        fontStyle = typography.bodySmall.fontStyle,
                                         fontSize = typography.bodySmall.fontSize,
                                     )
-                                ) { append(".") }
+                                ) { append("\u200A") }
                                 withLink(
                                     LinkAnnotation.Clickable(
                                         tag = "lastThree",
@@ -471,9 +469,13 @@ fun RenderItem(
                                         style = SpanStyle(
                                             textDecoration = TextDecoration.None,
                                             color = colorScheme.primary,
-                                            fontSize = typography.bodySmall.fontSize
+                                            fontStyle = typography.bodySmall.fontStyle,
+                                            fontSize = typography.bodySmall.fontSize,
+                                            baselineShift = BaselineShift.Superscript
                                         )
-                                    ) { append("...") }
+                                    ) {
+                                        append("\u2026")
+                                    }
                                 }
                             }
                         }
@@ -492,7 +494,7 @@ fun RenderItem(
                 }
                 //qqq("D "+index+more+item.title+ "--"+expandable)
 
-                val c = Constraints(maxWidth = (measures.descriptionWidth - 1.dp -measures.nodePadding * details.level).toPx().roundToInt())
+                val c = Constraints(maxWidth =( (measures.descriptionWidth  -measures.nodePadding * details.level)/ fontScale * ratio ).toPx().roundToInt())
 
                 val textMeasurer = rememberTextMeasurer()
                 val r = textMeasurer.measure(
@@ -505,15 +507,19 @@ fun RenderItem(
                     maxLines = 2,
                     skipCache = true
                 )
-                qqq("r"+details.description.take(r.getLineEnd(0, true)))
+                qqq("r "+details.description.take(r.getLineEnd(1, true)))
+
+
+
                 Text(
                     desc,
                     onTextLayout = { textLayoutResult ->
-                        // The width is available in pixels (px), convert to Dp for use in modifiers
                         val widthInPixels = textLayoutResult.size.width
                          qqq("W " +with(density) { widthInPixels.toDp() } + desc)
                     },
-                    modifier = Modifier.width(measures.descriptionWidth - measures.nodePadding * details.level),
+                    modifier = Modifier.fillMaxWidth()
+                        .background(Color.DarkGray)
+                        ,//.width(measures.descriptionWidth - measures.nodePadding * details.level),
                     style = typography.bodySmall,
                     maxLines =
                         if (display == Settings.Display.MAP || more != true) 2
@@ -654,12 +660,7 @@ fun Control(screen: Screen) {
                         else colorScheme.secondary,
                         shape = CircleShape
                     )
-                    .border(
-                        width = 1.dp,
-                        color = colorScheme.tertiary,
-                        shape = CircleShape
-                    )
-                    .padding(5.dp)
+                    .padding(6.dp)
             )
         if (screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS)
             Image(
@@ -677,12 +678,7 @@ fun Control(screen: Screen) {
                         else colorScheme.secondary,
                         shape = CircleShape
                     )
-                    .border(
-                        width = 1.dp,
-                        color = colorScheme.tertiary,
-                        shape = CircleShape
-                    )
-                    .padding(5.dp)
+                    .padding(6.dp)
             )
     }
 }

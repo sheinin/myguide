@@ -1,10 +1,24 @@
 package android.myguide
 
+import android.R.attr.data
+import android.R.attr.text
 import android.myguide.Settings.Display.*
+import android.util.Log.i
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,7 +123,7 @@ class Render(
         val height: Dp
             get() =
                 when (this) {
-                    DEFAULT -> measures.itemHeight
+                    DEFAULT -> measures.itemHeight * fontScale
                     NODE -> 44.dp
                 }
     }
@@ -167,16 +181,32 @@ class Render(
     }
     private fun measure(ix: Int) {
         if (list[ix].description == null) return
+        val s = list[ix].description!! + " \u2026"
         val p = androidx.compose.ui.text.Paragraph(
-            text = list[ix].description!!,
+            text = s,
             style = typography.bodySmall,
-            constraints = Constraints(maxWidth = (measures.descriptionWidth - measures.nodePadding * list[ix].level).toPx().toInt()),
+            spanStyles = listOf(
+                AnnotatedString.Range(
+                    SpanStyle(
+                        color = colorScheme.secondary,
+                        fontStyle = typography.bodySmall.fontStyle,
+                        fontSize = typography.bodySmall.fontSize,
+                    ),
+                    0,
+                    s.length
+                )
+            ),
+            constraints = Constraints(
+                maxWidth = ((measures.descriptionWidth - measures.nodePadding * list[ix].level) / fontScale * ratio).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-       // qqq("MEASURE "+p.getLineHeight(1).toInt().toDp() + list[ix].description + " "+p.lineCount+" "+(screenWidth - 138.dp))
+    //   qqq("MEASURE "
+      //         + p.getLineHeight(1).toInt().toDp()
+        //       + " " + measures.lineHeight + " "+p.lineCount + " "+(list[ix].description!! + " \u2026").take(p.getLineEnd(0)) + "|||"
+          //     + list[ix].description!!.take(p.getLineEnd(1)) + "|||" +list[ix].description)
         if (p.lineCount > 2)
-            data.display[ix].measure = p.getLineHeight(1).toInt().toDp() * p.lineCount.minus(2)// * fontScale
+            data.display[ix].measure = measures.lineHeight * p.lineCount.minus(2) + 0.dp// * fontScale
     }
     private var limit = 0
     private var start = 0
@@ -228,26 +258,133 @@ class Render(
             data.point.size
         )
         start = max(0, limit - batch)
-        if (limit == 0) {
-            qqq("job empty")
+        /*if (limit == 0) {
             activity.runOnUiThread { callback?.invoke() }
             (0 until list.size).map { vm(it) }
             return
+        }*/
+
+        (0 until 12).map { ix->
+            //val ix= 0
+            if (list[ix].description != null) {
+                val str1 = list[ix].description!! + " \u2026"
+                val p = androidx.compose.ui.text.Paragraph(
+                    text = str1,
+                    style = typography.bodySmall,
+                    spanStyles = listOf(
+                        AnnotatedString.Range(
+                            SpanStyle(
+                                color = colorScheme.secondary,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize,
+                            ),
+                            0,
+                            str1.length
+                        )
+                    ),
+                    constraints = Constraints(
+                        maxWidth = ((measures.descriptionWidth - measures.nodePadding * list[ix].level) / fontScale * ratio).toPx()
+                            .toInt()
+                    ),
+                    density = density,
+                    fontFamilyResolver = fontFamilyResolver,
+                )
+                qqq(
+                    "MEASURE "
+                            + p.getLineHeight(1).toInt().toDp()
+                            + " " + measures.lineHeight + " " + p.lineCount + " " + (list[ix].description!! + " \u2026").take(
+                        p.getLineEnd(0)
+                    ) + "|||"
+                            + list[ix].description!!.take(p.getLineEnd(1)) + "|||" + list[ix].description
+                )
+                val result = p
+                val s = if (result.lineCount > 1) str1.take(
+                    result.getLineEnd(
+                        1,
+                        true
+                    )
+                ) else (str1)
+                val str =
+                    if (result.lineCount > 1 && s != str1) {
+                        val take = s.dropLast(1)//.trim()
+                        qqq(
+                            "S " + result.lineCount + " " +
+                                    ((measures.descriptionWidth - measures.nodePadding * list[ix].level)) + " " +
+                                    take + "==" + str1.take(
+                                result.getLineEnd(
+                                    0,
+                                    true
+                                )
+                            ) + " == " + s
+                        )
+                        buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = colorScheme.secondary,
+                                    textDecoration = TextDecoration.None,
+                                    fontStyle = typography.bodySmall.fontStyle,
+                                    fontSize = typography.bodySmall.fontSize,
+                                )
+                            ) { append(take) }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color.Transparent,
+                                    textDecoration = TextDecoration.None,
+                                    fontStyle = typography.bodySmall.fontStyle,
+                                    fontSize = typography.bodySmall.fontSize,
+                                )
+                            ) { append("\u200A") }
+                            withLink(
+                                LinkAnnotation.Clickable(
+                                    tag = "lastThree",
+                                    linkInteractionListener = {
+                                        vm.toolbar.ellipsis(ix)
+                                    }
+                                )
+                            ) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        textDecoration = TextDecoration.None,
+                                        color = colorScheme.primary,
+                                        fontStyle = typography.bodySmall.fontStyle,
+                                        fontSize = typography.bodySmall.fontSize,
+                                        baselineShift = BaselineShift.Subscript
+                                    )
+                                ) {
+                                    append("\u2026")
+                                }
+                            }
+                        }
+                    } else
+                        buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = colorScheme.secondary,
+                                    textDecoration = TextDecoration.None,
+                                    fontSize = typography.bodySmall.fontSize,
+                                )
+                            ) {
+                                append(str1)
+                            }
+                        }
+                qqq("STR "+str)
+                data.vm.expand[ix] = str
+                bind.cycler.updateExpandable(ix, str)
+            }
         }
-        bind.measure(
+   /*     bind.measure(
             list.subList(start, limit).map {
                 it.level to it.description
             } .toList()
         )
 
-
-
-
+    */
+        start()
     }
     fun start() {
         qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
-            delay(10L)
+            //delay(10L)
             when (bind.display.value!!) {
                 D3 ->
                     (start until limit).map {
@@ -280,10 +417,10 @@ class Render(
                 l.add(list[it.index].level to list[it.index].description)
                 vm(it.index)
             }
-            list.subList(start, limit).map {
-                it.level to it.description
-            } .toList()
-            bind.measure(l)
+         //   list.subList(start, limit).map {
+           //     it.level to it.description
+        //    } .toList()
+         //   bind.measure(l)
         }
     }
     fun display(display: Settings.Display) {

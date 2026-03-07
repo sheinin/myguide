@@ -116,13 +116,6 @@ class ViewModel(private val repository: Repository) : ViewModel() {
 
     }
     val current = MutableLiveData<Boolean?>(null)
-
-    fun callback(i: Int, a: AnnotatedString) {
-        toolbar.last?.callback(i, a)
-    }
-    fun start() {
-        toolbar.last?.start()
-    }
     val toolbar = Toolbar()
     val showSplash = MutableLiveData(true)
     val mapShowing = MutableLiveData(true)
