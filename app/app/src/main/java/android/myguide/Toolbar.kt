@@ -15,7 +15,6 @@ class Toolbar {
             queryType: QueryType = QueryType.SHOPS,
         )
         fun query()
-        fun start()
         fun reset()
         fun update()
         val ident: Boolean
@@ -49,9 +48,6 @@ class Toolbar {
     }
     fun ellipsis(ix: Int) {
         screen[items.last().ident]!!.render.ellipsis(ix)
-    }
-    fun callback(ident: Boolean, i: Int, a: AnnotatedString) {
-        screen[ident]!!.callback(i, a)
     }
     fun clear() {
         items.clear()

@@ -42,6 +42,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                             color = colorScheme.secondary,
                             fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
+                            fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append(it.second ?: "") }
                 },
@@ -71,6 +72,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
+                            fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append(take) }
                     withStyle(
@@ -79,6 +81,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
                             fontSize = typography.bodySmall.fontSize,
+                            fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append("\u200A") }
                     withLink(
@@ -95,6 +98,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                                 color = colorScheme.primary,
                                 fontStyle = typography.bodySmall.fontStyle,
                                 fontSize = typography.bodySmall.fontSize,
+                                fontWeight = typography.bodySmall.fontWeight,
                                 baselineShift = BaselineShift.Subscript
                             )
                         ) {
@@ -114,12 +118,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                         append(text.second)
                     }
                 }
-        screen[ident]!!.callback(
-            ix,
-            str
-        )
     }
-    screen[ident]!!.start()
 }
 
 @Composable

@@ -433,7 +433,7 @@ fun RenderItem(
                     style = typography.bodyMedium,
                     fontStyle = FontStyle.Italic,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
             if (details.description != null) {
                 val display by vm.screen[screen.ident]!!.display.observeAsState()
@@ -446,6 +446,7 @@ fun RenderItem(
                                     color = colorScheme.secondary,
                                     fontStyle = typography.bodySmall.fontStyle,
                                     fontSize = typography.bodySmall.fontSize,
+                                    fontWeight = typography.bodySmall.fontWeight
                                 )
                             ) { append(details.description) }
                             if (more == true && display != Settings.Display.MAP) {
@@ -455,6 +456,7 @@ fun RenderItem(
                                         textDecoration = TextDecoration.None,
                                         fontStyle = typography.bodySmall.fontStyle,
                                         fontSize = typography.bodySmall.fontSize,
+                                        fontWeight = typography.bodySmall.fontWeight
                                     )
                                 ) { append("\u200A") }
                                 withLink(
@@ -471,7 +473,8 @@ fun RenderItem(
                                             color = colorScheme.primary,
                                             fontStyle = typography.bodySmall.fontStyle,
                                             fontSize = typography.bodySmall.fontSize,
-                                            baselineShift = BaselineShift.Superscript
+                                            fontWeight = typography.bodySmall.fontWeight,
+                                           // baselineShift = BaselineShift.Superscript
                                         )
                                     ) {
                                         append("\u2026")
@@ -493,7 +496,7 @@ fun RenderItem(
                     )
                 }
                 //qqq("D "+index+more+item.title+ "--"+expandable)
-
+/*
                 val c = Constraints(maxWidth =( (measures.descriptionWidth  -measures.nodePadding * details.level)/ fontScale * ratio ).toPx().roundToInt())
 
                 val textMeasurer = rememberTextMeasurer()
@@ -501,7 +504,7 @@ fun RenderItem(
                     text = AnnotatedString(details.description),
                     style = typography.bodySmall,
                     constraints = c,
-                    overflow = TextOverflow.Clip,
+                    overflow = TextOverflow.Ellipsis,
                     density = density,
                     fontFamilyResolver = fontFamilyResolver,
                     maxLines = 2,
@@ -510,6 +513,8 @@ fun RenderItem(
                 qqq("r "+details.description.take(r.getLineEnd(1, true)))
 
 
+ */
+
 
                 Text(
                     desc,
@@ -517,6 +522,9 @@ fun RenderItem(
                         val widthInPixels = textLayoutResult.size.width
                          qqq("W " +with(density) { widthInPixels.toDp() } + desc)
                     },
+
+                    fontSize = typography.bodySmall.fontSize,
+                    fontWeight = typography.bodySmall.fontWeight,
                     modifier = Modifier.fillMaxWidth()
                         .background(Color.DarkGray)
                         ,//.width(measures.descriptionWidth - measures.nodePadding * details.level),
@@ -524,7 +532,7 @@ fun RenderItem(
                     maxLines =
                         if (display == Settings.Display.MAP || more != true) 2
                         else Int.MAX_VALUE,
-                    overflow = TextOverflow.Clip,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

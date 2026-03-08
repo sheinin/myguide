@@ -54,10 +54,6 @@ class Screen(
         bind.clear()
         render.reset()
     }
-    fun callback(i: Int, a: AnnotatedString) {
-        render.data.vm.expand[i] = a
-        bind.cycler.updateExpandable(i, a)
-    }
     override fun query() {
         fun callback(list: List<ListInterface>) {
             var count = 0
@@ -92,10 +88,6 @@ class Screen(
 
     override fun reset() {
         render.listen(false)
-    }
-
-    override fun start() {
-        render.start()
     }
     override fun update() {
         qqq("UPDATE SCREEN " + ident + " " + vm.toolbar.items.last().position)

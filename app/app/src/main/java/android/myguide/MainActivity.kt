@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -69,6 +70,8 @@ var screenHeight = 0.dp
 var screenWidth = 0.dp
 lateinit var colorScheme: ColorScheme
 lateinit var density: Density
+
+lateinit var density1: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
 lateinit var vm: ViewModel
@@ -127,35 +130,37 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             GetScreenSize()
-           // density = LocalDensity.current
+            density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
             fontScale =  resources.configuration.fontScale
             ratio = (screenWidth / 360.0.dp + 820.0.dp / screenHeight) / 2
             typography = MaterialTheme.typography
 
             MyGuideTheme {
-                density = object : Density by Density(
+               /* density = object : Density by Density(
                     density = LocalDensity.current.density,
                     fontScale = ratio
                 ) {
                     override val fontScale: Float = android.myguide.fontScale
                 }
+
+                */
                 colorScheme = MaterialTheme.colorScheme
                 val r = 1
                 val h =
                     (getLineHeightDp(typography.bodyLarge.lineHeight) +
                             getLineHeightDp(typography.bodyMedium.lineHeight) +
                             getLineHeightDp(typography.bodySmall.lineHeight) * 2) *
-                            1 * ratio + 8.dp
+                            1 * ratio + 8.dp * fontScale
                 val w = screenWidth - h - 32.dp
-                qqq("WWW "+ratio+" "+fontScale+ ": "+h + " "+w + " "+resources.configuration.fontScale + " "+screenWidth + " "+screenHeight)
+                qqq("WWW "+ratio+" "+fontScale+ ": "+h + " "+w + " "+ " "+screenWidth + " "+screenHeight+" "+getLineHeightDp(typography.bodyLarge.lineHeight))
                 measures = Measures(
                     descriptionWidth = w * r,
                     itemHeight = h * r,
                     nodePadding = 16.dp * r,// * fontScale,
                     lineHeight = getLineHeightDp(typography.bodySmall.lineHeight)
                 )
-                CompositionLocalProvider(LocalDensity provides density) {
+               // CompositionLocalProvider(LocalDensity provides density) {
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -191,7 +196,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                     }
-                }}
+                }//}
             }
         }
     }
