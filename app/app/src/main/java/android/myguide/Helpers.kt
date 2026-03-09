@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
-
+/*
 @Composable
 fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
     //qqq("MeasureStringList"+strings)
@@ -41,7 +41,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                         style = SpanStyle(
                             color = colorScheme.secondary,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
                             fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append(it.second ?: "") }
@@ -71,7 +71,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
                             fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append(take) }
@@ -80,7 +80,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                             color = Color.Transparent,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
                             fontWeight = typography.bodySmall.fontWeight,
                         )
                     ) { append("\u200A") }
@@ -97,7 +97,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                                 textDecoration = TextDecoration.None,
                                 color = colorScheme.primary,
                                 fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
                                 fontWeight = typography.bodySmall.fontWeight,
                                 baselineShift = BaselineShift.Subscript
                             )
@@ -112,7 +112,7 @@ fun MeasureStringList(ident: Boolean, strings: List<Pair<Int, String?>>) {
                         style = SpanStyle(
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
-                            fontSize = typography.bodySmall.fontSize,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
                         )
                     ) {
                         append(text.second)
@@ -127,6 +127,8 @@ fun MeasuredFlowList(ident: Boolean) {
     if (strings.isNotEmpty()) MeasureStringList(ident = ident, strings = strings)
 }
 
+
+ */
 
 
 
@@ -158,6 +160,13 @@ fun Int.toDp(): Dp {
     }
 }
 
+
+fun Float.toDp(): Dp {
+    return with(density) {
+        this@toDp.toDp()
+    }
+}
+
 @Composable
 fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
     sp.toDp()
@@ -165,7 +174,8 @@ fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
 
 class Measures(
     val itemHeight: Dp,
-    val descriptionWidth: Dp,
-    val nodePadding: Dp,
-    val lineHeight: Dp
+//    val descriptionWidth: Dp,
+//    val nodePadding: Dp,
+    val lineHeight: Dp,
+    val padding: Dp
 )

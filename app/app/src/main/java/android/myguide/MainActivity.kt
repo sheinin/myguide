@@ -1,29 +1,21 @@
 package android.myguide
 
-import android.content.Context
+import android.R.attr.lineHeight
 import android.myguide.ui.theme.MyGuideTheme
-import android.os.Build
+import android.myguide.views.Main
+import android.myguide.views.Splash
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -31,33 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
-import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -70,14 +46,11 @@ var screenHeight = 0.dp
 var screenWidth = 0.dp
 lateinit var colorScheme: ColorScheme
 lateinit var density: Density
-
-lateinit var density1: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
 lateinit var vm: ViewModel
 lateinit var typography: Typography
 var fontScale by Delegates.notNull<Float>()
-var ratio by Delegates.notNull<Float>()
 
 lateinit var screen: Map<Boolean, Screen>
 
@@ -129,43 +102,48 @@ class MainActivity : ComponentActivity() {
                     )
         )
         setContent {
+
+            @Composable
+            fun rememberTextLineHeight(style: TextStyle): Float {
+                val density = LocalDensity.current
+                return remember(style, density) {
+                    val paint = Paint().asFrameworkPaint().apply {
+                        isAntiAlias = true
+                    }
+
+                    // Apply style to paint
+                    // (TextStyle.toSpanStyle().toPaint() is internal, so we do minimal setup)
+                    style.fontSize.takeIf { it.isSp }?.let { sizeSp ->
+                        paint.textSize = with(density) { sizeSp.toPx() }
+                    }
+
+                    // line height = ascent (-) + descent (+)
+                    paint.fontMetrics.run { descent - ascent }
+                }
+            }
+            BackHandler(enabled = true) { vm.toolbar.back() }
             GetScreenSize()
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
             fontScale =  resources.configuration.fontScale
-            ratio = (screenWidth / 360.0.dp + 820.0.dp / screenHeight) / 2
             typography = MaterialTheme.typography
-
+            val h =
+                getLineHeightDp(typography.bodyLarge.lineHeight) +
+                        getLineHeightDp(typography.bodyMedium.lineHeight) +
+                        getLineHeightDp(typography.bodySmall.lineHeight) * 2
+            qqq("START f:$fontScale itemHeight:$h w:$screenWidth h:$screenHeight ${rememberTextLineHeight(typography.bodySmall).toDp()}")
+            measures = Measures(
+                itemHeight = h,
+                lineHeight = getLineHeightDp(typography.bodySmall.lineHeight),
+                padding = 8.dp
+            )
+            vm.ratioH.value = screenWidth / 360.0.dp
+            vm.ratioV.value = 820.0.dp / screenHeight
             MyGuideTheme {
-               /* density = object : Density by Density(
-                    density = LocalDensity.current.density,
-                    fontScale = ratio
-                ) {
-                    override val fontScale: Float = android.myguide.fontScale
-                }
-
-                */
                 colorScheme = MaterialTheme.colorScheme
-                val r = 1
-                val h =
-                    (getLineHeightDp(typography.bodyLarge.lineHeight) +
-                            getLineHeightDp(typography.bodyMedium.lineHeight) +
-                            getLineHeightDp(typography.bodySmall.lineHeight) * 2) *
-                            1 * ratio + 8.dp * fontScale
-                val w = screenWidth - h - 32.dp
-                qqq("WWW "+ratio+" "+fontScale+ ": "+h + " "+w + " "+ " "+screenWidth + " "+screenHeight+" "+getLineHeightDp(typography.bodyLarge.lineHeight))
-                measures = Measures(
-                    descriptionWidth = w * r,
-                    itemHeight = h * r,
-                    nodePadding = 16.dp * r,// * fontScale,
-                    lineHeight = getLineHeightDp(typography.bodySmall.lineHeight)
-                )
-               // CompositionLocalProvider(LocalDensity provides density) {
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        MeasuredFlowList(false)
-                        MeasuredFlowList(true)
                         val show = vm.showSplash.observeAsState()
                         if (show.value!!)
                             Splash(Modifier.padding(innerPadding))
@@ -196,32 +174,10 @@ class MainActivity : ComponentActivity() {
                         }
 
                     }
-                }//}
+                }
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-    val singapore = LatLng(1.35, 103.86)
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(singapore, 10f)
-    }
-    GoogleMap(
-        modifier = Modifier.fillMaxSize(),
-        cameraPositionState = cameraPositionState
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MyGuideTheme {
-        Greeting("Android")
-    }
-}

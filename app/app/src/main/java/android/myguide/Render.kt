@@ -4,6 +4,7 @@ import android.myguide.Settings.Display.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
@@ -13,6 +14,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,6 +28,7 @@ import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
 import kotlin.ranges.until
+import kotlin.time.Duration.Companion.seconds
 
 class Render(
     val activity: MainActivity,
@@ -35,7 +38,7 @@ class Render(
     val bind = vm.screen[screen.ident]!!
     private val cycler = bind.cycler
     private var display: Settings.Display = LIST
-    private val mapHeight = 116.dp
+    //private val mapHeight = 116.dp
     private val pics = IntArray(batch) { -1 }
     private val spinners = (0 until batch).associateWith { -1 }.toMutableMap()
     val data = Data(
@@ -68,6 +71,45 @@ class Render(
     private var ordinal = 0
     var offset = 0
     init {
+        vm.adjust.observeForever {
+            if (screen.ident != vm.toolbar.last?.ident) list.indices.map { i ->
+                measure(i)
+                expandable(i)
+            }
+            else list.indices.filter { i -> i !in data.stack }.map { i ->
+                measure(i)
+                expandable(i)
+            }
+        }
+        vm.ratioH.observeForever {
+            if (screen.ident == vm.toolbar.last?.ident)
+                data.stack.withIndex().filter { it.value != -1 }.map { stack ->
+                    (measure(stack.value) ?: 0.dp)?.also { m ->
+                        if (data.display[stack.value].height != data.display[stack.value].type.height + m) {
+                            data.display[stack.value].height = data.display[stack.value].type.height + m
+                            ruler()
+                            //xy(stack.value)
+                          //  cycler.updateXY(it.value.mod(batch), data.vm.xy[it.value])
+                            data.stack
+                                .filter { it >= stack.value }
+                                .map {
+                                    xy(it)
+                                    renderYSync(it)
+                                }
+                        }
+                    }
+                    expandable(stack.value)
+                    cycler.updateExpandable(stack.index, data.vm.expand[stack.value])
+                }
+        }
+        vm.ratioV.observeForever {
+            data.stack.withIndex().filter { it.value != -1 }.map {
+                measure(it.value)
+                expandable(it.value)
+                cycler.updateXY(it.index, data.vm.xy[it.value])
+                cycler.updateExpandable(it.index, data.vm.expand[it.value])
+            }
+        }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(handler.delay)
@@ -109,7 +151,6 @@ class Render(
                 }
             }
         }
-        calibrate()
     }
     enum class DisplayType {
         DEFAULT,
@@ -132,8 +173,7 @@ class Render(
         class Display(
             val ordinal: Int,
             var type: DisplayType,
-            var height: Dp,
-            var measure: Dp = 0.dp,
+            var height: Dp
         )
         data class VM(
             var details: MutableList<Details>,
@@ -173,25 +213,25 @@ class Render(
         //qqq("?? "+item.displayName+ " "+ordinal+" "+px2dp(data.display.last().height)+item.currentTime)//.+" "
         ordinal += 1
     }
-    private fun measure(ix: Int) {
-        if (list[ix].description == null) return
-        val s = list[ix].description!! + " \u2026"
+    private fun measure(ix: Int): Dp? {
+        if (list[ix].description == null) return null
+        val s = list[ix].title!!
         val p = androidx.compose.ui.text.Paragraph(
             text = s,
-            style = typography.bodySmall,
+            style = typography.bodyLarge,
             spanStyles = listOf(
                 AnnotatedString.Range(
                     SpanStyle(
                         color = colorScheme.secondary,
-                        fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize,
+                        fontStyle = typography.bodyLarge.fontStyle,
+                        fontSize = typography.bodyLarge.fontSize * vm.ratioV.value!!,
                     ),
                     0,
                     s.length
                 )
             ),
             constraints = Constraints(
-                maxWidth = ((measures.descriptionWidth - measures.nodePadding * list[ix].level) / fontScale * ratio).toPx().toInt()),
+                maxWidth = (screenWidth - (measures.itemHeight + measures.padding.times(4) + measures.padding.times(2) * list[ix].level) * vm.ratioH.value!!).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
@@ -199,11 +239,188 @@ class Render(
       //         + p.getLineHeight(1).toInt().toDp()
         //       + " " + measures.lineHeight + " "+p.lineCount + " "+(list[ix].description!! + " \u2026").take(p.getLineEnd(0)) + "|||"
           //     + list[ix].description!!.take(p.getLineEnd(1)) + "|||" +list[ix].description)
-        if (p.lineCount > 2)
-            data.display[ix].measure = measures.lineHeight * p.lineCount.minus(2) + 0.dp// * fontScale
+        if (p.lineCount > 1)
+            return p.getLineHeight(1).toDp() * p.lineCount.dec()
+        return null
     }
     private var limit = 0
     private var start = 0
+    private fun expandable(ix: Int) {
+        val str = list[ix].description ?: return
+        if (data.vm.more[ix] == true) {
+            data.vm.expand[ix] = buildAnnotatedString {
+                withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV.value!!)) {
+                    withStyle(
+                        style = SpanStyle(
+                            color = colorScheme.secondary,
+                            fontStyle = typography.bodySmall.fontStyle,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                            fontWeight = typography.bodySmall.fontWeight
+                        )
+                    ) { append(list[ix].description) }
+                    withStyle(
+                        style = SpanStyle(
+                            color = Color.Transparent,
+                            textDecoration = TextDecoration.None,
+                            fontStyle = typography.bodySmall.fontStyle,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                            fontWeight = typography.bodySmall.fontWeight
+                        )
+                    ) { append("\u200A") }
+                    withLink(
+                        LinkAnnotation.Clickable(
+                            tag = "lastThree",
+                            linkInteractionListener = {
+                                screen.render.ellipsis(ix)
+                            }
+                        )
+                    ) {
+                        withStyle(
+                            style = SpanStyle(
+                                textDecoration = TextDecoration.None,
+                                color = colorScheme.primary,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) {
+                            append("\u2026")
+                        }
+                    }
+                }
+            }
+            return
+        }
+        fun static(): AnnotatedString =
+            buildAnnotatedString {
+                withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV.value!!)) {
+                    withStyle(
+                        style = SpanStyle(
+                            color = colorScheme.secondary,
+                            textDecoration = TextDecoration.None,
+                            fontStyle = typography.bodySmall.fontStyle,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                            fontWeight = typography.bodySmall.fontWeight
+                        )
+                    ) { append(str) }
+                }
+            }
+        if (display == MAP) {
+            data.vm.expand[ix] = static()
+            return
+        }
+        val result = androidx.compose.ui.text.Paragraph(
+            text = str,
+            style = typography.bodySmall,
+            spanStyles = listOf(
+                AnnotatedString.Range(
+                    SpanStyle(
+                        fontStyle = typography.bodySmall.fontStyle,
+                        fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                        fontWeight = typography.bodySmall.fontWeight,
+                    ),
+                    0,
+                    str.length
+                )
+            ),
+            constraints = Constraints(
+                maxWidth = (
+                        (screenWidth - (
+                                measures.itemHeight +
+                                        measures.padding.times(4) +
+                                        measures.padding.times(2) * list[ix].level
+                                ) * vm.ratioH.value!!)
+                        ).toPx()
+                    .toInt()
+            ),
+            density = density,
+            fontFamilyResolver = fontFamilyResolver,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (result.lineCount < 2) {
+            data.vm.expand[ix] = static()
+            return
+        }
+/*
+        qqq(
+            "MEASURE "
+                    + " " + measures.lineHeight + " " + result.lineCount + " " + (list[ix].description!! + " \u2026").take(
+                result.getLineEnd(0)
+            ) + "|||"
+                    + list[ix].description!!.take(result.getLineEnd(1)) + "|||" + list[ix].description
+        )
+
+ */
+
+
+        //qqq("C")
+        val take =
+            str.take(
+                result.getLineEnd(
+                    1,
+                    true
+                )
+            )
+        /*qqq(
+            "S " + result.lineCount + " " +
+                    //((measures.descriptionWidth - measures.nodePadding * list[ix].level)) + " " +
+                    take + "==" + str.take(
+                result.getLineEnd(
+                    0,
+                    true
+                )
+            ) + " == " + str
+        )
+
+         */
+        data.vm.expand[ix] =
+            if (take == str) static()
+            else
+                buildAnnotatedString {
+                    withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV.value!!)) {
+                        withStyle(
+                            style = SpanStyle(
+                                color = colorScheme.secondary,
+                                textDecoration = TextDecoration.None,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append(take.dropLast(1)) }
+                        withStyle(
+                            style = SpanStyle(
+                                color = Color.Transparent,
+                                textDecoration = TextDecoration.None,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append("\u200A") }
+                        withLink(
+                            LinkAnnotation.Clickable(
+                                tag = "lastThree",
+                                linkInteractionListener = {
+                                    vm.toolbar.ellipsis(ix)
+                                }
+                            )
+                        ) {
+                            withStyle(
+                                style = SpanStyle(
+                                    textDecoration = TextDecoration.None,
+                                    color = colorScheme.primary,
+                                    fontStyle = typography.bodySmall.fontStyle,
+                                    fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                                    fontWeight = typography.bodySmall.fontWeight,
+                                )
+                            ) {
+                                append("\u2026")
+                            }
+                        }
+                    }
+                }
+        //qqq("STR "+str)
+    }
     private fun job(position: Dp = 0.dp, callback: (() -> Unit)? = null) {
         @Suppress("UNUSED_VARIABLE")
         when (display) {
@@ -257,107 +474,10 @@ class Render(
             (0 until list.size).map { vm(it) }
             return
         }*/
-        fun expandable(ix: Int) {
-            val str = list[ix].description ?: return
-            val result = androidx.compose.ui.text.Paragraph(
-                text = str,
-                style = typography.bodySmall,
-                spanStyles = listOf(
-                    AnnotatedString.Range(
-                        SpanStyle(
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        ),
-                        0,
-                        str.length
-                    )
-                ),
-                constraints = Constraints(
-                    maxWidth = ((measures.descriptionWidth - measures.nodePadding * list[ix].level) / 1 * ratio).toPx()
-                        .toInt()
-                ),
-                density = density,
-                fontFamilyResolver = fontFamilyResolver,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (result.lineCount < 2) return
-            /*
-            qqq(
-                "MEASURE "
-                        + " " + measures.lineHeight + " " + result.lineCount + " " + (list[ix].description!! + " \u2026").take(
-                    result.getLineEnd(0)
-                ) + "|||"
-                        + list[ix].description!!.take(result.getLineEnd(1)) + "|||" + list[ix].description
-            )
-
-             */
-            val take =
-                str.take(
-                    result.getLineEnd(
-                        1,
-                        true
-                    )
-                ).dropLast(1)
-            /* qqq(
-                 "S " + result.lineCount + " " +
-                         ((measures.descriptionWidth - measures.nodePadding * list[ix].level)) + " " +
-                         take + "==" + str1.take(
-                     result.getLineEnd(
-                         0,
-                         true
-                     )
-                 ) + " == " + s
-             )
-
-             */
-            data.vm.expand[ix] =
-                buildAnnotatedString {
-                    withStyle(
-                        style = SpanStyle(
-                            color = colorScheme.secondary,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append(take) }
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color.Transparent,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append("\u200A") }
-                    withLink(
-                        LinkAnnotation.Clickable(
-                            tag = "lastThree",
-                            linkInteractionListener = {
-                                vm.toolbar.ellipsis(ix)
-                            }
-                        )
-                    ) {
-                        withStyle(
-                            style = SpanStyle(
-                                textDecoration = TextDecoration.None,
-                                color = colorScheme.primary,
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize,
-                                fontWeight = typography.bodySmall.fontWeight,
-                            )
-                        ) {
-                            append("\u2026")
-                        }
-                    }
-                }
-            //qqq("STR "+str)
-        }
         qqq("SL "+start + " "+limit + " "+list.size)
         CoroutineScope(Dispatchers.IO).launch {
             //delay(10L)
+            if (data.point.isEmpty()) return@launch
             when (bind.display.value!!) {
                 D3 ->
                     (start until limit).map {
@@ -402,32 +522,46 @@ class Render(
         if (display == MAP) {
             handler = handler.set(true)
             bind.w.value = (screenWidth - 90.dp) * data.ruler.size
-            bind.h.value = mapHeight
+            bind.h.value = measures.itemHeight
+            list.indices.map {
+                data.vm.expand[it] = buildAnnotatedString {
+                    withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV.value!!)) {
+                        withStyle(
+                            style = SpanStyle(
+                                color = colorScheme.secondary,
+                                textDecoration = TextDecoration.None,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append(list[it].description) }
+                    }
+                }
+            }
             data.vm.xy.mapIndexed { ix, it ->
                 it.x = (screenWidth - 90.dp) * ix
                 it.y = 0.dp
                 it.w = screenWidth - 90.dp
                 it.h = data.display[ix].type.height
             }
-            (start until end).map { renderX(it) }
         } else {
             handler = handler.set(false)
+            list.indices.map { expandable(it) }
             data.vm.xy.mapIndexed { ix, it ->
                 it.x = 0.dp
                 it.y = data.ruler[ix]
                 it.w = screenWidth
-                it.h = data.display[ix].height +
-                    if (data.vm.more[ix] == true) data.display[ix].measure
-                    else 0.dp
+                it.h = data.display[ix].height
             }
             bind.w.value = screenWidth
             bind.h.value = height
-            (start until end).map {
-                val point = data.point.getOrNull(it) ?: return
-                val index = it.mod(batch)
-                data.stack[index] = it
-                cycler.updateXY(index, data.vm.xy[point])
-            }
+        }
+        (start until end).map {
+            val point = data.point[it]
+            val index = it.mod(batch)
+            data.stack[index] = it
+            cycler.updateExpandable(index, data.vm.expand[point])
+            cycler.updateXY(index, data.vm.xy[point])
         }
     }
     fun load(list: List<ListInterface>, callback: (() -> Unit)? = null) {
@@ -441,7 +575,6 @@ class Render(
                 id = "",
                 title = "",
                 origin = null,
-                description = null,
                 drawable = null,
                 level = 0
             )
@@ -456,7 +589,7 @@ class Render(
             activity.runOnUiThread {
                 if (display == MAP) {
                     bind.w.value = position + screenWidth
-                    bind.h.value = mapHeight
+                    bind.h.value = measures.itemHeight
                 } else {
                     bind.w.value = screenWidth
                     bind.h.value = position + screenHeight
@@ -497,11 +630,10 @@ class Render(
                 data.point.add(d.ordinal)
                 data.ruler.add(height)
                 height += d.height + 8.dp
-                //qqq(">>>>> " +d.ordinal + " "+height)
             }
             if (display == MAP) {
                 bind.w.postValue((screenWidth - 90.dp) * data.ruler.size)
-                bind.h.postValue(mapHeight)
+                bind.h.postValue(measures.itemHeight)
             }
             else {
                 bind.w.postValue(screenWidth)
@@ -514,7 +646,6 @@ class Render(
         else Handlers.NONE
     }
     fun observe(pos: Dp) {
-        //qqq("Y "+pos + display+screen.ident + " " +offset)
         when (display) {
             LIST ->
                 max(data.ruler.indexOfLast { it < pos } - offset, 0).also { f ->
@@ -530,7 +661,7 @@ class Render(
                 }
         }
     }
-    fun reset(refresh: Boolean = false) {
+    fun reset() {
         data.collapse.clear()
         data.display.clear()
         data.point.clear()
@@ -543,13 +674,6 @@ class Render(
         height = 0.dp
         job?.cancel()
         jobQue.clear()
-     /*   elements.map {
-            it.root.findViewById<ImageView>(R.id.iv_blur).setImageResource(R.color.transparent)
-            it.root.tag = null
-            it.thumbnail.alpha = 0f
-        }
-
-      */
         offset = 0
         ordinal = 0
         pics.fill(-1)
@@ -567,8 +691,7 @@ class Render(
         cycler.updateXY(index, data.vm.xy[point])
     }
     private fun renderYSync(ix: Int) {
-        val point = data.point.getOrNull(ix) ?: return
-        val disp = data.display.find { it.ordinal == point } ?: return
+        val point = data.point[ix]
         val index = ix.mod(batch)
         //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+data.vm.xy[point].y  + data.vm.more[index])
         data.stack[index] = ix
@@ -592,39 +715,64 @@ class Render(
       //  activity.picasso.cancelRequest(elements[index].thumbnail)
         spinners[index] = ix
     }
-    fun ellipsis(index: Int) {
-        //data.display.map { qqq("D"+it.title) }
-        fun vm1(ix: Int, more: Boolean) {
-            val disp = data.display.find { it.ordinal == ix } ?: return
-            //qqq("VM1 "+ix +more+disp.title + "  "+disp.height + screen.ident)
-            data.vm.xy[ix] = ViewModel.Cycler.XY(
-                x = if (display == MAP) (screenWidth - 90.dp) * disp.ordinal else 0.dp,
-                y = if (display == MAP) 0.dp else data.ruler.getOrNull(ix) ?: 0.dp,
-                w = screenWidth - if (display == MAP) 90.dp else 0.dp,
-                h = disp.height,
+    private fun xy(ix: Int) {
+        val disp = data.display.find { it.ordinal == ix }!!
+        data.vm.xy[ix] = ViewModel.Cycler.XY(
+            x = 0.dp,
+            y = data.ruler.getOrNull(ix) ?: 0.dp,
+            w = screenWidth,
+            h = disp.height,
+        )
+    }
+    fun ellipsis(ix: Int) {
+        data.vm.more[ix] = !data.vm.more[ix]!!
+
+        val disp = data.display.find { it.ordinal == ix }!!
+        if (data.vm.more[ix]!!) {
+            val s = list[ix].description!! + " \u2026"
+            val p = androidx.compose.ui.text.Paragraph(
+                text = s,
+                style = typography.bodySmall,
+                spanStyles = listOf(
+                    AnnotatedString.Range(
+                        SpanStyle(
+                            fontStyle = typography.bodySmall.fontStyle,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV.value!!,
+                        ),
+                        0,
+                        s.length
+                    )
+                ),
+                constraints = Constraints(
+                    maxWidth = (
+                            (screenWidth - (
+                                    measures.itemHeight +
+                                            measures.padding.times(4) +
+                                            measures.padding.times(2) * list[ix].level
+                                    ) * vm.ratioH.value!!)
+                            ).toPx().toInt()
+                ),
+                density = density,
+                fontFamilyResolver = fontFamilyResolver,
             )
-            data.vm.more.getOrNull(ix).also {
-                data.vm.more[ix] =
-                    if (display == MAP) null
-                    else more// ?: (data.vmMore.getOrNull(ix) ?: false)
-                // qqq(">"+item.id + " "+ix+" "+item.title  +  " "+data.vmMore.size+data.vmMore[ix])
-            }
+            qqq("p" + p.lineCount + " " + measures.lineHeight + " " + p.getLineHeight(1).toDp() + " "+p.height.toDp())
+            data.display[ix].height += 14.dp * p.lineCount.minus(2)
+        } else {
+            measure(ix)
+            data.display[ix].height = disp.type.height
         }
-        val disp = data.display.find { it.ordinal == index } ?: return
-        //qqq("E "+index+" "+list[index].title + " "+disp.title + " "+disp.measure+data.vmMore[index]!!)
-        if (data.vm.more[index]!!) disp.height -= disp.measure
-        else disp.height += disp.measure
-        height = 0.dp
+        expandable(ix)
         ruler()
-        vm1(index, !data.vm.more[index]!!)
-        renderYSync(index)
-        data.stack.filter { it != index && it != -1 }.map {
-            vm1(it, data.vm.more.getOrNull(it) ?: false)
-            renderYSync(it)
-        }
+        xy(ix)
+        data.stack
+            .filter { it >= ix }
+            .map {
+                xy(it)
+                renderYSync(it)
+            }
         list.indices
-            .filter { it > index && !data.stack.contains(it) }
-            .map { vm1(it, data.vm.more.getOrNull(it) ?: false) }
+            .filter { it > ix && it !in data.stack }
+            .map { xy(it) }
 
     }
     fun collapse(ix: Int) {
@@ -633,10 +781,7 @@ class Render(
             data.collapse[key] =
                 data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
         }
-  //      data.collapse.entries.find { c ->
-    //        c.key != point && c.value == data.collapse[point]
-      //  }?.also { c -> go(c.key, c.value) }
-        qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
+        //qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
         go(point, data.collapse[point]!!)
         ruler()
         data.ruler.indices.map {
@@ -652,42 +797,6 @@ class Render(
         }
         data.stack.filter { it != -1 }.map { renderYSync(it) }
     }
-    fun calibrate() {
-        qqq("ca")
-return
-        /*
-        data.vm = MutableList(batch) { cycler.viewItem }
-        val l = mutableListOf<ListInterface>()
-        (0 until batch).map {
-            l += object : ListInterface {
-                override val title: String = "calibrate"
-                override val origin: String = ""
-                override val description: String = ""
-                override val drawable: Int = 0
-                override val id: String = ""
-                override val level: Int?
-                    get() = TODO("Not yet implemented")
-            }
-            data.display.add(
-                Data.Display(
-                    height = 100.dp,
-                    title = "",
-                    ordinal = it,
-                    drawable = 0,
-                    type = DisplayType.DEFAULT
-                )
-            )
-
-            list = l
-
-            vm(it)
-
-            cycler.updateItem(it, data.vm[it])
-        }
-
-*/
-    }
-
     private fun vm(ix: Int, more: Boolean? = null) {
         val item = list.getOrNull(ix) ?: return
         val disp = data.display.getOrNull(ix) ?: return
@@ -697,7 +806,6 @@ return
                 id = item.id!!,
                 title = item.title!!,
                 origin = item.origin,
-                description = item.description?.trim(),
                 drawable = item.drawable,
                 level = item.level
             )
@@ -707,12 +815,9 @@ return
             w = screenWidth - if (display == MAP) 90.dp else 0.dp,
             h = disp.height,
         )
-        data.vm.more.getOrNull(ix).also {
-            data.vm.more[ix] =
-                if (display == MAP) null
-                else more ?: (data.vm.more.getOrNull(ix) ?: false)
-           // qqq(">"+item.id + " "+ix+" "+item.title  +  " "+data.vmMore.size+data.vmMore[ix])
-        }
+        data.vm.more[ix] =
+            if (display == MAP) null
+            else more ?: (data.vm.more.getOrNull(ix) ?: false)
         data.vm.details[ix] = vm
     }
 }

@@ -4,7 +4,6 @@ import android.myguide.QueryType.ITEM
 import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 
 
@@ -47,7 +46,8 @@ class Screen(
                     + " display:" + display
             + " position:" + vm.toolbar.items.last().position
         )
-        bind.item.value = details
+        bind.description.value = "kjhk adsf asfd asdf asdf asdf asdf"
+        bind.details.value = details
         bind.cycler.isMap.value = display.isMap
         bind.display.value = display
         bind.position.value = 0.dp
@@ -125,6 +125,13 @@ enum class QueryType {
     ITEMS,
     SHOP,
     SHOPS;
+    val next: QueryType
+        get() = when (this) {
+            ITEM -> SHOP
+            ITEMS -> ITEM
+            SHOP -> ITEM
+            SHOPS -> SHOP
+        }
     val title: String
         get() = when (this) {
             ITEM -> "Available at These Shops:"

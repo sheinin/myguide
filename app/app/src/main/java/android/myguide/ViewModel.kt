@@ -21,8 +21,8 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             var w: Dp,
             var h: Dp
         )
-        private val _expand = MutableStateFlow<List<AnnotatedString?>>(emptyList())
-        val expand = _expand.asStateFlow()
+        private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
+        val description = _description.asStateFlow()
         private val _more = MutableStateFlow<List<Boolean?>>(emptyList())
         val more = _more.asStateFlow()
         private val _details = MutableStateFlow<List<Details>>(emptyList())
@@ -31,18 +31,18 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val xy = _xy.asStateFlow()
         init { reset() }
         fun reset() {
-            _expand.value = emptyList()
+            _description.value = emptyList()
             _details.value = emptyList()
             _more.value = emptyList()
             _xy
             repeat(batch) {
-                _expand.value += null
+                _description.value += null
                 _details.value +=
                     Details(
                         id = "",
                         title = "",
                         origin = null,
-                        description = null,
+                        //description = null,
                         drawable = null,
                         level = 0
                     )
@@ -51,7 +51,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             }
         }
         fun updateExpandable(index: Int, e: AnnotatedString?) {
-            _expand.update {
+            _description.update {
                 it.mapIndexed { ix, it ->
                     if (ix == index) e
                     else it
@@ -66,7 +66,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                             id = details.id,
                             title = details.title,
                             origin = details.origin,
-                            description = details.description,
+                            //description = details.description,
                             drawable = details.drawable,
                             level = details.level
                         )
@@ -105,31 +105,19 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         val position = MutableLiveData(0.dp)
         val w = MutableLiveData(0.dp)
         val h = MutableLiveData(0.dp)
-        val item = MutableLiveData<Details>()
+        val description = MutableLiveData<String>()
+        val details = MutableLiveData<Details>()
         private val _measures = MutableStateFlow<List<Pair<Int, String?>>>(emptyList())
-        val measures = _measures.asStateFlow()
-        fun measure(strings: List<Pair<Int, String?>>) {
-            strings.map { l -> _measures.update { it + l } }
-            qqq("updated")
-        }
         fun clear() { _measures.update { emptyList() } }
-
     }
+    val adjust = MutableLiveData(false)
     val current = MutableLiveData<Boolean?>(null)
-    val toolbar = Toolbar()
-    val showSplash = MutableLiveData(true)
     val mapShowing = MutableLiveData(true)
+    val ratioH = MutableLiveData(1f)
+    val ratioV = MutableLiveData(1f)
     val screen = mapOf(false to Screen(), true to Screen())
-    fun fetchItems(callback: (List<ListInterface>) -> Unit) {
-        repository.getItems { list ->
-            callback.invoke(list.map { it.toInterface() }.toList())
-        }
-    }
-    fun fetchItems(id: String, callback: (List<ListInterface>) -> Unit) {
-        repository.getItems(id) { list ->
-            callback.invoke(list.map { it.toInterface() }.toList())
-        }
-    }
+    val showSplash = MutableLiveData(true)
+    val toolbar = Toolbar()
     fun fetchShops(callback: (List<ListInterface>) -> Unit) {
         repository.getShops { list ->
             callback.invoke(list.map { it.toInterface() }.toList())
@@ -174,7 +162,7 @@ data class Details(
     val id: String,
     val title: String,
     val origin: String?,
-    val description: String?,
+    //val description: AnnotatedString?,
     val drawable: Int?,
     val level: Int
 )

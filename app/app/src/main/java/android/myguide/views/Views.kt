@@ -1,13 +1,22 @@
-package android.myguide
+package android.myguide.views
 
-import android.R.attr.maxLines
-import android.R.attr.x
-import android.R.attr.y
+import android.myguide.QueryType
+import android.myguide.R
+import android.myguide.ViewItem
+import android.myguide.Screen
+import android.myguide.Settings
+import android.myguide.batch
+import android.myguide.colorScheme
+import android.myguide.density
+import android.myguide.measures
+import android.myguide.screenWidth
+import android.myguide.toDp
+import android.myguide.toPx
+import android.myguide.typography
+import android.myguide.vm
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,21 +25,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +50,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -51,19 +60,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.BaselineShift
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -74,8 +74,8 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Main(
     ident: Boolean,
@@ -87,7 +87,8 @@ fun Main(
     val display by vm.screen[screen.ident]!!.display.observeAsState()
     Box(
         modifier
-            .fillMaxSize().onPlaced {
+            .fillMaxSize()
+            .onPlaced {
                 vm.toolbar.pending()
             }
     ) {
@@ -141,35 +142,101 @@ fun Main(
                             .background(colorScheme.secondary, shape = CircleShape)
                             .padding(6.dp)
                     )
-                    Text(
-                        vm.toolbar.title[screen.ident]!!.value!!,
-                        style = typography.titleLarge,
-                        maxLines = 1,
-                        fontWeight = FontWeight.Bold,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
+                    val linked = remember { mutableStateOf(true) }
+                    val ratioH by vm.ratioH.observeAsState()
+                    val ratioV by vm.ratioV.observeAsState()
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .padding(8.dp, 0.dp)
-                            .fillMaxWidth()
                             .weight(1f)
-                    )
+                            .padding(start = 8.dp, end = 4.dp)
+
+                    ) {
+                        Text(
+                            "H: ${"%.2f".format(ratioH)}",
+                            style = typography.labelSmall
+                        )
+                        Slider(
+                            value = ratioH!!,
+                            onValueChange = {
+                                vm.ratioH.value = it
+                                if (linked.value) vm.ratioV.value = it
+                            },
+                            onValueChangeFinished = { vm.adjust.value = true },
+                            valueRange = 0.5f..2.5f,
+                            modifier = Modifier
+                                .height(20.dp),
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = colorScheme.primary,
+                                        activeTrackColor = colorScheme.secondaryContainer,
+                                        inactiveTrackColor = colorScheme.secondaryContainer,
+                                    )
+                                )
+                            }
+                        )
+                    }
                     Image(
-                        painter = painterResource(R.drawable.back),
+                        painter = painterResource(
+                            if (linked.value) R.drawable.link_on
+                            else R.drawable.link_off
+                        ),
                         contentDescription = "",
-                        colorFilter = ColorFilter.tint(colorScheme.background),
-                        modifier = Modifier.clickable(
-                                onClick = { vm.toolbar.back() }
+                        colorFilter = ColorFilter.tint(colorScheme.primary),
+                        modifier = Modifier
+                            .clickable(
+                                onClick = {
+                                    linked.value = !linked.value
+                                    if (linked.value) {
+                                        vm.ratioH.value = 1f
+                                        vm.ratioV.value = 1f
+                                    }
+                                }
                             )
-                            .background(colorScheme.secondary, shape = CircleShape)
-                            .padding(6.dp)
                     )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 4.dp, end = 8.dp)
+                    ) {
+                        Text(
+                            "V: ${"%.2f".format(ratioV)}",
+                            style = typography.labelSmall
+                        )
+                        Slider(
+                            value = ratioV!!,
+                            onValueChange = {
+                                vm.ratioV.value = it
+                                if (linked.value) vm.ratioH.value = it
+                            },
+                            onValueChangeFinished = { vm.adjust.value = true },
+                            valueRange = 0.5f..2.5f,
+                            modifier = Modifier.height(20.dp),
+                            track = { sliderState ->
+                                SliderDefaults.Track(
+                                    sliderState = sliderState,
+                                    thumbTrackGapSize = 0.dp,
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = colorScheme.primary,
+                                        activeTrackColor = colorScheme.secondaryContainer,
+                                        inactiveTrackColor = colorScheme.secondaryContainer,
+                                    )
+                                )
+                            }
+                        )
+                    }
                 }
                 if (vm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
                     Row(Modifier.padding(8.dp, 4.dp)) {
                         repeat(3) {
                             ArrowText(
                                 vm.toolbar.crumbs[screen.ident]!!.value!![it],
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .weight(1f)
                                     .alpha(
                                         if (vm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
                                         else 0f
@@ -229,7 +296,8 @@ fun Main(
 
                     }
             ) {
-                val viewItem by bind.item.observeAsState()
+                val description by bind.description.observeAsState()
+                val viewItem by bind.details.observeAsState()
                 if (display != Settings.Display.MAP && viewItem != null)
                     Column(modifier = Modifier.padding(8.dp)) {
                         Text(
@@ -247,14 +315,13 @@ fun Main(
                         val lines = 3
                         val textMeasurer = rememberTextMeasurer()
                         val c = Constraints(maxWidth = (screenWidth - 58.dp - 24.dp).toPx().toInt())
-                        val measurements = remember(viewItem!!.description!!) {
+                        val measurements = remember(description) {
                             textMeasurer.measure(
-                                text = viewItem!!.description!!,
+                                text = description!!,
                                 style = typography.bodySmall,
                                 constraints = c
                             )
                         }
-                        qqq("LC "+measurements.lineCount)
                         Row(verticalAlignment = Alignment.Bottom) {
                             Image(
                                 painterResource(viewItem!!.drawable!!),
@@ -265,8 +332,9 @@ fun Main(
                                     .background(color = colorScheme.surface)
                             )
                             Text(
-                                if (measurements.lineCount <= lines) viewItem!!.description!!
-                                else viewItem!!.description!!.take(measurements.getLineEnd(lines)),
+                               // if (measurements.lineCount <= lines)
+                                    description!!,
+                                //else description!!.take(measurements.getLineEnd(lines)),
                                 style = typography.bodySmall,
                                 color = colorScheme.secondary,
                                 modifier = Modifier.padding(start = 8.dp)
@@ -274,7 +342,7 @@ fun Main(
                         }
                         if (measurements.lineCount > lines)
                         Text(
-                            viewItem!!.description!!.substring(measurements.getLineEnd(lines)),
+                            description!!.substring(measurements.getLineEnd(lines)),
                             style = typography.bodySmall,
                             color = colorScheme.secondary
                         )
@@ -309,20 +377,23 @@ fun Main(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(scrollStateX)
+                        .padding(
+                            bottom = if (display?.isMap == true) measures.padding * 4 else 0.dp
+                        )
                 ) {
                     val h = bind.h.observeAsState()
                     val w = bind.w.observeAsState()
                     val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
                     val display by vm.screen[screen.ident]!!.display.observeAsState()
-                    val expand by vm.screen[screen.ident]!!.cycler.expand.collectAsStateWithLifecycle()
+                    val expand by vm.screen[screen.ident]!!.cycler.description.collectAsStateWithLifecycle()
                     val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
                     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
-                            .size(w.value!!, h.value!!)
+                            .size(w.value!!, h.value!! * vm.ratioV.value!!)
                     ) {
                         fun callback(index: Int) {
-                            if (details[index].description == null) return
+                            //if (description == null) return
                             vm.toolbar.items.last().position =
                                 if (display == Settings.Display.MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
@@ -330,16 +401,11 @@ fun Main(
                                 id = details[index].id,
                                 details = details[index],
                                 title = details[index].title,
-                                queryType =
-                                    if (
-                                        screen.queryType == QueryType.SHOP
-                                        || screen.queryType == QueryType.ITEMS
-                                    ) QueryType.ITEM
-                                    else QueryType.SHOP
+                                queryType = screen.queryType!!.next
                             )
                         }
                         repeat(batch) {
-                            RenderItem(
+                            ViewItem(
                                 index = it,
                                 screen = screen,
                                 details = details[it],
@@ -360,187 +426,6 @@ fun Main(
 }
 
 @Composable
-fun RenderItem(
-    index: Int,
-    screen: Screen,
-    details: Details,
-    display: Settings.Display?,
-    expand: AnnotatedString?,
-    more: Boolean?,
-    xy: ViewModel.Cycler.XY,
-    callback: (Int) -> Unit
-) {
-  //  qqq("TITLE " + " "+ xy.y+  " " +viewItem?.title)
-    if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
-    Row(
-        modifier = Modifier
-            .offset(xy.x, xy.y)
-            .size(xy.w, xy.h)
-            .clickable(
-                onClick = { callback(index) }
-            )
-            .padding(
-                8.dp + measures.nodePadding * details.level,
-                0.dp,
-                8.dp,
-                0.dp
-            )
-            .background(
-                color = colorScheme.surfaceContainer
-            )
-    ) {
-        if (display != Settings.Display.MAP && details.drawable != null)
-            Image(
-                painterResource(details.drawable),
-                "item icon",
-                modifier = Modifier
-                    .size(measures.itemHeight)
-                    .background(
-                        color = colorScheme.surface
-                    )
-            )
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row {
-                Text(
-                    details.title,
-                    color = colorScheme.secondary,
-                    style = typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (details.description == null) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    Image(
-                        painter = painterResource(R.drawable.back),
-                        contentDescription = "",
-                        colorFilter = ColorFilter.tint(colorScheme.secondary),
-                        modifier = Modifier
-                            .clickable(
-                                onClick = {
-                                    screen.render.collapse(index)
-                                }
-                            )
-                    )
-                }
-            }
-            if (details.origin != null)
-                Text(
-                    details.origin,
-                    color = colorScheme.secondary,
-                    style = typography.bodyMedium,
-                    fontStyle = FontStyle.Italic,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            if (details.description != null) {
-                val display by vm.screen[screen.ident]!!.display.observeAsState()
-                val txt by
-                remember(more, details.description) {
-                    mutableStateOf(
-                        buildAnnotatedString {
-                            withStyle(
-                                style = SpanStyle(
-                                    color = colorScheme.secondary,
-                                    fontStyle = typography.bodySmall.fontStyle,
-                                    fontSize = typography.bodySmall.fontSize,
-                                    fontWeight = typography.bodySmall.fontWeight
-                                )
-                            ) { append(details.description) }
-                            if (more == true && display != Settings.Display.MAP) {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = Color.Transparent,
-                                        textDecoration = TextDecoration.None,
-                                        fontStyle = typography.bodySmall.fontStyle,
-                                        fontSize = typography.bodySmall.fontSize,
-                                        fontWeight = typography.bodySmall.fontWeight
-                                    )
-                                ) { append("\u200A") }
-                                withLink(
-                                    LinkAnnotation.Clickable(
-                                        tag = "lastThree",
-                                        linkInteractionListener = {
-                                            screen.render.ellipsis(screen.render.data.stack[index])
-                                        }
-                                    )
-                                ) {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            textDecoration = TextDecoration.None,
-                                            color = colorScheme.primary,
-                                            fontStyle = typography.bodySmall.fontStyle,
-                                            fontSize = typography.bodySmall.fontSize,
-                                            fontWeight = typography.bodySmall.fontWeight,
-                                           // baselineShift = BaselineShift.Superscript
-                                        )
-                                    ) {
-                                        append("\u2026")
-                                    }
-                                }
-                            }
-                        }
-                    )
-                }
-                var desc by remember(
-                    more,
-                    details.description,
-                    display,
-                    expand
-                ) {
-                    mutableStateOf(
-                        if (display == Settings.Display.MAP || more == true) txt
-                        else expand ?: txt
-                    )
-                }
-                //qqq("D "+index+more+item.title+ "--"+expandable)
-/*
-                val c = Constraints(maxWidth =( (measures.descriptionWidth  -measures.nodePadding * details.level)/ fontScale * ratio ).toPx().roundToInt())
-
-                val textMeasurer = rememberTextMeasurer()
-                val r = textMeasurer.measure(
-                    text = AnnotatedString(details.description),
-                    style = typography.bodySmall,
-                    constraints = c,
-                    overflow = TextOverflow.Ellipsis,
-                    density = density,
-                    fontFamilyResolver = fontFamilyResolver,
-                    maxLines = 2,
-                    skipCache = true
-                )
-                qqq("r "+details.description.take(r.getLineEnd(1, true)))
-
-
- */
-
-
-                Text(
-                    desc,
-                    onTextLayout = { textLayoutResult ->
-                        val widthInPixels = textLayoutResult.size.width
-                         qqq("W " +with(density) { widthInPixels.toDp() } + desc)
-                    },
-
-                    fontSize = typography.bodySmall.fontSize,
-                    fontWeight = typography.bodySmall.fontWeight,
-                    modifier = Modifier.fillMaxWidth()
-                        .background(Color.DarkGray)
-                        ,//.width(measures.descriptionWidth - measures.nodePadding * details.level),
-                    style = typography.bodySmall,
-                    maxLines =
-                        if (display == Settings.Display.MAP || more != true) 2
-                        else Int.MAX_VALUE,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
 fun Splash(modifier: Modifier) {
     Column (
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -551,7 +436,6 @@ fun Splash(modifier: Modifier) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                //.weight(1f)
                 .clickable(
                     onClick = {
                         vm.showSplash.value = false
@@ -563,11 +447,12 @@ fun Splash(modifier: Modifier) {
                 )
         ) {
             Image(painter = painterResource(R.drawable.all_shops), "all shops",
-                modifier = Modifier.size(screenWidth * .5f))
+                modifier = Modifier.Companion.size(screenWidth * .5f))
             Text(
                 "SHOPS",
                 fontWeight = FontWeight.Bold,
-                style = typography.displayMedium,)
+                style = typography.displayMedium,
+            )
         }
         Spacer(Modifier.height(16.dp))
         Column(
@@ -586,7 +471,7 @@ fun Splash(modifier: Modifier) {
         ) {
             Image(
                 painter = painterResource(R.drawable.all_items), "all items",
-                modifier = Modifier.size(screenWidth * .5f)
+                modifier = Modifier.Companion.size(screenWidth * .5f)
             )
             Text(
                 "ITEMS",
@@ -619,7 +504,7 @@ fun ArrowText(
                     shape = RoundedCornerShape(12.dp)
                 )
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
         ) {
             Text(
                 text = text,
@@ -655,13 +540,14 @@ fun Control(screen: Screen) {
                 painter = painterResource(R.drawable.list),
                 contentDescription = "list",
                 colorFilter = ColorFilter.tint(colorScheme.background),
-                modifier = Modifier.clickable(
-                    onClick = {
-                        //    isMap = true
-                        vm.screen[screen.ident]!!.display.value = Settings.Display.LIST
-                        screen.render.display(Settings.Display.LIST)
-                    }
-                )
+                modifier = Modifier
+                    .clickable(
+                        onClick = {
+                            //    isMap = true
+                            vm.screen[screen.ident]!!.display.value = Settings.Display.LIST
+                            screen.render.display(Settings.Display.LIST)
+                        }
+                    )
                     .padding(8.dp, 0.dp)
                     .background(
                         if (display != Settings.Display.MAP) colorScheme.primary
@@ -675,7 +561,8 @@ fun Control(screen: Screen) {
                 painterResource(R.drawable.map),
                 "map",
                 colorFilter = ColorFilter.tint(colorScheme.background),
-                modifier = Modifier.clickable(
+                modifier = Modifier
+                    .clickable(
                         onClick = {
                             vm.screen[screen.ident]!!.display.value = Settings.Display.MAP
                             screen.render.display(Settings.Display.MAP)
@@ -697,8 +584,7 @@ fun MyDialog(screen: Screen) {
     Dialog(
         onDismissRequest = { vm.screen[screen.ident]!!.dialog.postValue(false) },
         properties = DialogProperties(
-
-            usePlatformDefaultWidth = false // Important for custom alignment/width control
+            usePlatformDefaultWidth = false
         )
     ) {
         (LocalView.current.parent as DialogWindowProvider).window.setDimAmount(0f)
