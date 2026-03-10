@@ -1,7 +1,6 @@
 package android.myguide
 
 import android.myguide.Settings.Display.*
-import android.myguide.vm
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -29,7 +28,6 @@ import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
 import kotlin.ranges.until
-import kotlin.time.Duration.Companion.seconds
 
 class Render(
     val activity: MainActivity,
@@ -49,7 +47,7 @@ class Render(
         vm = Data.VM(
             details = mutableListOf(),
             expand = mutableListOf(),
-            more = mutableListOf(),
+            toggle = mutableListOf(),
             xy = mutableListOf()
         ),
         display = CopyOnWriteArrayList()
@@ -112,7 +110,7 @@ class Render(
                                     val next = it.next()
                                     cycler.updateExpandable(next.key, data.vm.expand[next.value])
                                     cycler.updateItem(next.key, data.vm.details[next.value])
-                                    cycler.updateMore(next.key, data.vm.more[next.value])
+                                    cycler.updateToggle(next.key, data.vm.toggle[next.value])
                                     cycler.updateXY(next.key, data.vm.xy[next.value])
                                     pics[next.key] = next.value
                                     it.remove()
@@ -170,7 +168,7 @@ class Render(
         data class VM(
             var details: MutableList<Details>,
             var expand: MutableList<AnnotatedString?>,
-            var more: MutableList<Boolean?>,
+            var toggle: MutableList<Boolean?>,
             var xy: MutableList<ViewModel.Cycler.XY>
         )
         override fun equals(other: Any?): Boolean {
@@ -221,9 +219,9 @@ class Render(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-       qqq("MEASURE "
+     //  qqq("MEASURE "
 //               + p.getLineHeight(1).toInt().toDp()
-               + " " + measures.lineHeight + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+       //        + " " + measures.lineHeight + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1) {
             qqq("?"+s.take(p.getLineEnd(1)))
             return p.getLineHeight(1).toDp() * p.lineCount.dec()
@@ -232,9 +230,9 @@ class Render(
     }
     private var limit = 0
     private var start = 0
-    private fun expandable(ix: Int) {
+    private fun expandable(ix: Int, expand: Boolean = false) {
         val str = list[ix].description ?: return
-        if (data.vm.more[ix] == true) {
+        if (expand) {
             data.vm.expand[ix] = buildAnnotatedString {
                 withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV.value!!)) {
                     withStyle(
@@ -258,7 +256,7 @@ class Render(
                         LinkAnnotation.Clickable(
                             tag = "lastThree",
                             linkInteractionListener = {
-                                screen.render.ellipsis(ix)
+                                screen.render.expand(ix, false)
                             }
                         )
                     ) {
@@ -388,7 +386,7 @@ class Render(
                             LinkAnnotation.Clickable(
                                 tag = "lastThree",
                                 linkInteractionListener = {
-                                    vm.toolbar.ellipsis(ix)
+                                    vm.toolbar.expand(ix, true)
                                 }
                             )
                         ) {
@@ -570,7 +568,7 @@ class Render(
         data.vm.xy = MutableList(this@Render.list.size) {
             ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)
         }
-        data.vm.more = MutableList(this@Render.list.size) { null }
+        data.vm.toggle = MutableList(this@Render.list.size) { null }
         val position = vm.toolbar.items.last().position
         if (position > 0.dp) {
             activity.runOnUiThread {
@@ -655,7 +653,7 @@ class Render(
         data.ruler.clear()
         data.stack = IntArray(batch) { -1 }
         data.vm.details.clear()
-        data.vm.more.clear()
+        data.vm.toggle.clear()
         bind.cycler.reset()
         handler = Handlers.NONE
         height = 0.dp
@@ -680,11 +678,13 @@ class Render(
     private fun renderYSync(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
         val index = ix.mod(batch)
-        //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+data.vm.xy[point].y  + data.vm.more[index])
+
+        val disp = data.display.find { it.ordinal == ix }!!
+        qqq("RS "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
         data.stack[index] = ix
         cycler.updateExpandable(index, data.vm.expand[point])
         cycler.updateItem(index, data.vm.details[point])
-        cycler.updateMore(index, data.vm.more[point])
+        cycler.updateToggle(index, data.vm.toggle[point])
         cycler.updateXY(index, data.vm.xy[point])
     }
     private fun renderY(ix: Int) {
@@ -703,28 +703,32 @@ class Render(
         spinners[index] = ix
     }
     private fun xy(ix: Int) {
+
         val disp = data.display.find { it.ordinal == ix }!!
+//        qqq("XY "+ix + " "+ data.ruler[ix] + " "+disp.height + " "+disp.type)
         data.vm.xy[ix] = when (display) {
-            LIST ->
+            LIST -> {
                 ViewModel.Cycler.XY(
                     x = 0.dp,
                     y = data.ruler[ix],
                     w = screenWidth,
                     h = disp.height,
                 )
+            }
             else ->
                 ViewModel.Cycler.XY(
-                    x = (screenWidth - 90.dp) * disp.ordinal,
+                    x = (screenWidth - 90.dp) * ix,
                     y = 0.dp,
                     w = screenWidth - 90.dp,
-                    h = disp.height,
+                    h = DisplayType.DEFAULT.height,
                 )
         }
     }
-    fun ellipsis(ix: Int) {
-        data.vm.more[ix] = !data.vm.more[ix]!!
+    fun expand(ix: Int, expand: Boolean) {
+        qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))
+      //  data.vm.toggle[ix] = !data.vm.toggle[ix]!!
         val disp = data.display.find { it.ordinal == ix }!!
-        if (data.vm.more[ix]!!) {
+        if (expand) {
             val s = list[ix].description!! + " \u2026"
             val p = androidx.compose.ui.text.Paragraph(
                 text = s,
@@ -752,28 +756,45 @@ class Render(
                 fontFamilyResolver = fontFamilyResolver,
             )
             data.display[ix].height += 14.dp * p.lineCount.minus(2)
+            qqq("EX "+data.point[ix]+" "+data.display[data.point[ix]].height)
         } else data.display[ix].height = disp.type.height + measure(ix)
-        expandable(ix)
+        val start = data.point.indexOf(ix)
+        expandable(ix, expand)
         ruler()
-        xy(ix)
-        data.stack
+        //xy(ix)
+        /*data.stack
             .filter { it >= ix }
             .map {
-                xy(it)
-                renderYSync(it)
+                qqq("M"+it)
+                xy(data.point[it])
+                renderYSync(data.point[it])
             }
-        list.indices
-            .filter { it > ix && it !in data.stack }
-            .map { xy(it) }
 
-    }
-    fun collapse(ix: Int) {
-        val point = data.point[data.stack[ix]]
-        fun go(key: Int, v: Pair<Int, Int>) {
-            data.collapse[key] =
-                data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
+         */
+        data.stack = IntArray(batch) { -1 }
+        data.point
+            .mapIndexed { ix, it ->
+                data.vm.xy[it] =
+                    ViewModel.Cycler.XY(
+                        x = 0.dp,
+                        y = data.ruler[ix],
+                        w = screenWidth,
+                        h = data.display.find { d -> d.ordinal == it }!!.height,
+                    )
+            }
+        (max(0, start - batch / 2) until min(data.ruler.size, start + batch / 2)).map { ix ->
+            val point = data.point[ix]
+            val index = ix.mod(batch)
+            //qqq("RS "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
+            data.stack[index] = ix
+            cycler.updateXY(index, data.vm.xy[point])
         }
-        go(point, data.collapse[point]!!)
+    }
+    fun toggle(ix: Int) {
+        val point = data.point[data.stack[ix]]
+        data.vm.toggle[point] = data.collapse[point]!!.second > 0
+        data.collapse[point] =
+            data.collapse[point]!!.first to data.collapse[point]!!.second.unaryMinus()
         ruler()
         data.ruler.indices.map {
             data.vm.xy[data.point[it]] = ViewModel.Cycler.XY(
@@ -792,9 +813,9 @@ class Render(
         val item = list.getOrNull(ix) ?: return
         //qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+item.level+disp.type+data.ruler.getOrNull(ix))
         xy(ix)
-        data.vm.more[ix] =
+        data.vm.toggle[ix] =
             if (display == MAP) null
-            else more ?: (data.vm.more.getOrNull(ix) ?: false)
+            else more ?: (data.vm.toggle.getOrNull(ix) ?: false)
         data.vm.details[ix] =
             Details(
                 id = item.id!!,

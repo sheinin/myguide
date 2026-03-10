@@ -16,24 +16,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 
@@ -45,7 +35,7 @@ fun ViewItem(
     details: Details,
     display: Settings.Display?,
     expand: AnnotatedString?,
-    more: Boolean?,
+    toggle: Boolean?,
     xy: ViewModel.Cycler.XY,
     callback: (Int) -> Unit
 ) {
@@ -108,9 +98,10 @@ fun ViewItem(
                         modifier = Modifier
                             .clickable(
                                 onClick = {
-                                    screen.render.collapse(index)
+                                    screen.render.toggle(index)
                                 }
                             )
+                            .rotate(if (toggle == true) 90f else -90f)
                     )
                 }
             }
@@ -139,7 +130,7 @@ fun ViewItem(
                     style = typography.bodySmall,
                     //lineHeight = 1.em,
                     maxLines =
-                        if (display == Settings.Display.MAP || more != true) 2
+                        if (display == Settings.Display.MAP) 2
                         else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -1,7 +1,6 @@
 package android.myguide
 
 import android.view.View
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
@@ -46,8 +45,8 @@ class Toolbar {
         else if (vi == null) goto(i)
         else goto(i)
     }
-    fun ellipsis(ix: Int) {
-        screen[items.last().ident]!!.render.ellipsis(ix)
+    fun expand(ix: Int, expand: Boolean) {
+        screen[items.last().ident]!!.render.expand(ix, expand)
     }
     fun clear() {
         items.clear()

@@ -1,5 +1,6 @@
 package android.myguide.views
 
+import android.R.id.toggle
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.ViewItem
@@ -371,14 +372,13 @@ fun Main(
                     val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
                     val display by vm.screen[screen.ident]!!.display.observeAsState()
                     val expand by vm.screen[screen.ident]!!.cycler.description.collectAsStateWithLifecycle()
-                    val more by vm.screen[screen.ident]!!.cycler.more.collectAsStateWithLifecycle()
+                    val toggle by vm.screen[screen.ident]!!.cycler.toggle.collectAsStateWithLifecycle()
                     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
                             .size(w.value!!, h.value!! * vm.ratioV.value!!)
                     ) {
                         fun callback(index: Int) {
-                            //if (description == null) return
                             vm.toolbar.items.last().position =
                                 if (display == Settings.Display.MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
@@ -396,7 +396,7 @@ fun Main(
                                 details = details[it],
                                 display = display,
                                 expand = expand[it],
-                                more = more[it],
+                                toggle = toggle[it],
                                 xy = xy[it],
                                 callback = ::callback
                             )

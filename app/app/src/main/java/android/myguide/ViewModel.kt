@@ -23,8 +23,8 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         )
         private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
         val description = _description.asStateFlow()
-        private val _more = MutableStateFlow<List<Boolean?>>(emptyList())
-        val more = _more.asStateFlow()
+        private val _toggle = MutableStateFlow<List<Boolean?>>(emptyList())
+        val toggle = _toggle.asStateFlow()
         private val _details = MutableStateFlow<List<Details>>(emptyList())
         val details = _details.asStateFlow()
         private val _xy = MutableStateFlow<List<XY>>(emptyList())
@@ -33,7 +33,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         fun reset() {
             _description.value = emptyList()
             _details.value = emptyList()
-            _more.value = emptyList()
+            _toggle.value = emptyList()
             _xy
             repeat(batch) {
                 _description.value += null
@@ -46,7 +46,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                         drawable = null,
                         level = 0
                     )
-                _more.value += null
+                _toggle.value += null
                 _xy.value += XY(0.dp, 0.dp, 0.dp, 0.dp)
             }
         }
@@ -74,10 +74,10 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                 }
             }
         }
-        fun updateMore(index: Int, more: Boolean?) {
-            _more.update {
+        fun updateToggle(index: Int, toggle: Boolean?) {
+            _toggle.update {
                 it.mapIndexed { ix, it ->
-                    if (ix == index) more
+                    if (ix == index) toggle
                     else it
                 }
             }
