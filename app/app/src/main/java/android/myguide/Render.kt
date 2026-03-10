@@ -1,6 +1,7 @@
 package android.myguide
 
 import android.myguide.Settings.Display.*
+import android.myguide.vm
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -71,25 +72,13 @@ class Render(
     private var ordinal = 0
     var offset = 0
     init {
-        vm.adjust.observeForever {
-            if (screen.ident != vm.toolbar.last?.ident) list.indices.map { i ->
-                measure(i)
-                expandable(i)
-            }
-            else list.indices.filter { i -> i !in data.stack }.map { i ->
-                measure(i)
-                expandable(i)
-            }
-        }
-        vm.ratioH.observeForever {
+        fun refresh() {
             if (screen.ident == vm.toolbar.last?.ident)
                 data.stack.withIndex().filter { it.value != -1 }.map { stack ->
-                    (measure(stack.value) ?: 0.dp)?.also { m ->
+                    measure(stack.value).also { m ->
                         if (data.display[stack.value].height != data.display[stack.value].type.height + m) {
                             data.display[stack.value].height = data.display[stack.value].type.height + m
                             ruler()
-                            //xy(stack.value)
-                          //  cycler.updateXY(it.value.mod(batch), data.vm.xy[it.value])
                             data.stack
                                 .filter { it >= stack.value }
                                 .map {
@@ -102,14 +91,17 @@ class Render(
                     cycler.updateExpandable(stack.index, data.vm.expand[stack.value])
                 }
         }
-        vm.ratioV.observeForever {
-            data.stack.withIndex().filter { it.value != -1 }.map {
-                measure(it.value)
-                expandable(it.value)
-                cycler.updateXY(it.index, data.vm.xy[it.value])
-                cycler.updateExpandable(it.index, data.vm.expand[it.value])
+        vm.adjust.observeForever {
+            if (screen.ident != vm.toolbar.last?.ident) list.indices.map { i ->
+                data.display[i].height = data.display[i].type.height + measure(i)
+                expandable(i)
+            } else list.indices.filter { i -> i !in data.stack }.map { i ->
+                data.display[i].height = data.display[i].type.height + measure(i)
+                expandable(i)
             }
         }
+        vm.ratioH.observeForever { refresh() }
+        vm.ratioV.observeForever { refresh() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(handler.delay)
@@ -205,7 +197,7 @@ class Render(
             if (item.description == null) DisplayType.NODE else DisplayType.DEFAULT
         data.display.add(
             Data.Display(
-                height = displayType.height,
+                height = displayType.height + measure(ix),
                 ordinal = ordinal,
                 type = displayType
             )
@@ -213,35 +205,30 @@ class Render(
         //qqq("?? "+item.displayName+ " "+ordinal+" "+px2dp(data.display.last().height)+item.currentTime)//.+" "
         ordinal += 1
     }
-    private fun measure(ix: Int): Dp? {
-        if (list[ix].description == null) return null
-        val s = list[ix].title!!
+    private fun measure(ix: Int): Dp {
+        if (list[ix].description == null || display == MAP) return 0.dp
+        val s = list[ix].title!!.trim()
         val p = androidx.compose.ui.text.Paragraph(
             text = s,
-            style = typography.bodyLarge,
-            spanStyles = listOf(
-                AnnotatedString.Range(
-                    SpanStyle(
-                        color = colorScheme.secondary,
-                        fontStyle = typography.bodyLarge.fontStyle,
-                        fontSize = typography.bodyLarge.fontSize * vm.ratioV.value!!,
-                    ),
-                    0,
-                    s.length
-                )
-            ),
+            style = typography.bodyLarge.copy(fontSize = typography.bodyLarge.fontSize * vm.ratioV.value!!),
             constraints = Constraints(
-                maxWidth = (screenWidth - (measures.itemHeight + measures.padding.times(4) + measures.padding.times(2) * list[ix].level) * vm.ratioH.value!!).toPx().toInt()),
+                maxWidth =
+                    (screenWidth - (
+                            measures.itemHeight +
+                            measures.padding.times(4) +
+                            measures.padding.times(2) * list[ix].level
+                    ) * vm.ratioH.value!!).toPx().toInt()),
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-    //   qqq("MEASURE "
-      //         + p.getLineHeight(1).toInt().toDp()
-        //       + " " + measures.lineHeight + " "+p.lineCount + " "+(list[ix].description!! + " \u2026").take(p.getLineEnd(0)) + "|||"
-          //     + list[ix].description!!.take(p.getLineEnd(1)) + "|||" +list[ix].description)
-        if (p.lineCount > 1)
+       qqq("MEASURE "
+//               + p.getLineHeight(1).toInt().toDp()
+               + " " + measures.lineHeight + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+        if (p.lineCount > 1) {
+            qqq("?"+s.take(p.getLineEnd(1)))
             return p.getLineHeight(1).toDp() * p.lineCount.dec()
-        return null
+        }
+        return 0.dp
     }
     private var limit = 0
     private var start = 0
@@ -444,7 +431,7 @@ class Render(
                 ) {
                     val s = start++
                     ini1(s)
-                    measure(s)
+                    //measure(s)
                 }
                 //qqq("LIM "+list.size+" "+start +" "+ min(list.size, batch)+" "+lim +" " +position + " "+screenHeight)
                 start = max(start - min(list.size, batch), 0)
@@ -458,7 +445,7 @@ class Render(
                 ) {
                     val s = start++
                     ini1(s)
-                    measure(s)
+                    //measure(s)
                 }
                 start = max(start - lim, 0)
             }
@@ -503,7 +490,7 @@ class Render(
             //////////callback?.invoke()
             (data.display.size until list.size).map {
                 ini1(it)
-                measure(it)
+                //measure(it)
             }
             ruler(false)
             data.vm.details.withIndex().filter { it.value.title == "" }.map {
@@ -691,7 +678,7 @@ class Render(
         cycler.updateXY(index, data.vm.xy[point])
     }
     private fun renderYSync(ix: Int) {
-        val point = data.point[ix]
+        val point = data.point.getOrNull(ix) ?: return
         val index = ix.mod(batch)
         //qqq("RS "+disp.ordinal+" "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+data.vm.xy[point].y  + data.vm.more[index])
         data.stack[index] = ix
@@ -717,16 +704,25 @@ class Render(
     }
     private fun xy(ix: Int) {
         val disp = data.display.find { it.ordinal == ix }!!
-        data.vm.xy[ix] = ViewModel.Cycler.XY(
-            x = 0.dp,
-            y = data.ruler.getOrNull(ix) ?: 0.dp,
-            w = screenWidth,
-            h = disp.height,
-        )
+        data.vm.xy[ix] = when (display) {
+            LIST ->
+                ViewModel.Cycler.XY(
+                    x = 0.dp,
+                    y = data.ruler[ix],
+                    w = screenWidth,
+                    h = disp.height,
+                )
+            else ->
+                ViewModel.Cycler.XY(
+                    x = (screenWidth - 90.dp) * disp.ordinal,
+                    y = 0.dp,
+                    w = screenWidth - 90.dp,
+                    h = disp.height,
+                )
+        }
     }
     fun ellipsis(ix: Int) {
         data.vm.more[ix] = !data.vm.more[ix]!!
-
         val disp = data.display.find { it.ordinal == ix }!!
         if (data.vm.more[ix]!!) {
             val s = list[ix].description!! + " \u2026"
@@ -755,12 +751,8 @@ class Render(
                 density = density,
                 fontFamilyResolver = fontFamilyResolver,
             )
-            qqq("p" + p.lineCount + " " + measures.lineHeight + " " + p.getLineHeight(1).toDp() + " "+p.height.toDp())
             data.display[ix].height += 14.dp * p.lineCount.minus(2)
-        } else {
-            measure(ix)
-            data.display[ix].height = disp.type.height
-        }
+        } else data.display[ix].height = disp.type.height + measure(ix)
         expandable(ix)
         ruler()
         xy(ix)
@@ -781,7 +773,6 @@ class Render(
             data.collapse[key] =
                 data.collapse[key]!!.first to data.collapse[key]!!.second.unaryMinus()
         }
-        //qqq("CO "+ix + " "+point +" "+ data.collapse[point]!!)
         go(point, data.collapse[point]!!)
         ruler()
         data.ruler.indices.map {
@@ -799,25 +790,18 @@ class Render(
     }
     private fun vm(ix: Int, more: Boolean? = null) {
         val item = list.getOrNull(ix) ?: return
-        val disp = data.display.getOrNull(ix) ?: return
         //qqq("VM ix:"+ix+ " id:"+item.id+" "+item.title + " "+item.level+disp.type+data.ruler.getOrNull(ix))
-        val vm =
+        xy(ix)
+        data.vm.more[ix] =
+            if (display == MAP) null
+            else more ?: (data.vm.more.getOrNull(ix) ?: false)
+        data.vm.details[ix] =
             Details(
                 id = item.id!!,
-                title = item.title!!,
+                title = item.title!!.trim(),
                 origin = item.origin,
                 drawable = item.drawable,
                 level = item.level
             )
-        data.vm.xy[ix] = ViewModel.Cycler.XY(
-            x = if (display == MAP) (screenWidth - 90.dp) * disp.ordinal else 0.dp,
-            y = if (display == MAP) 0.dp else data.ruler[ix] ?: 0.dp,
-            w = screenWidth - if (display == MAP) 90.dp else 0.dp,
-            h = disp.height,
-        )
-        data.vm.more[ix] =
-            if (display == MAP) null
-            else more ?: (data.vm.more.getOrNull(ix) ?: false)
-        data.vm.details[ix] = vm
     }
 }

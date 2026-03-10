@@ -22,14 +22,12 @@ android {
                 load(File("$path/$fileName").inputStream())
             }
         val localProperties: Properties = loadProperties("local.properties")
-
         applicationId = "android.myguide"
-        minSdk = 29
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         manifestPlaceholders["googleMapsApiKey"] = localProperties["MAPS_API_KEY"]!!
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

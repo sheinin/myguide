@@ -19,6 +19,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -52,11 +53,13 @@ fun ViewItem(
     val ratioV by vm.ratioV.observeAsState()
     if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
+       // verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .offset(xy.x, xy.y * ratioV!!)
             .size(xy.w, xy.h * ratioV!!)
-            .clickable(
-                onClick = { callback(index) }
+            .then(
+                if (details.origin == null) Modifier
+                else Modifier.clickable(onClick = { callback(index) })
             )
             .padding(
                 start = measures.padding * ratioH!! + measures.padding.times(2) * ratioH!! * details.level,
@@ -86,13 +89,15 @@ fun ViewItem(
             Row {
                 Text(
                     details.title,
-                    onTextLayout = { textLayoutResult ->
-                        qqq("WT "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
-                    },
+                 //   onTextLayout = { textLayoutResult ->
+                   //     qqq("WT "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
+                   // },
                     color = colorScheme.secondary,
                     style = typography.bodyLarge,
                     fontSize = typography.bodyLarge.fontSize * ratioV!!,
-                    lineHeight = 1.em * fontScale
+                    lineHeight = 1.em * fontScale,
+                    maxLines = if (display == Settings.Display.MAP) 1 else Int.MAX_VALUE,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -112,9 +117,9 @@ fun ViewItem(
             if (details.origin != null)
                 Text(
                     details.origin,
-                    onTextLayout = { textLayoutResult ->
-                        qqq("Wo "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
-                    },
+               //     onTextLayout = { textLayoutResult ->
+                 //       qqq("Wo "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
+                   // },
                     color = colorScheme.secondary,
                     style = typography.bodyMedium,
                     fontSize = typography.bodyMedium.fontSize * ratioV!!,
@@ -126,9 +131,9 @@ fun ViewItem(
             if (expand != null)
                 Text(
                     expand,
-                    onTextLayout = { textLayoutResult ->
-                        qqq("W "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + expand)
-                    },
+                 //   onTextLayout = { textLayoutResult ->
+                   //     qqq("W "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + expand)
+                    //},
                     modifier = Modifier
                         .fillMaxWidth(),
                     style = typography.bodySmall,

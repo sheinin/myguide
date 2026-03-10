@@ -26,9 +26,7 @@ class Screen(
         activity = activity,
         screen = this,
         getSettings = ::getSettings
-    ).also {
-    //    it.calibrate(realm.query(Activity::class).find().subList(0, cyclerBatch).toMutableList())
-    }
+    )
     private var id: String? = null
     var queryType: QueryType? = null
     override fun build(
@@ -46,6 +44,16 @@ class Screen(
                     + " display:" + display
             + " position:" + vm.toolbar.items.last().position
         )
+        when (queryType) {
+            ITEM -> {
+
+            }
+            SHOP -> {
+            }
+            else -> {
+
+            }
+        }
         bind.description.value = "kjhk adsf asfd asdf asdf asdf asdf"
         bind.details.value = details
         bind.cycler.isMap.value = display.isMap

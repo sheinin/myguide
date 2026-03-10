@@ -128,20 +128,6 @@ fun Main(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    Image(
-                        painterResource(R.drawable.home),
-                        contentDescription = "Home",
-                        colorFilter = ColorFilter.tint(colorScheme.background),
-                        modifier = Modifier
-                            .clickable(
-                                onClick = {
-                                    vm.showSplash.value = true
-                                    vm.toolbar.clear()
-                                }
-                            )
-                            .background(colorScheme.secondary, shape = CircleShape)
-                            .padding(6.dp)
-                    )
                     val linked = remember { mutableStateOf(true) }
                     val ratioH by vm.ratioH.observeAsState()
                     val ratioV by vm.ratioV.observeAsState()
@@ -150,7 +136,6 @@ fun Main(
                         modifier = Modifier
                             .weight(1f)
                             .padding(start = 8.dp, end = 4.dp)
-
                     ) {
                         Text(
                             "H: ${"%.2f".format(ratioH)}",
@@ -441,13 +426,13 @@ fun Splash(modifier: Modifier) {
                         vm.showSplash.value = false
                         vm.toolbar.navigate(
                             queryType = QueryType.SHOPS,
-                            title = "All Shops"
+                            title = QueryType.SHOPS.title
                         )
                     }
                 )
         ) {
             Image(painter = painterResource(R.drawable.all_shops), "all shops",
-                modifier = Modifier.Companion.size(screenWidth * .5f))
+                modifier = Modifier.size(screenWidth * .5f))
             Text(
                 "SHOPS",
                 fontWeight = FontWeight.Bold,
@@ -464,7 +449,7 @@ fun Splash(modifier: Modifier) {
                         vm.showSplash.value = false
                         vm.toolbar.navigate(
                             queryType = QueryType.ITEMS,
-                            title = "All Items"
+                            title = QueryType.ITEMS.title
                         )
                     }
                 )

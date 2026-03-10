@@ -22,7 +22,7 @@ class Toolbar {
     class Item(
         var id: String?,
         val queryType: QueryType,
-        val details: Details?,
+        //val details: Details?,
         val title: String,
         var ident: Boolean,
         var display: Settings.Display,
@@ -87,7 +87,7 @@ class Toolbar {
                 id = id,
                 ident = tracker,
                 display = display,
-                details = details,
+            //    details = details,
                 title = title,
                 position = 0.dp,
                 queryType = queryType
