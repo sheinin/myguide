@@ -1,5 +1,8 @@
 package android.myguide
 
+import android.myguide.QueryType.*
+import android.myguide.ViewModel.Screen.*
+import android.myguide.ViewModel.Screen.Display.*
 import android.view.View
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -9,9 +12,8 @@ class Toolbar {
     interface ScreenTools {
         fun build(
             id: String? = null,
-            display: Settings.Display = Settings.Display.LIST,
-            details: Details? = null,
-            queryType: QueryType = QueryType.SHOPS,
+            display: Display = LIST,
+            queryType: QueryType = SHOPS,
         )
         fun query()
         fun reset()
@@ -21,10 +23,9 @@ class Toolbar {
     class Item(
         var id: String?,
         val queryType: QueryType,
-        //val details: Details?,
         val title: String,
         var ident: Boolean,
-        var display: Settings.Display,
+        var display: Display,
         var position: Dp
     )
     private lateinit var activity: MainActivity
@@ -35,26 +36,24 @@ class Toolbar {
         false to MutableLiveData(List(3) { "" }),
         true to MutableLiveData(List(3) { "" })
     )
-    val title = mapOf(
-        false to MutableLiveData(""),
-        true to MutableLiveData("")
-    )
+    private fun splash() {
+       crumbs[false]!!.value = List(3) { "" }
+       crumbs[true]!!.value = List(3) { "" }
+       items.clear()
+       vm.showSplash.value = true
+    }
     fun back(vi: View? = null) {
         val i = items.lastIndex.dec()
-        if (i == -1) vm.showSplash.value = true
+        if (i == -1) splash()
         else if (vi == null) goto(i)
         else goto(i)
     }
     fun expand(ix: Int, expand: Boolean) {
         screen[items.last().ident]!!.render.expand(ix, expand)
     }
-    fun clear() {
-        items.clear()
-        tracker = true
-    }
     fun click(ix: Int) {
         when (ix) {
-            -1 -> vm.showSplash.postValue(true)
+            -1 -> splash()
             1 if items.size > 4 -> vm.screen[tracker]!!.dialog.postValue(true)
             2 if items.size > 4 -> goto(items.lastIndex.dec())
             else -> goto(ix)
@@ -67,12 +66,11 @@ class Toolbar {
             else screen[items.last().ident]
     fun navigate(
         id: String? = null,
-        display: Settings.Display = Settings.Display.LIST,
-        details: Details? = null,
-        queryType: QueryType = QueryType.SHOPS,
+        display: Display = LIST,
+        queryType: QueryType = SHOPS,
         title: String
     ) {
-        qqq("NAVIGATE id:"+id+" title:"+title+" query:"+queryType)
+        qqq("NAVIGATE items:"+ items.size+" id:"+id+" title:"+title+" query:"+queryType + " "+items.getOrNull(0)?.title ?: "")
         items.mapIndexed { ix, it ->
             if (it.queryType == queryType && it.id == id) {
                 goto(ix)
@@ -86,7 +84,6 @@ class Toolbar {
                 id = id,
                 ident = tracker,
                 display = display,
-            //    details = details,
                 title = title,
                 position = 0.dp,
                 queryType = queryType
@@ -98,23 +95,15 @@ class Toolbar {
                 if (items.size > 3) activity.resources.getString(R.string.ellipsis) else items.getOrNull(1)?.title ?: "",
                 if (items.size > 2) items.last().title else ""
             )
-        this.title[tracker]!!.value = title
         cached = true
         items.add(item)
         vm.current.value = next!!.ident
         next!!.build(
             id = id,
             display = display,
-            details = details,
             queryType = queryType,
         )
         current!!.reset()
-      //  sleep(1000) {
-         //   next.query()
-           // if (slide) slideIn(current.root, next.root) { next.query() }
-           // else animCross(current.root, next.root) { next.query() }
-        //}
-      //  }
     }
     fun pending() {
         sleep {
@@ -122,29 +111,22 @@ class Toolbar {
             next = null
         }
     }
-
-    fun splash() {
-
-        //activity.showSplash()
-    }
     private var cached = true
     fun goto(ix: Int) {
         val current = screen[tracker]!!
         val item = items[ix]
         val next = screen[!tracker]!!
-        qqq("GOTO ix:" +ix+" current:" + current.ident +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
+        //qqq("GOTO ix:" +ix+" current:" + current.ident +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
         tracker = !tracker
-        items.last().ident = next.ident //
-        vm.current.value = next.ident// why duped
+        items.last().ident = next.ident
+        vm.current.value = next.ident
         current.reset()
         if (item.display.isMap) vm.mapShowing.value = true
         if (cached) {
             cached = false
             next.update()
-        //    if (last.slide == true) slideOut(current.root, next.root) { next.update() }
-          //  else animCross(current.root, next.root) { next.update() }
         } else {
             crumbs[next.ident]!!.value =
                 listOf(
@@ -154,17 +136,12 @@ class Toolbar {
                     else items.getOrNull(1)?.title ?: "",
                     if (items.size > 3) items[items.lastIndex.dec()].title else ""
                 )
-            title[next.ident]!!.value = item.title
             next.build(
                 id = item.id,
                 display = item.display,
                 queryType = item.queryType
             )
-           // sleep(1000) {
-                next.query()
-            //    if (last.slide == true) slideOut(current.root, next.root) { next.query() }
-              //  else animCross(current.root, next.root) { next.query() }
-           // }
+            next.query()
         }
     }
 }

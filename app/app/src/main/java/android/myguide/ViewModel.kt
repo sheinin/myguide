@@ -58,7 +58,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
                 }
             }
         }
-        fun updateItem(index: Int, details: Details) {
+        fun updateDetails(index: Int, details: Details) {
             _details.update {
                 it.mapIndexed { ix, it ->
                     if (ix == index)
@@ -99,10 +99,19 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     }
 
     class Screen {
-        val display = MutableLiveData(Settings.Display.LIST)
+        enum class Display {
+            D3,
+            LIST,
+            MAP;
+            val isMap: Boolean
+                get() = this == MAP
+        }
+        val display = MutableLiveData(Display.LIST)
         val dialog = MutableLiveData(false)
         val cycler = Cycler()
+        val filter = MutableLiveData<Boolean?>(null)
         val position = MutableLiveData(0.dp)
+        val sort = MutableLiveData(false)
         val w = MutableLiveData(0.dp)
         val h = MutableLiveData(0.dp)
         val description = MutableLiveData<String>()
@@ -113,11 +122,22 @@ class ViewModel(private val repository: Repository) : ViewModel() {
     val adjust = MutableLiveData(false)
     val current = MutableLiveData<Boolean?>(null)
     val mapShowing = MutableLiveData(true)
-    val ratioH = MutableLiveData(1f)
-    val ratioV = MutableLiveData(1f)
+    val ratio = MutableLiveData(1f)
+    val ratioH = MutableLiveData<Float?>(null)
+    val ratioV = MutableLiveData<Float?>(null)
     val screen = mapOf(false to Screen(), true to Screen())
     val showSplash = MutableLiveData(true)
     val toolbar = Toolbar()
+    fun fetchItemDetails(id: String, callback: (Item) -> Unit) {
+        repository.getItemDetails(id) {
+            callback.invoke(it!!)
+        }
+    }
+    fun fetchShopDetails(id: String, callback: (Shop) -> Unit) {
+        repository.getShopDetails(id) {
+            callback.invoke(it!!)
+        }
+    }
     fun fetchShops(callback: (List<ListInterface>) -> Unit) {
         repository.getShops { list ->
             callback.invoke(list.map { it.toInterface() }.toList())

@@ -1,9 +1,11 @@
 package android.myguide
 
 import android.R.attr.lineHeight
+import android.app.ProgressDialog.show
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
 import android.myguide.views.Splash
+import android.myguide.views.Toolbar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -124,8 +126,8 @@ class MainActivity : ComponentActivity() {
             typography = MaterialTheme.typography
             val h =
                 getLineHeightDp(typography.bodyLarge.lineHeight) +
-                        getLineHeightDp(typography.bodyMedium.lineHeight) +
-                        getLineHeightDp(typography.bodySmall.lineHeight) * 2
+                    getLineHeightDp(typography.bodyMedium.lineHeight) +
+                    getLineHeightDp(typography.bodySmall.lineHeight) * 2
             qqq("START f:$fontScale itemHeight:$h w:$screenWidth h:$screenHeight}")
             measures = Measures(
                 itemHeight = h,
@@ -135,67 +137,31 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    var showContent by remember { mutableStateOf(false) }
-                    LaunchedEffect(Unit) {
-                        delay(2000)
-                        showContent = true
-                    }
-                    AnimatedVisibility(
-                        visible = !showContent,
-                        enter = EnterTransition.None,
-                        exit = fadeOut()
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.logo),
-                                "my guide",
-                                modifier = Modifier.size(screenWidth * .8f)
-                            )
-                            Text(
-                                "My Guide",
-                                fontWeight = FontWeight.Bold,
-                                style = typography.displayLarge,
-                            )
-                        }
-                    }
-                    AnimatedVisibility(
-                        visible = showContent,
-                        enter = fadeIn(),
-                        exit = ExitTransition.None
-                    ) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            val show = vm.showSplash.observeAsState()
-                            if (show.value!!)
-                                Splash(Modifier.padding(innerPadding))
-                            else {
-                                val ident = vm.current.observeAsState()
-                                AnimatedVisibility(
-                                    visible = ident.value == false,
-                                    enter = EnterTransition.None,
-                                    exit = ExitTransition.None
-                                ) {
-                                    Main(
-                                        ident = false,
-                                        modifier = Modifier.padding(innerPadding),
-                                        screen = screen[false]!!
-                                    )
-                                }
-                                AnimatedVisibility(
-                                    ident.value == true,
-                                    enter = EnterTransition.None,
-                                    exit = ExitTransition.None
-                                ) {
-                                    Main(
-                                        ident = true,
-                                        modifier = Modifier.padding(innerPadding),
-                                        screen = screen[true]!!
-                                    )
-                                }
+                    if (vm.showSplash.observeAsState().value!!)
+                        Splash(Modifier.padding(innerPadding))
+                    else {
+                        Column(Modifier.fillMaxSize().padding(innerPadding)) {
+                            Toolbar()
+                            val ident = vm.current.observeAsState()
+                            AnimatedVisibility(
+                                visible = ident.value == false,
+                                enter = EnterTransition.None,
+                                exit = ExitTransition.None
+                            ) {
+                                Main(
+                                    ident = false,
+                                    screen = screen[false]!!
+                                )
+                            }
+                            AnimatedVisibility(
+                                ident.value == true,
+                                enter = EnterTransition.None,
+                                exit = ExitTransition.None
+                            ) {
+                                Main(
+                                    ident = true,
+                                    screen = screen[true]!!
+                                )
                             }
                         }
                     }

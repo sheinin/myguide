@@ -1,5 +1,16 @@
-package android.myguide
+package android.myguide.views
 
+import android.myguide.Details
+import android.myguide.R
+import android.myguide.Screen
+import android.myguide.ViewModel
+import android.myguide.ViewModel.Screen.*
+import android.myguide.ViewModel.Screen.Display.*
+import android.myguide.colorScheme
+import android.myguide.fontScale
+import android.myguide.measures
+import android.myguide.typography
+import android.myguide.vm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,47 +44,48 @@ fun ViewItem(
     index: Int,
     screen: Screen,
     details: Details,
-    display: Settings.Display?,
+    display: Display?,
     expand: AnnotatedString?,
     toggle: Boolean?,
     xy: ViewModel.Cycler.XY,
     callback: (Int) -> Unit
 ) {
+    val ratio by vm.ratio.observeAsState()
     val ratioH by vm.ratioH.observeAsState()
     val ratioV by vm.ratioV.observeAsState()
     if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
        // verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .offset(xy.x, xy.y * ratioV!!)
-            .size(xy.w, xy.h * ratioV!!)
+            .offset(xy.x, xy.y * (ratioV ?: ratio!!))
+            .size(xy.w, xy.h * (ratioV ?: ratio!!))
             .then(
                 if (details.origin == null) Modifier
                 else Modifier.clickable(onClick = { callback(index) })
             )
             .padding(
-                start = measures.padding * ratioH!! + measures.padding.times(2) * ratioH!! * details.level,
-                end = measures.padding * ratioH!!
+                start = measures.padding * (ratioH ?: ratio!!) + measures.padding.times(2) * (ratioH ?: ratio!!) * details.level,
+                end = measures.padding * (ratioH ?: ratio!!)
             )
             .background(
                 color = colorScheme.surfaceContainer
             )
     ) {
-        if (display != Settings.Display.MAP && details.drawable != null)
+        if (display != MAP && details.drawable != null)
             Image(
                 painterResource(details.drawable),
                 "item icon",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(
-                        width = measures.itemHeight * ratioH!!,
-                        height = measures.itemHeight * ratioV!!
+                        width = measures.itemHeight * (ratioH ?: ratio!!),
+                        height = measures.itemHeight * (ratioV ?: ratio!!)
                     )
             )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp * ratioH!!,),
+                .padding(horizontal = 8.dp * (ratioH ?: ratio!!)),
             verticalArrangement = Arrangement.Center
         ) {
             Row {
@@ -84,9 +96,9 @@ fun ViewItem(
                    // },
                     color = colorScheme.secondary,
                     style = typography.bodyLarge,
-                    fontSize = typography.bodyLarge.fontSize * ratioV!!,
+                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
                     lineHeight = 1.em * fontScale,
-                    maxLines = if (display == Settings.Display.MAP) 1 else Int.MAX_VALUE,
+                    maxLines = if (display == MAP) 1 else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (details.origin == null) {
@@ -96,6 +108,14 @@ fun ViewItem(
                         contentDescription = "",
                         colorFilter = ColorFilter.tint(colorScheme.secondary),
                         modifier = Modifier
+                            .size(
+                                36.dp * (ratioH ?: ratio!!),
+                                36.dp * (ratioV ?: ratio!!)
+                            )
+                            .padding(
+                                horizontal = 6.dp * (ratioH ?: ratio!!),
+                                vertical = 6.dp * (ratioV ?: ratio!!)
+                            )
                             .clickable(
                                 onClick = {
                                     screen.render.toggle(index)
@@ -113,7 +133,7 @@ fun ViewItem(
                    // },
                     color = colorScheme.secondary,
                     style = typography.bodyMedium,
-                    fontSize = typography.bodyMedium.fontSize * ratioV!!,
+                    fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
                     fontStyle = FontStyle.Italic,
                     lineHeight = 1.em * fontScale,
                     maxLines = 1,
@@ -130,7 +150,7 @@ fun ViewItem(
                     style = typography.bodySmall,
                     //lineHeight = 1.em,
                     maxLines =
-                        if (display == Settings.Display.MAP) 2
+                        if (display == MAP) 2
                         else Int.MAX_VALUE,
                     overflow = TextOverflow.Ellipsis,
                 )

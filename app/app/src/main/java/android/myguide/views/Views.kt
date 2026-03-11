@@ -1,14 +1,15 @@
 package android.myguide.views
 
-import android.R.id.toggle
+import android.R.attr.bottom
 import android.myguide.QueryType
 import android.myguide.R
-import android.myguide.ViewItem
 import android.myguide.Screen
-import android.myguide.Settings
+import android.myguide.ViewModel.Screen.Display.LIST
+import android.myguide.ViewModel.Screen.Display.MAP
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
+import android.myguide.fontScale
 import android.myguide.measures
 import android.myguide.screenWidth
 import android.myguide.toDp
@@ -23,9 +24,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,11 +38,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -56,19 +58,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
@@ -80,14 +84,13 @@ import com.google.maps.android.compose.rememberCameraPositionState
 @Composable
 fun Main(
     ident: Boolean,
-    modifier: Modifier = Modifier,
     screen: Screen
 ) {
     val bind = vm.screen[ident]!!
     val dialog by vm.screen[screen.ident]!!.dialog.observeAsState()
     val display by vm.screen[screen.ident]!!.display.observeAsState()
     Box(
-        modifier
+        Modifier
             .fillMaxSize()
             .onPlaced {
                 vm.toolbar.pending()
@@ -112,7 +115,7 @@ fun Main(
                     .fillMaxWidth()
                     .background(colorScheme.background)
                     .constrainAs(toolbar) {
-                        if (display == Settings.Display.MAP) {
+                        if (display == MAP) {
                             top.linkTo(parent.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -125,97 +128,6 @@ fun Main(
                         height = Dimension.wrapContent
                     }
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(8.dp)
-                ) {
-                    val linked = remember { mutableStateOf(true) }
-                    val ratioH by vm.ratioH.observeAsState()
-                    val ratioV by vm.ratioV.observeAsState()
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp, end = 4.dp)
-                    ) {
-                        Text(
-                            "H: ${"%.2f".format(ratioH)}",
-                            style = typography.labelSmall
-                        )
-                        Slider(
-                            value = ratioH!!,
-                            onValueChange = {
-                                vm.ratioH.value = it
-                                if (linked.value) vm.ratioV.value = it
-                            },
-                            onValueChangeFinished = { vm.adjust.value = true },
-                            valueRange = 0.5f..2.5f,
-                            modifier = Modifier
-                                .height(20.dp),
-                            track = { sliderState ->
-                                SliderDefaults.Track(
-                                    sliderState = sliderState,
-                                    thumbTrackGapSize = 0.dp,
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = colorScheme.primary,
-                                        activeTrackColor = colorScheme.secondaryContainer,
-                                        inactiveTrackColor = colorScheme.secondaryContainer,
-                                    )
-                                )
-                            }
-                        )
-                    }
-                    Image(
-                        painter = painterResource(
-                            if (linked.value) R.drawable.link_on
-                            else R.drawable.link_off
-                        ),
-                        contentDescription = "",
-                        colorFilter = ColorFilter.tint(colorScheme.primary),
-                        modifier = Modifier
-                            .clickable(
-                                onClick = {
-                                    linked.value = !linked.value
-                                    if (linked.value) {
-                                        vm.ratioH.value = 1f
-                                        vm.ratioV.value = 1f
-                                    }
-                                }
-                            )
-                    )
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp, end = 8.dp)
-                    ) {
-                        Text(
-                            "V: ${"%.2f".format(ratioV)}",
-                            style = typography.labelSmall
-                        )
-                        Slider(
-                            value = ratioV!!,
-                            onValueChange = {
-                                vm.ratioV.value = it
-                                if (linked.value) vm.ratioH.value = it
-                            },
-                            onValueChangeFinished = { vm.adjust.value = true },
-                            valueRange = 0.5f..2.5f,
-                            modifier = Modifier.height(20.dp),
-                            track = { sliderState ->
-                                SliderDefaults.Track(
-                                    sliderState = sliderState,
-                                    thumbTrackGapSize = 0.dp,
-                                    colors = SliderDefaults.colors(
-                                        thumbColor = colorScheme.primary,
-                                        activeTrackColor = colorScheme.secondaryContainer,
-                                        inactiveTrackColor = colorScheme.secondaryContainer,
-                                    )
-                                )
-                            }
-                        )
-                    }
-                }
                 if (vm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
                     Row(Modifier.padding(8.dp, 4.dp)) {
                         repeat(3) {
@@ -235,18 +147,18 @@ fun Main(
                             )
                         }
                     }
-                if (display == Settings.Display.MAP) Control(screen)
+                if (display == MAP) Control(screen)
             }
             val scrollStateY = rememberScrollState()
             val view = LocalView.current
             LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
-                if (display != Settings.Display.MAP)
+                if (display != MAP)
                     scrollStateY.animateScrollTo(
                         vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
                     )
             }
             DisposableEffect(view, display) {
-                if (display == Settings.Display.MAP) return@DisposableEffect onDispose {}
+                if (display == MAP) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     with(density) {
                         screen.render.observe(scrollStateY.value.toDp())
@@ -263,11 +175,11 @@ fun Main(
                     .fillMaxWidth()
                     .verticalScroll(scrollStateY)
                     .background(
-                        if (display == Settings.Display.MAP) Color.Transparent
+                        if (display == MAP) Color.Transparent
                         else colorScheme.surface
                     )
                     .constrainAs(scroll) {
-                        if (display == Settings.Display.MAP) {
+                        if (display == MAP) {
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -283,71 +195,69 @@ fun Main(
                     }
             ) {
                 val description by bind.description.observeAsState()
+                val ratio by vm.ratio.observeAsState()
+                val ratioH by vm.ratioH.observeAsState()
+                val ratioV by vm.ratioV.observeAsState()
                 val viewItem by bind.details.observeAsState()
-                if (display != Settings.Display.MAP && viewItem != null)
+                if (display != MAP && viewItem != null)
                     Column(modifier = Modifier.padding(8.dp)) {
-                        Text(
-                            viewItem!!.title,
-                            style = typography.bodyLarge,
-                            color = colorScheme.secondary
-                        )
-                        Text(
-                            viewItem!!.origin!!,
-                            fontStyle = FontStyle.Italic,
-                            style = typography.bodyMedium,
-                            color = colorScheme.secondary,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        val lines = 3
-                        val textMeasurer = rememberTextMeasurer()
-                        val c = Constraints(maxWidth = (screenWidth - 58.dp - 24.dp).toPx().toInt())
-                        val measurements = remember(description) {
-                            textMeasurer.measure(
-                                text = description!!,
-                                style = typography.bodySmall,
-                                constraints = c
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.Bottom) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = measures.padding * (ratioH ?: ratio!!),
+                                    vertical = measures.padding * (ratioV ?: ratio!!)
+                                )
+                        ) {
+                            Column {
+                                Text(
+                                    viewItem!!.title,
+                                    style = typography.bodyLarge,
+                                    color = colorScheme.secondary,
+                                    lineHeight = 1.em * fontScale,
+                                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!)
+                                )
+                                Text(
+                                    viewItem!!.origin!!,
+                                    fontStyle = FontStyle.Italic,
+                                    style = typography.bodyMedium,
+                                    color = colorScheme.secondary,
+                                    lineHeight = 1.em * fontScale,
+                                    fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
+                                    modifier = Modifier.padding(bottom = 4.dp)
+                                )
+                            }
+                            Spacer(Modifier.weight(1f))
                             Image(
                                 painterResource(viewItem!!.drawable!!),
                                 "item icon",
                                 modifier = Modifier
-                                    .size(58.dp, 62.dp)
-                                    .padding(bottom = 4.dp)
-                                    .background(color = colorScheme.surface)
-                            )
-                            Text(
-                               // if (measurements.lineCount <= lines)
-                                    description!!,
-                                //else description!!.take(measurements.getLineEnd(lines)),
-                                style = typography.bodySmall,
-                                color = colorScheme.secondary,
-                                modifier = Modifier.padding(start = 8.dp)
+                                    .size(
+                                        60.dp * (ratioH ?: ratio!!),
+                                        60.dp * (ratioV ?: ratio!!)
+                                    )
                             )
                         }
-                        if (measurements.lineCount > lines)
-                        Text(
-                            description!!.substring(measurements.getLineEnd(lines)),
+                        Text(description!!,
                             style = typography.bodySmall,
-                            color = colorScheme.secondary
+                            lineHeight = 1.em * fontScale,
+                            color = colorScheme.secondary,
+                            fontSize = typography.bodySmall.fontSize * (ratioV ?: ratio!!),
+                            modifier = Modifier.padding(start = 8.dp)
                         )
-
                     }
-
-
-                if (display != Settings.Display.MAP)
+                if (display != MAP)
                     Control(screen)
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
                 LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
-                    if (display == Settings.Display.MAP)
+                    if (display == MAP)
                         scrollStateX.animateScrollTo(
                             vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
                         )
                 }
                 DisposableEffect(view, display) {
-                    if (display == Settings.Display.LIST) return@DisposableEffect onDispose {}
+                    if (display == LIST) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
                         with(density) {
                             screen.render.observe(scrollStateX.value.toDp())
@@ -376,15 +286,14 @@ fun Main(
                     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
-                            .size(w.value!!, h.value!! * vm.ratioV.value!!)
+                            .size(w.value!!, h.value!! * (ratioV ?: ratio!!))
                     ) {
                         fun callback(index: Int) {
                             vm.toolbar.items.last().position =
-                                if (display == Settings.Display.MAP) scrollStateX.value.toDp()
+                                if (display == MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
                             vm.toolbar.navigate(
                                 id = details[index].id,
-                                details = details[index],
                                 title = details[index].title,
                                 queryType = screen.queryType!!.next
                             )
@@ -407,63 +316,6 @@ fun Main(
             }
         }
         if (dialog == true) MyDialog(screen)
-    }
-}
-
-@Composable
-fun Splash(modifier: Modifier) {
-    Column (
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxSize()
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .clickable(
-                    onClick = {
-                        vm.showSplash.value = false
-                        vm.toolbar.navigate(
-                            queryType = QueryType.SHOPS,
-                            title = QueryType.SHOPS.title
-                        )
-                    }
-                )
-        ) {
-            Image(painter = painterResource(R.drawable.all_shops), "all shops",
-                modifier = Modifier.size(screenWidth * .5f))
-            Text(
-                "SHOPS",
-                fontWeight = FontWeight.Bold,
-                style = typography.displayMedium,
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                //.weight(1f)
-                .clickable(
-                    onClick = {
-                        vm.showSplash.value = false
-                        vm.toolbar.navigate(
-                            queryType = QueryType.ITEMS,
-                            title = QueryType.ITEMS.title
-                        )
-                    }
-                )
-        ) {
-            Image(
-                painter = painterResource(R.drawable.all_items), "all items",
-                modifier = Modifier.Companion.size(screenWidth * .5f)
-            )
-            Text(
-                "ITEMS",
-                fontWeight = FontWeight.Bold,
-                style = typography.displayMedium
-            )
-        }
     }
 }
 
@@ -498,68 +350,6 @@ fun ArrowText(
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-@Composable
-fun Control(screen: Screen) {
-    val display by vm.screen[screen.ident]!!.display.observeAsState()
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp)
-            .background(colorScheme.background)
-            .padding(8.dp)
-    ) {
-        Text(
-            screen.queryType?.title ?: "",
-            style = typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        )
-        if (screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS)
-            Image(
-                painter = painterResource(R.drawable.list),
-                contentDescription = "list",
-                colorFilter = ColorFilter.tint(colorScheme.background),
-                modifier = Modifier
-                    .clickable(
-                        onClick = {
-                            //    isMap = true
-                            vm.screen[screen.ident]!!.display.value = Settings.Display.LIST
-                            screen.render.display(Settings.Display.LIST)
-                        }
-                    )
-                    .padding(8.dp, 0.dp)
-                    .background(
-                        if (display != Settings.Display.MAP) colorScheme.primary
-                        else colorScheme.secondary,
-                        shape = CircleShape
-                    )
-                    .padding(6.dp)
-            )
-        if (screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS)
-            Image(
-                painterResource(R.drawable.map),
-                "map",
-                colorFilter = ColorFilter.tint(colorScheme.background),
-                modifier = Modifier
-                    .clickable(
-                        onClick = {
-                            vm.screen[screen.ident]!!.display.value = Settings.Display.MAP
-                            screen.render.display(Settings.Display.MAP)
-                        }
-                    )
-                    .background(
-                        if (display == Settings.Display.MAP) colorScheme.primary
-                        else colorScheme.secondary,
-                        shape = CircleShape
-                    )
-                    .padding(6.dp)
-            )
     }
 }
 

@@ -77,14 +77,21 @@ interface ListInterface {
 }
 
 class Repository(private val storeDao: StoreDao) {
+
+    fun getItemDetails(id: String, callback: (Item?) -> Unit) {
+        Thread {
+            callback(storeDao.itemDetails(id))
+        }.start()
+    }
+
+    fun getShopDetails(id: String, callback: (Shop?) -> Unit) {
+        Thread {
+            callback(storeDao.shopDetails(id))
+        }.start()
+    }
     fun getItems(callback: (List<Item>) -> Unit) {
         Thread {
             callback(storeDao.items())
-        }.start()
-    }
-    fun getItems(id: String, callback: (List<Item>) -> Unit) {
-        Thread {
-            callback(storeDao.items(id))
         }.start()
     }
     fun getShops(callback: (List<Shop>) -> Unit) {
@@ -229,6 +236,11 @@ interface StoreDao {
     fun shops(): List<Shop>
     @Query("SELECT * FROM shops WHERE id IN (SELECT shop from shop_items where item = :id) ORDER BY title")
     fun shops(id: String): List<Shop>
+
+    @Query("SELECT * FROM items WHERE id = :id LIMIT 1")
+    fun itemDetails(id: String): Item?
+    @Query("SELECT * FROM shops WHERE id = :id LIMIT 1")
+    fun shopDetails(id: String): Shop?
 }
 
 

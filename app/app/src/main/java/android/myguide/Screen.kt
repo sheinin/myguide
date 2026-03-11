@@ -12,27 +12,15 @@ class Screen(
     override val ident: Boolean
 ) : Toolbar.ScreenTools {
     private val bind = vm.screen[ident]!!
-    private fun getSettings(): Settings {
-        val s = Settings().apply {
-            display = this.display
-            sort = mutableMapOf(
-                true to Settings.Sort.DISTANCE,
-                false to Settings.Sort.DISTANCE
-            )
-        }
-        return s
-    }
     val render = Render(
         activity = activity,
-        screen = this,
-        getSettings = ::getSettings
+        screen = this
     )
     private var id: String? = null
     var queryType: QueryType? = null
     override fun build(
         id: String?,
-        display: Settings.Display,
-        details: Details?,
+        display: ViewModel.Screen.Display,
         queryType: QueryType,
     ) {
         this.id = id
@@ -45,17 +33,37 @@ class Screen(
             + " position:" + vm.toolbar.items.last().position
         )
         when (queryType) {
-            ITEM -> {
-
-            }
-            SHOP -> {
-            }
+            ITEM ->
+                vm.fetchItemDetails(id!!) {
+                    bind.description.postValue(it.description)
+                    bind.details.postValue(
+                        Details(
+                            id = it.id,
+                            title = it.title!!,
+                            origin = it.origin,
+                            drawable = it.drawable,
+                            level = 0
+                        )
+                    )
+                }
+            SHOP ->
+                vm.fetchShopDetails(id!!) {
+                    bind.description.postValue(it.description)
+                    bind.details.postValue(
+                        Details(
+                            id = it.id,
+                            title = it.title,
+                            origin = it.origin,
+                            drawable = it.drawable,
+                            level = 0
+                        )
+                    )
+                }
             else -> {
-
+                bind.description.value = null
+                bind.details.value = null
             }
         }
-        bind.description.value = "kjhk adsf asfd asdf asdf asdf asdf"
-        bind.details.value = details
         bind.cycler.isMap.value = display.isMap
         bind.display.value = display
         bind.position.value = 0.dp
@@ -103,29 +111,6 @@ class Screen(
         render.listen(true)
     }
 
-}
-
-
-
-class Settings {
-    enum class Display {
-        D3,
-        LIST,
-        MAP;
-        val isMap: Boolean
-            get() = this == MAP
-    }
-    enum class Sort {
-        DATE,
-        DISTANCE,
-        NAME,
-        SIZE;
-    }
-    var display = Display.LIST
-    var sort = mutableMapOf(
-        true to Sort.DATE,
-        false to Sort.DISTANCE
-    )
 }
 
 enum class QueryType {
