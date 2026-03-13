@@ -46,8 +46,5 @@ fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
 
 class Measures(
     val itemHeight: Dp,
-//    val descriptionWidth: Dp,
-//    val nodePadding: Dp,
-    val lineHeight: Dp,
     val padding: Dp
 )

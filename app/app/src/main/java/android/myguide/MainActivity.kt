@@ -1,7 +1,9 @@
 package android.myguide
 
 import android.R.attr.lineHeight
+import android.R.id.toggle
 import android.app.ProgressDialog.show
+import android.myguide.ViewModel.Screen.Display.MAP
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
 import android.myguide.views.Splash
@@ -22,6 +24,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,17 +45,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.constraintlayout.compose.Dimension.Companion.ratio
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -124,16 +140,50 @@ class MainActivity : ComponentActivity() {
             fontFamilyResolver = LocalFontFamilyResolver.current
             fontScale =  resources.configuration.fontScale
             typography = MaterialTheme.typography
+            Column(
+                Modifier
+                    .onGloballyPositioned { coordinates ->
+                        measures = Measures(
+                            itemHeight = coordinates.size.height.toDp(),
+                            padding = 8.dp
+                        )
+                        // Convert the measured height from pixels (Int) to Dp
+                        qqq("START f:$fontScale itemHeight:${coordinates.size.height.toDp()}")
+                    }
+            ) {
+                Text(
+                    "1",
+                    style = typography.bodyLarge,
+                    fontSize = typography.bodyLarge.fontSize,
+                    lineHeight = 1.em * fontScale,
+                )
+                Text(
+                    "1",
+                    style = typography.bodyMedium,
+                    fontSize = typography.bodyMedium.fontSize,
+                    lineHeight = 1.em * fontScale,
+                )
+                Text(
+                    buildAnnotatedString {
+                        withStyle(
+                            style = SpanStyle(
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append("1\n1") }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    style = typography.bodySmall
+                )
+            }
             val h =
-                getLineHeightDp(typography.bodyLarge.lineHeight) +
-                    getLineHeightDp(typography.bodyMedium.lineHeight) +
-                    getLineHeightDp(typography.bodySmall.lineHeight) * 2
+                getLineHeightDp(typography.bodyLarge.fontSize) +
+                    getLineHeightDp(typography.bodyMedium.fontSize) +
+                    getLineHeightDp(typography.bodySmall.fontSize) * 2
             qqq("START f:$fontScale itemHeight:$h w:$screenWidth h:$screenHeight}")
-            measures = Measures(
-                itemHeight = h,
-                lineHeight = getLineHeightDp(typography.bodySmall.lineHeight),
-                padding = 8.dp
-            )
+
             MyGuideTheme {
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

@@ -1,17 +1,20 @@
 package android.myguide.views
 
-import android.R.attr.mode
-import android.R.attr.track
+
 import android.myguide.R
 import android.myguide.colorScheme
+import android.myguide.getLineHeightDp
 import android.myguide.typography
 import android.myguide.vm
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -23,10 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.Dimension.Companion.ratio
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +75,7 @@ fun Toolbar() {
                 )
                 .padding(6.dp)
         )
+        Spacer(Modifier.width(8.dp))
         Text(
             "%.2f".format(
                 when (mode.value) {
@@ -80,7 +84,8 @@ fun Toolbar() {
                     null -> vm.ratio.value!!
                 }
             ),
-            style = typography.labelSmall
+            style = typography.labelSmall,
+            modifier = Modifier.width(36.dp)
         )
         Image(
             painter = painterResource(R.drawable.remove),
@@ -99,6 +104,7 @@ fun Toolbar() {
                     }
                 )
         )
+        Spacer(Modifier.width(8.dp))
         Slider(
             value =
                 when (mode.value) {
@@ -107,6 +113,7 @@ fun Toolbar() {
                     else -> ratio!!
                 },
             onValueChange = {
+                vm.adjust.value = false
                 when (mode.value) {
                     false -> vm.ratioH.value = it
                     true -> vm.ratioV.value = it
@@ -130,6 +137,7 @@ fun Toolbar() {
                 )
             }
         )
+        Spacer(Modifier.width(8.dp))
         Image(
             painter = painterResource(R.drawable.add),
             "plus",

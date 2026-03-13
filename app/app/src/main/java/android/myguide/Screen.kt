@@ -5,6 +5,7 @@ import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.MutableLiveData
 
 
 class Screen(
@@ -12,11 +13,12 @@ class Screen(
     override val ident: Boolean
 ) : Toolbar.ScreenTools {
     private val bind = vm.screen[ident]!!
+    private var id: String? = null
     val render = Render(
         activity = activity,
         screen = this
     )
-    private var id: String? = null
+    val stateY = MutableLiveData(0)
     var queryType: QueryType? = null
     override fun build(
         id: String?,
@@ -101,7 +103,6 @@ class Screen(
             else -> {}
         }
     }
-
     override fun reset() {
         render.listen(false)
     }
@@ -110,7 +111,6 @@ class Screen(
         bind.position.postValue(vm.toolbar.items.last().position)
         render.listen(true)
     }
-
 }
 
 enum class QueryType {

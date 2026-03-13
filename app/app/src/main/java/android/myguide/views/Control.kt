@@ -41,7 +41,6 @@ fun Control(screen: Screen) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(0.dp)
-            .background(colorScheme.background.copy(alpha = .75f))
             .padding(8.dp)
     ) {
         Text(
@@ -58,7 +57,7 @@ fun Control(screen: Screen) {
                     when (filter) {
                         false -> R.drawable.east
                         true -> R.drawable.west
-                        null -> R.drawable.compass
+                        null -> R.drawable.filter
                     }
                 ),
                 contentDescription = "filter",
@@ -95,7 +94,7 @@ fun Control(screen: Screen) {
             Image(
                 painter = painterResource(
                     when (display!!) {
-                        LIST -> R.drawable.list
+                        LIST -> R.drawable.view_list
                         MAP -> R.drawable.map
                         D3 -> R.drawable.grid
                     }
