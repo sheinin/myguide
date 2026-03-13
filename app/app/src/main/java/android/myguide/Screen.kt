@@ -4,41 +4,65 @@ import android.myguide.QueryType.ITEM
 import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
+import android.myguide.ViewModel.Cycler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 
 class Screen(
     val activity: MainActivity,
     override val ident: Boolean
 ) : Toolbar.ScreenTools {
-    private val bind = vm.screen[ident]!!
+    class VM {
+        enum class Display {
+            D3,
+            LIST,
+            MAP;
+            val isMap: Boolean
+                get() = this == MAP
+        }
+        val display = MutableLiveData(Display.LIST)
+        val cycler = Cycler()
+        val filter = MutableLiveData<Boolean?>(null)
+        val position = MutableLiveData(0.dp)
+        val sort = MutableLiveData(false)
+        val stateY = MutableLiveData(0)
+        val w = MutableLiveData(0.dp)
+        val h = MutableLiveData(0.dp)
+        val description = MutableLiveData<String>()
+        val details = MutableLiveData<Details>()
+        private val _measures = MutableStateFlow<List<Pair<Int, String?>>>(emptyList())
+        fun clear() { _measures.update { emptyList() } }
+    }
+    val vm = VM()
     private var id: String? = null
-    val render = Render(
-        activity = activity,
-        screen = this
-    )
-    val stateY = MutableLiveData(0)
+    val render =
+        Render(
+            ident = ident,
+            vm = vm
+        )
     var queryType: QueryType? = null
     override fun build(
         id: String?,
-        display: ViewModel.Screen.Display,
+        display: VM.Display,
         queryType: QueryType,
     ) {
         this.id = id
         this.queryType = queryType
         qqq(
             "SCREEN BUILD query:" + queryType
-                    + " ident:" +ident+vm.toolbar.items.last().ident
+                    + " ident:" +ident+vmm.toolbar.items.last().ident
                     + " id:" + id
                     + " display:" + display
-            + " position:" + vm.toolbar.items.last().position
+            + " position:" + vmm.toolbar.items.last().position
         )
         when (queryType) {
             ITEM ->
-                vm.fetchItemDetails(id!!) {
-                    bind.description.postValue(it.description)
-                    bind.details.postValue(
+                vmm.fetchItemDetails(id!!) {
+                    vm.description.postValue(it.description)
+                    vm.details.postValue(
                         Details(
                             id = it.id,
                             title = it.title!!,
@@ -49,9 +73,9 @@ class Screen(
                     )
                 }
             SHOP ->
-                vm.fetchShopDetails(id!!) {
-                    bind.description.postValue(it.description)
-                    bind.details.postValue(
+                vmm.fetchShopDetails(id!!) {
+                    vm.description.postValue(it.description)
+                    vm.details.postValue(
                         Details(
                             id = it.id,
                             title = it.title,
@@ -62,14 +86,14 @@ class Screen(
                     )
                 }
             else -> {
-                bind.description.value = null
-                bind.details.value = null
+                vm.description.value = null
+                vm.details.value = null
             }
         }
-        bind.cycler.isMap.value = display.isMap
-        bind.display.value = display
-        bind.position.value = 0.dp
-        bind.clear()
+        vm.cycler.isMap.value = display.isMap
+        vm.display.value = display
+        vm.position.value = 0.dp
+        vm.clear()
         render.reset()
     }
     override fun query() {
@@ -94,12 +118,12 @@ class Screen(
             render.load(l)
         }
         render.reset()
-        bind.cycler.reset()
+        vm.cycler.reset()
         when (queryType) {
-            ITEM -> vm.fetchShops(id!!, ::callback)
-            ITEMS -> vm.fetchTree(::callback)
-            SHOP -> vm.fetchTree(id!!, ::callback)
-            SHOPS -> vm.fetchShops(::callback)
+            ITEM -> vmm.fetchShops(id!!, ::callback)
+            ITEMS -> vmm.fetchTree(::callback)
+            SHOP -> vmm.fetchTree(id!!, ::callback)
+            SHOPS -> vmm.fetchShops(::callback)
             else -> {}
         }
     }
@@ -107,8 +131,8 @@ class Screen(
         render.listen(false)
     }
     override fun update() {
-        qqq("UPDATE SCREEN " + ident + " " + vm.toolbar.items.last().position)
-        bind.position.postValue(vm.toolbar.items.last().position)
+        qqq("UPDATE SCREEN " + ident + " " + vmm.toolbar.items.last().position)
+        vm.position.postValue(vmm.toolbar.items.last().position)
         render.listen(true)
     }
 }

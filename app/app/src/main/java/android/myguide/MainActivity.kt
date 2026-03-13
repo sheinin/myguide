@@ -1,11 +1,9 @@
 package android.myguide
 
-import android.R.attr.lineHeight
-import android.R.id.toggle
-import android.app.ProgressDialog.show
-import android.myguide.ViewModel.Screen.Display.MAP
+
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
+import android.myguide.views.MyDialog
 import android.myguide.views.Splash
 import android.myguide.views.Toolbar
 import android.os.Bundle
@@ -16,63 +14,28 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
-import androidx.constraintlayout.compose.Dimension.Companion.ratio
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.delay
 import kotlin.properties.Delegates
 
 const val batch = 21
@@ -82,7 +45,7 @@ lateinit var colorScheme: ColorScheme
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
-lateinit var vm: ViewModel
+lateinit var vmm: ViewModel
 lateinit var typography: Typography
 var fontScale by Delegates.notNull<Float>()
 
@@ -94,12 +57,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
-        vm = ViewModel(repository)
-        vm.toolbar.init(this)
-        vm.updateItemList { list ->
+        vmm = ViewModel(repository)
+        vmm.toolbar.init(this)
+        vmm.updateItemList { list ->
             list.filter { it.pic != null }
                 .map {
-                    vm.updateItem(
+                    vmm.updateItem(
                         this.resources.getIdentifier(
                             it.pic,
                             "drawable",
@@ -109,9 +72,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
         }
-        vm.updateShopList { list ->
+        vmm.updateShopList { list ->
             list.map {
-                    vm.updateShop(
+                    vmm.updateShop(
                         this.resources.getIdentifier(
                             it.id,
                             "drawable",
@@ -134,7 +97,7 @@ class MainActivity : ComponentActivity() {
                     )
         )
         setContent {
-            BackHandler(enabled = true) { vm.toolbar.back() }
+            BackHandler(enabled = true) { vmm.toolbar.back() }
             GetScreenSize()
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
@@ -187,19 +150,18 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (vm.showSplash.observeAsState().value!!)
+                    if (vmm.showSplash.observeAsState().value!!)
                         Splash(Modifier.padding(innerPadding))
                     else {
                         Column(Modifier.fillMaxSize().padding(innerPadding)) {
                             Toolbar()
-                            val ident = vm.current.observeAsState()
+                            val ident = vmm.current.observeAsState()
                             AnimatedVisibility(
                                 visible = ident.value == false,
                                 enter = EnterTransition.None,
                                 exit = ExitTransition.None
                             ) {
                                 Main(
-                                    ident = false,
                                     screen = screen[false]!!
                                 )
                             }
@@ -209,11 +171,12 @@ class MainActivity : ComponentActivity() {
                                 exit = ExitTransition.None
                             ) {
                                 Main(
-                                    ident = true,
                                     screen = screen[true]!!
                                 )
                             }
                         }
+                        val dialog by vmm.dialog.observeAsState()
+                        if (dialog == true) MyDialog()
                     }
                 }
             }

@@ -1,5 +1,4 @@
 package android.myguide
-
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -97,7 +96,7 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             }
         }
     }
-
+/*
     class Screen {
         enum class Display {
             D3,
@@ -119,13 +118,19 @@ class ViewModel(private val repository: Repository) : ViewModel() {
         private val _measures = MutableStateFlow<List<Pair<Int, String?>>>(emptyList())
         fun clear() { _measures.update { emptyList() } }
     }
-    val adjust = MutableLiveData(false)
+
+ */
+    val adjust = mapOf(
+        false to MutableLiveData(false),
+        true to MutableLiveData(false)
+    )
     val current = MutableLiveData<Boolean?>(null)
+    val dialog = MutableLiveData(false)
     val mapShowing = MutableLiveData(true)
     val ratio = MutableLiveData(1f)
     val ratioH = MutableLiveData<Float?>(null)
     val ratioV = MutableLiveData<Float?>(null)
-    val screen = mapOf(false to Screen(), true to Screen())
+    //val screen = mapOf(false to Screen(), true to Screen())
     val showSplash = MutableLiveData(true)
     val toolbar = Toolbar()
     fun fetchItemDetails(id: String, callback: (Item) -> Unit) {

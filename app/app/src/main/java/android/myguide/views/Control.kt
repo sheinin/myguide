@@ -3,14 +3,10 @@ package android.myguide.views
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
-import android.myguide.ViewModel.Screen.Display.D3
-import android.myguide.ViewModel.Screen.Display.LIST
-import android.myguide.ViewModel.Screen.Display.MAP
+import android.myguide.Screen.VM.Display.*
 import android.myguide.colorScheme
 import android.myguide.typography
-import android.myguide.vm
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
@@ -33,9 +28,9 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun Control(screen: Screen) {
-    val display by vm.screen[screen.ident]!!.display.observeAsState()
-    val filter by vm.screen[screen.ident]!!.filter.observeAsState()
-    val sort by vm.screen[screen.ident]!!.sort.observeAsState()
+    val display by screen.vm.display.observeAsState()
+    val filter by screen.vm.filter.observeAsState()
+    val sort by screen.vm.sort.observeAsState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -65,8 +60,8 @@ fun Control(screen: Screen) {
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            vm.screen[screen.ident]!!.filter.value =
-                                when (vm.screen[screen.ident]!!.filter.value) {
+                            screen.vm.filter.value =
+                                when (screen.vm.filter.value) {
                                     false -> true
                                     true -> null
                                     null -> false
@@ -84,8 +79,8 @@ fun Control(screen: Screen) {
                     .scale(scaleX = 1f, scaleY = if (sort == true) -1f else 1f)
                     .clickable(
                         onClick = {
-                            vm.screen[screen.ident]!!.sort.value =
-                                !vm.screen[screen.ident]!!.sort.value!!
+                            screen.vm.sort.value =
+                                !screen.vm.sort.value!!
                         }
                     )
                     .padding(6.dp)
@@ -104,8 +99,8 @@ fun Control(screen: Screen) {
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            vm.screen[screen.ident]!!.display.value =
-                                when (vm.screen[screen.ident]!!.display.value!!) {
+                            screen.vm.display.value =
+                                when (screen.vm.display.value!!) {
                                     LIST -> MAP
                                     MAP -> D3
                                     D3 -> LIST

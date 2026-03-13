@@ -1,8 +1,7 @@
 package android.myguide
 
 import android.myguide.QueryType.*
-import android.myguide.ViewModel.Screen.*
-import android.myguide.ViewModel.Screen.Display.*
+import android.myguide.Screen.VM.Display.*
 import android.view.View
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -12,7 +11,7 @@ class Toolbar {
     interface ScreenTools {
         fun build(
             id: String? = null,
-            display: Display = LIST,
+            display: Screen.VM.Display = LIST,
             queryType: QueryType = SHOPS,
         )
         fun query()
@@ -25,7 +24,7 @@ class Toolbar {
         val queryType: QueryType,
         val title: String,
         var ident: Boolean,
-        var display: Display,
+        var display: Screen.VM.Display,
         var position: Dp
     )
     private lateinit var activity: MainActivity
@@ -40,7 +39,7 @@ class Toolbar {
        crumbs[false]!!.value = List(3) { "" }
        crumbs[true]!!.value = List(3) { "" }
        items.clear()
-       vm.showSplash.value = true
+       vmm.showSplash.value = true
     }
     fun back(vi: View? = null) {
         val i = items.lastIndex.dec()
@@ -54,7 +53,7 @@ class Toolbar {
     fun click(ix: Int) {
         when (ix) {
             -1 -> splash()
-            1 if items.size > 4 -> vm.screen[tracker]!!.dialog.postValue(true)
+            1 if items.size > 4 -> vmm.dialog.postValue(true)
             2 if items.size > 4 -> goto(items.lastIndex.dec())
             else -> goto(ix)
         }
@@ -66,7 +65,7 @@ class Toolbar {
             else screen[items.last().ident]
     fun navigate(
         id: String? = null,
-        display: Display = LIST,
+        display: Screen.VM.Display = LIST,
         queryType: QueryType = SHOPS,
         title: String
     ) {
@@ -97,7 +96,7 @@ class Toolbar {
             )
         cached = true
         items.add(item)
-        vm.current.value = next!!.ident
+        vmm.current.value = next!!.ident
         next!!.build(
             id = id,
             display = display,
@@ -121,9 +120,9 @@ class Toolbar {
         items.subList(ix.inc(), items.size).clear()
         tracker = !tracker
         items.last().ident = next.ident
-        vm.current.value = next.ident
+        vmm.current.value = next.ident
         current.reset()
-        if (item.display.isMap) vm.mapShowing.value = true
+        if (item.display.isMap) vmm.mapShowing.value = true
         if (cached) {
             cached = false
             next.update()

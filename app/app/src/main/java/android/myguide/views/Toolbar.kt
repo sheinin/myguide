@@ -3,11 +3,10 @@ package android.myguide.views
 
 import android.myguide.R
 import android.myguide.colorScheme
-import android.myguide.getLineHeightDp
+import android.myguide.fontScale
 import android.myguide.typography
-import android.myguide.vm
+import android.myguide.vmm
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -39,27 +37,26 @@ fun Toolbar() {
         modifier = Modifier.padding(8.dp)
     ) {
         val mode = remember { mutableStateOf<Boolean?>(null) }
-        val ratio by vm.ratio.observeAsState()
-        val ratioH by vm.ratioH.observeAsState()
-        val ratioV by vm.ratioV.observeAsState()
+        val ratio by vmm.ratio.observeAsState()
+        val ratioH by vmm.ratioH.observeAsState()
+        val ratioV by vmm.ratioV.observeAsState()
         Image(
             painter = painterResource(
                 when (mode.value) {
-                    false -> R.drawable.horizontal
-                    true -> R.drawable.vertical
-                    null -> R.drawable.zoom
+                    false -> R.drawable._horizontal
+                    true -> R.drawable._vertical
+                    null -> R.drawable._hv
                 }
             ),
             "mode switch",
             colorFilter = ColorFilter.tint(colorScheme.primary),
             modifier = Modifier
                 .size(36.dp)
-                .padding(end = 8.dp)
                 .clickable(
                     onClick = {
                         if (mode.value == null) {
-                            vm.ratioH.value = vm.ratio.value
-                            vm.ratioV.value = vm.ratio.value
+                            vmm.ratioH.value = vmm.ratio.value
+                            vmm.ratioV.value = vmm.ratio.value
                         }
                         mode.value = when (mode.value) {
                             false -> true
@@ -67,9 +64,9 @@ fun Toolbar() {
                             null -> false
                         }
                         if (mode.value == null) {
-                            vm.ratio.value = 1f
-                            vm.ratioH.value = null
-                            vm.ratioV.value = null
+                            vmm.ratio.value = 1f
+                            vmm.ratioH.value = null
+                            vmm.ratioV.value = null
                         }
                     }
                 )
@@ -79,13 +76,13 @@ fun Toolbar() {
         Text(
             "%.2f".format(
                 when (mode.value) {
-                    false -> vm.ratioH.value ?: ""
-                    true -> vm.ratioV.value ?: ""
-                    null -> vm.ratio.value!!
+                    false -> vmm.ratioH.value ?: ""
+                    true -> vmm.ratioV.value ?: ""
+                    null -> vmm.ratio.value!!
                 }
             ),
             style = typography.labelSmall,
-            modifier = Modifier.width(36.dp)
+            modifier = Modifier.width(32.dp * fontScale)
         )
         Image(
             painter = painterResource(R.drawable.remove),
@@ -97,9 +94,9 @@ fun Toolbar() {
                 .clickable(
                     onClick = {
                         when (mode.value) {
-                            false -> vm.ratioH.value = vm.ratioH.value!! - .01f
-                            true -> vm.ratioV.value = vm.ratioH.value!! - .01f
-                            null -> vm.ratio.value = vm.ratio.value!! - .01f
+                            false -> vmm.ratioH.value = vmm.ratioH.value!! - .01f
+                            true -> vmm.ratioV.value = vmm.ratioH.value!! - .01f
+                            null -> vmm.ratio.value = vmm.ratio.value!! - .01f
                         }
                     }
                 )
@@ -113,14 +110,14 @@ fun Toolbar() {
                     else -> ratio!!
                 },
             onValueChange = {
-                vm.adjust.value = false
+                vmm.adjust[vmm.toolbar.last!!.ident]!!.value = false
                 when (mode.value) {
-                    false -> vm.ratioH.value = it
-                    true -> vm.ratioV.value = it
-                    null -> vm.ratio.value = it
+                    false -> vmm.ratioH.value = it
+                    true -> vmm.ratioV.value = it
+                    null -> vmm.ratio.value = it
                 }
             },
-            onValueChangeFinished = { vm.adjust.value = true },
+            onValueChangeFinished = { vmm.adjust[vmm.toolbar.last!!.ident]!!.value = true },
             valueRange = 0.5f..2.5f,
             modifier = Modifier
                 .weight(1f)
@@ -148,9 +145,9 @@ fun Toolbar() {
                 .clickable(
                     onClick = {
                         when (mode.value) {
-                            false -> vm.ratioH.value = vm.ratioH.value!! + .01f
-                            true -> vm.ratioV.value = vm.ratioH.value!! + .01f
-                            null -> vm.ratio.value = vm.ratio.value!! + .01f
+                            false -> vmm.ratioH.value = vmm.ratioH.value!! + .01f
+                            true -> vmm.ratioV.value = vmm.ratioH.value!! + .01f
+                            null -> vmm.ratio.value = vmm.ratio.value!! + .01f
                         }
                     }
                 )

@@ -4,7 +4,7 @@ import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.screenWidth
 import android.myguide.typography
-import android.myguide.vm
+import android.myguide.vmm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,8 +35,8 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                        vm.showSplash.value = false
-                        vm.toolbar.navigate(
+                        vmm.showSplash.value = false
+                        vmm.toolbar.navigate(
                             queryType = QueryType.SHOPS,
                             title = "All Shops"
                         )
@@ -57,8 +57,8 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                        vm.showSplash.value = false
-                        vm.toolbar.navigate(
+                        vmm.showSplash.value = false
+                        vmm.toolbar.navigate(
                             queryType = QueryType.ITEMS,
                             title = "All Items"
                         )

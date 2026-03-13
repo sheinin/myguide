@@ -1,8 +1,7 @@
 package android.myguide.views
 
 import android.myguide.Screen
-import android.myguide.ViewModel.Screen.Display.LIST
-import android.myguide.ViewModel.Screen.Display.MAP
+import android.myguide.Screen.VM.Display.*
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
@@ -11,7 +10,7 @@ import android.myguide.measures
 import android.myguide.toDp
 import android.myguide.toPx
 import android.myguide.typography
-import android.myguide.vm
+import android.myguide.vmm
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,7 +55,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -64,22 +62,20 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.rememberCameraPositionState
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Main(
-    ident: Boolean,
     screen: Screen
 ) {
-    val bind = vm.screen[ident]!!
-    val dialog by vm.screen[screen.ident]!!.dialog.observeAsState()
-    val display by vm.screen[screen.ident]!!.display.observeAsState()
-    val stateY by screen.stateY.observeAsState()
+
+    val bind = screen.vm
+    val display by bind.display.observeAsState()
+    val stateY by bind.stateY.observeAsState()
     Box(
         Modifier
             .fillMaxSize()
             .onPlaced {
-                vm.toolbar.pending()
+                vmm.toolbar.pending()
             }
     ) {
         val singapore = LatLng(1.35, 103.86)
@@ -114,20 +110,20 @@ fun Main(
                         height = Dimension.wrapContent
                     }
             ) {
-                if (vm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
+                if (vmm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
                     Row(Modifier.padding(8.dp, 4.dp)) {
                         repeat(3) {
                             ArrowText(
-                                vm.toolbar.crumbs[screen.ident]!!.value!![it],
+                                vmm.toolbar.crumbs[screen.ident]!!.value!![it],
                                 modifier = Modifier
                                     .weight(1f)
                                     .alpha(
-                                        if (vm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
+                                        if (vmm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
                                         else 0f
                                     )
                                     .clickable(
                                         onClick = {
-                                            vm.toolbar.click(it)
+                                            vmm.toolbar.click(it)
                                         }
                                     )
                             )
@@ -137,12 +133,16 @@ fun Main(
             }
             val scrollStateY = rememberScrollState()
             val view = LocalView.current
-            LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
+            LaunchedEffect(bind.position.value) {
                 if (display != MAP)
                     scrollStateY.scrollTo(
-                        vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
+                        bind.position.value!!.toPx().toInt()
                     )
             }
+            LaunchedEffect(stateY) {
+                scrollStateY.animateScrollTo(stateY!!)
+            }
+
             DisposableEffect(view, display) {
                 if (display == MAP) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
@@ -181,9 +181,9 @@ fun Main(
                     }
             ) {
                 val description by bind.description.observeAsState()
-                val ratio by vm.ratio.observeAsState()
-                val ratioH by vm.ratioH.observeAsState()
-                val ratioV by vm.ratioV.observeAsState()
+                val ratio by vmm.ratio.observeAsState()
+                val ratioH by vmm.ratioH.observeAsState()
+                val ratioV by vmm.ratioV.observeAsState()
                 val viewItem by bind.details.observeAsState()
                 if (display != MAP && viewItem != null)
                     Column(modifier = Modifier.padding(8.dp)) {
@@ -236,10 +236,10 @@ fun Main(
                     Control(screen)
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
-                LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
+                LaunchedEffect(bind.position.value) {
                     if (display == MAP)
                         scrollStateX.scrollTo(
-                            vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
+                            bind.position.value!!.toPx().toInt()
                         )
                 }
                 DisposableEffect(view, display) {
@@ -265,20 +265,20 @@ fun Main(
                 ) {
                     val h = bind.h.observeAsState()
                     val w = bind.w.observeAsState()
-                    val details by vm.screen[screen.ident]!!.cycler.details.collectAsStateWithLifecycle()
-                    val display by vm.screen[screen.ident]!!.display.observeAsState()
-                    val expand by vm.screen[screen.ident]!!.cycler.description.collectAsStateWithLifecycle()
-                    val toggle by vm.screen[screen.ident]!!.cycler.toggle.collectAsStateWithLifecycle()
-                    val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
+                    val details by bind.cycler.details.collectAsStateWithLifecycle()
+                    val display by bind.display.observeAsState()
+                    val expand by bind.cycler.description.collectAsStateWithLifecycle()
+                    val toggle by bind.cycler.toggle.collectAsStateWithLifecycle()
+                    val xy by bind.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
                             .size(w.value!!, h.value!!)// * (ratioV ?: ratio!!))
                     ) {
                         fun callback(index: Int) {
-                            vm.toolbar.items.last().position =
+                            vmm.toolbar.items.last().position =
                                 if (display == MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
-                            vm.toolbar.navigate(
+                            vmm.toolbar.navigate(
                                 id = details[index].id,
                                 title = details[index].title,
                                 queryType = screen.queryType!!.next
@@ -301,7 +301,7 @@ fun Main(
 
             }
         }
-        if (dialog == true) MyDialog(screen)
+
     }
 }
 
@@ -341,9 +341,9 @@ fun ArrowText(
 
 
 @Composable
-fun MyDialog(screen: Screen) {
+fun MyDialog() {
     Dialog(
-        onDismissRequest = { vm.screen[screen.ident]!!.dialog.postValue(false) },
+        onDismissRequest = { vmm.dialog.postValue(false) },
         properties = DialogProperties(
             usePlatformDefaultWidth = false
         )
@@ -353,7 +353,7 @@ fun MyDialog(screen: Screen) {
             modifier = Modifier
                 .fillMaxSize()
                 .clickable(
-                    onClick = { vm.screen[screen.ident]!!.dialog.value = false }
+                    onClick = { vmm.dialog.value = false }
                 )
                 .padding(top = 86.dp, start = 8.dp, end = 8.dp), // Adjust top padding as needed
             contentAlignment = Alignment.TopCenter // Aligns content to the top center
@@ -367,15 +367,15 @@ fun MyDialog(screen: Screen) {
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    val list = vm.toolbar.items.subList(1, vm.toolbar.items.lastIndex.dec())
+                    val list = vmm.toolbar.items.subList(1, vmm.toolbar.items.lastIndex.dec())
                     items(list.size) {
                         Text(
                             text = list[it].title,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    vm.toolbar.goto(it.inc())
-                                    vm.screen[screen.ident]!!.dialog.value = false
+                                    vmm.toolbar.goto(it.inc())
+                                    vmm.dialog.value = false
                                 }
                                 .padding(16.dp)
                         )
