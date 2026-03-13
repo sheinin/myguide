@@ -57,7 +57,7 @@ fun ViewItem(
     Row(
        // verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .offset(xy.x, xy.y * (ratioV ?: ratio!!))
+            .offset(xy.x, xy.y)// * (ratioV ?: ratio!!))
             .size(xy.w, xy.h * (ratioV ?: ratio!!))
             .then(
                 if (details.origin == null) Modifier

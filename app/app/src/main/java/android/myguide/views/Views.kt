@@ -252,7 +252,7 @@ fun Main(
                 val view = LocalView.current
                 LaunchedEffect(vm.screen[screen.ident]!!.position.value) {
                     if (display == MAP)
-                        scrollStateX.animateScrollTo(
+                        scrollStateX.scrollTo(
                             vm.screen[screen.ident]!!.position.value!!.toPx().toInt()
                         )
                 }
@@ -286,7 +286,7 @@ fun Main(
                     val xy by vm.screen[screen.ident]!!.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
-                            .size(w.value!!, h.value!! * (ratioV ?: ratio!!))
+                            .size(w.value!!, h.value!!)// * (ratioV ?: ratio!!))
                     ) {
                         fun callback(index: Int) {
                             vm.toolbar.items.last().position =
