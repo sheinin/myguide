@@ -12,6 +12,8 @@ class VM {
         val isMap: Boolean
             get() = this == MAP
     }
+    fun ratioH(): Float = ratioV.value ?: ratio.value!!
+    fun ratioV(): Float = ratioV.value ?: ratio.value!!
     val adjust = MutableLiveData(false)
     val display = MutableLiveData(Display.LIST)
     val cycler = Cycler()

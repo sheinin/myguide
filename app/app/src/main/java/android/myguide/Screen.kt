@@ -67,6 +67,7 @@ class Screen(
         this@Screen.lock = false
         //vm.cycler.isMap.value = display.isMap
         vm.display.value = display
+        vm.h.value = screenHeight
         vm.stateY.value = 0
         render.reset()
     }

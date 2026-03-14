@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
@@ -34,6 +35,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -46,29 +48,15 @@ fun ViewItem(
     details: Details,
     display: VM.Display?,
     expand: AnnotatedString?,
-    ratio: Float?,
-    ratioH: Float?,
-    ratioV: Float?,
+    ratioH: Float,
+    ratioV: Float,
     toggle: Boolean?,
     xy: Cycler.XY,
     callback: (Int) -> Unit
 ) {
     if (details.title.isEmpty() || xy == Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
-    Row(
-        modifier = Modifier
-            .offset(xy.x, xy.y)
-            .size(xy.w, xy.h * (ratioV ?: ratio!!))
-            .background(color = colorScheme.surfaceContainer)
-            .padding(
-                start = measures.padding * (ratioH ?: ratio!!)
-                        + measures.padding.times(2) * (ratioH ?: ratio!!) * details.level,
-                end = measures.padding * (ratioH ?: ratio!!)
-            )
-            .then(
-                if (details.origin == null) Modifier
-                else Modifier.clickable(onClick = { callback(index) })
-            )
-    ) {
+    @Composable
+    fun Content() {
         if (display != MAP && details.drawable != null)
             Image(
                 painterResource(details.drawable),
@@ -76,23 +64,34 @@ fun ViewItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(
-                        width = measures.itemHeight * (ratioH ?: ratio!!),
-                        height = measures.itemHeight * (ratioV ?: ratio!!)
+                        width = measures.itemHeight * ratioH,
+                        height = measures.itemHeight * ratioV
                     )
             )
         Column(
+            horizontalAlignment =
+                if (display == D3) Alignment.CenterHorizontally
+                else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp * (ratioH ?: ratio!!)),
+                .padding(horizontal = 8.dp * ratioH),
             verticalArrangement = Arrangement.Center
         ) {
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     details.title,
+                    textAlign = if (display == D3) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
+                    fontSize = typography.bodyLarge.fontSize * ratioV,
                     lineHeight = 1.em * fontScale,
-                    maxLines = if (display == MAP) 1 else Int.MAX_VALUE,
+                    maxLines =
+                        when (display!!) {
+                            D3 -> 2
+                            LIST -> Int.MAX_VALUE
+                            MAP -> 1
+                        },
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyLarge,
                 )
@@ -107,13 +106,13 @@ fun ViewItem(
                                 onClick = { screen.render.toggle(index) }
                             )
                             .padding(
-                                horizontal = 6.dp * (ratioH ?: ratio!!),
-                                vertical = 6.dp * (ratioV ?: ratio!!)
+                                horizontal = 6.dp * ratioH,
+                                vertical = 6.dp * ratioV
                             )
                             .rotate(if (toggle == true) 90f else -90f)
                             .size(
-                                36.dp * (ratioH ?: ratio!!),
-                                36.dp * (ratioV ?: ratio!!)
+                                36.dp * ratioH,
+                                36.dp * ratioV
                             )
                     )
                 }
@@ -122,14 +121,14 @@ fun ViewItem(
                 Text(
                     details.origin,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
+                    fontSize = typography.bodyMedium.fontSize * ratioV,
                     fontStyle = FontStyle.Italic,
                     lineHeight = 1.em * fontScale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
                 )
-            if (expand != null)
+            if (expand != null && display != D3)
                 Text(
                     expand,
                     maxLines =
@@ -142,4 +141,43 @@ fun ViewItem(
                 )
         }
     }
+    val modifier = Modifier
+        .offset(xy.x, xy.y)
+        .size(xy.w, xy.h * ratioV)
+        .then(
+            if (details.origin == null) Modifier
+            else Modifier.clickable(onClick = { callback(index) })
+        )
+    if (display != D3)
+        Row(
+            modifier
+                .padding(
+                    start = measures.padding * ratioH
+                            + measures.padding.times(2) * ratioH * details.level,
+                    end = measures.padding * ratioH
+                )
+                .background(color = colorScheme.surfaceContainer)
+        ) { Content() }
+    else// (display == D3)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
+                .padding(
+                    horizontal = measures.padding * ratioH,
+                    vertical = measures.padding * ratioV
+                )
+                .background(color = colorScheme.surfaceContainer)
+        ) { Content() }
+    /*else
+        Row(
+            modifier
+                .padding(
+                    start = measures.padding * ratioH
+                            + measures.padding.times(2) * ratioH * details.level,
+                    end = measures.padding * ratioH
+                )
+                .background(color = colorScheme.surfaceContainer)
+        ) { Content() }
+
+     */
 }

@@ -1,5 +1,9 @@
 package android.myguide.views
 
+import android.R.attr.bottom
+import android.R.attr.end
+import android.R.attr.height
+import android.R.attr.top
 import android.myguide.Screen
 import android.myguide.batch
 import android.myguide.colorScheme
@@ -13,18 +17,22 @@ import android.myguide.toDp
 import android.myguide.toPx
 import android.myguide.typography
 import android.myguide.vmm
+import android.util.Log.w
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -41,10 +49,16 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -87,29 +101,15 @@ fun Main(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
         )
-        ConstraintLayout(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            val (toolbar, scroll) = createRefs()
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(colorScheme.background)
-                    .constrainAs(toolbar) {
-                        if (display == MAP) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        } else {
-                            top.linkTo(parent.top)
-                            bottom.linkTo(scroll.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }
-                        height = Dimension.wrapContent
-                    }
             ) {
                 if (vmm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
                     Row(Modifier.padding(8.dp, 4.dp)) {
@@ -134,6 +134,9 @@ fun Main(
             }
             val scrollStateY = rememberScrollState()
             val view = LocalView.current
+            var viewItemHeight by remember { mutableIntStateOf(0) }
+            val h = bind.h.observeAsState()
+            val w = bind.w.observeAsState()
             LaunchedEffect(bind.position.value) {
                 if (display != MAP)
                     scrollStateY.scrollTo(stateY!!)
@@ -142,7 +145,7 @@ fun Main(
                 if (display == MAP) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     with(density) {
-                        screen.render.observe(scrollStateY.value.toDp())
+                        screen.render.observe((scrollStateY.value - viewItemHeight).toDp())
                     }
                 }
                 val vto = view.viewTreeObserver
@@ -152,28 +155,19 @@ fun Main(
                 }
             }
             Column(
+                verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollStateY)
-                    .background(
-                        if (display == MAP) Color.Transparent
-                        else colorScheme.surface
+                    .weight(1f)
+                    .then(
+                        if (display == MAP) Modifier
+                            .height(h.value!!)
+                            .background(Color.Transparent)
+                        else Modifier
+                            .fillMaxHeight()
+                            .background(colorScheme.surface)
                     )
-                    .constrainAs(scroll) {
-                        if (display == MAP) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            height = Dimension.wrapContent
-                        } else {
-                            bottom.linkTo(parent.bottom)
-                            top.linkTo(toolbar.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            height = Dimension.fillToConstraints
-                        }
-
-                    }
             ) {
                 val description by bind.description.observeAsState()
                 val ratio by screen.vm.ratio.observeAsState()
@@ -181,7 +175,15 @@ fun Main(
                 val ratioV by screen.vm.ratioV.observeAsState()
                 val viewItem by bind.details.observeAsState()
                 if (display != MAP && viewItem != null)
-                    Column(modifier = Modifier.padding(8.dp)) {
+                    Column(
+                        Modifier
+                            .padding(8.dp)
+                            .onGloballyPositioned(
+                                onGloballyPositioned = {
+                                    viewItemHeight = it.size.height
+                                }
+                            )
+                    ) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
@@ -237,7 +239,7 @@ fun Main(
                     //)
                 }
                 DisposableEffect(view, display) {
-                    if (display == LIST) return@DisposableEffect onDispose {}
+                    if (display != MAP) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
                         with(density) {
                             screen.render.observe(scrollStateX.value.toDp())
@@ -257,8 +259,6 @@ fun Main(
                             bottom = if (display?.isMap == true) measures.padding * 4 else 0.dp
                         )
                 ) {
-                    val h = bind.h.observeAsState()
-                    val w = bind.w.observeAsState()
                     val details by bind.cycler.details.collectAsStateWithLifecycle()
                     val display by bind.display.observeAsState()
                     val expand by bind.cycler.description.collectAsStateWithLifecycle()
@@ -287,9 +287,8 @@ fun Main(
                                 details = details[it],
                                 display = display,
                                 expand = expand[it],
-                                ratio = ratio,
-                                ratioH = ratioH,
-                                ratioV = ratioV,
+                                ratioH = ratioH ?: ratio!!,
+                                ratioV = ratioV ?: ratio!!,
                                 toggle = toggle[it],
                                 xy = xy[it],
                                 callback = ::callback
