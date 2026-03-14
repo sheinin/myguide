@@ -46,13 +46,13 @@ fun ViewItem(
     details: Details,
     display: VM.Display?,
     expand: AnnotatedString?,
+    ratio: Float?,
+    ratioH: Float?,
+    ratioV: Float?,
     toggle: Boolean?,
     xy: Cycler.XY,
     callback: (Int) -> Unit
 ) {
-    val ratio by vmm.ratio.observeAsState()
-    val ratioH by vmm.ratioH.observeAsState()
-    val ratioV by vmm.ratioV.observeAsState()
     if (details.title.isEmpty() || xy == Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
         modifier = Modifier

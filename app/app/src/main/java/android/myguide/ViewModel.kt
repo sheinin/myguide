@@ -11,15 +11,8 @@ import kotlin.collections.plus
 
 
 class ViewModel() {
-    val adjust = mapOf(
-        false to MutableLiveData(false),
-        true to MutableLiveData(false)
-    )
     val current = MutableLiveData<Boolean?>(null)
     val dialog = MutableLiveData(false)
-    val ratio = MutableLiveData(1f)
-    val ratioH = MutableLiveData<Float?>(null)
-    val ratioV = MutableLiveData<Float?>(null)
     val toolbar = Toolbar()
 
 }

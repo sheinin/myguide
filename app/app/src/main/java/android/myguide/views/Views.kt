@@ -176,9 +176,9 @@ fun Main(
                     }
             ) {
                 val description by bind.description.observeAsState()
-                val ratio by vmm.ratio.observeAsState()
-                val ratioH by vmm.ratioH.observeAsState()
-                val ratioV by vmm.ratioV.observeAsState()
+                val ratio by screen.vm.ratio.observeAsState()
+                val ratioH by screen.vm.ratioH.observeAsState()
+                val ratioV by screen.vm.ratioV.observeAsState()
                 val viewItem by bind.details.observeAsState()
                 if (display != MAP && viewItem != null)
                     Column(modifier = Modifier.padding(8.dp)) {
@@ -287,6 +287,9 @@ fun Main(
                                 details = details[it],
                                 display = display,
                                 expand = expand[it],
+                                ratio = ratio,
+                                ratioH = ratioH,
+                                ratioV = ratioV,
                                 toggle = toggle[it],
                                 xy = xy[it],
                                 callback = ::callback
