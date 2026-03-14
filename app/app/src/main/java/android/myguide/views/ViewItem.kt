@@ -55,20 +55,18 @@ fun ViewItem(
     val ratioV by vmm.ratioV.observeAsState()
     if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
-       // verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .offset(xy.x, xy.y)// * (ratioV ?: ratio!!))
+            .offset(xy.x, xy.y)
             .size(xy.w, xy.h * (ratioV ?: ratio!!))
+            .background(color = colorScheme.surfaceContainer)
+            .padding(
+                start = measures.padding * (ratioH ?: ratio!!)
+                        + measures.padding.times(2) * (ratioH ?: ratio!!) * details.level,
+                end = measures.padding * (ratioH ?: ratio!!)
+            )
             .then(
                 if (details.origin == null) Modifier
                 else Modifier.clickable(onClick = { callback(index) })
-            )
-            .padding(
-                start = measures.padding * (ratioH ?: ratio!!) + measures.padding.times(2) * (ratioH ?: ratio!!) * details.level,
-                end = measures.padding * (ratioH ?: ratio!!)
-            )
-            .background(
-                color = colorScheme.surfaceContainer
             )
     ) {
         if (display != MAP && details.drawable != null)
@@ -88,18 +86,15 @@ fun ViewItem(
                 .padding(horizontal = 8.dp * (ratioH ?: ratio!!)),
             verticalArrangement = Arrangement.Center
         ) {
-            Row {
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text(
                     details.title,
-                 //   onTextLayout = { textLayoutResult ->
-                   //     qqq("WT "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
-                   // },
                     color = colorScheme.secondary,
-                    style = typography.bodyLarge,
                     fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
                     lineHeight = 1.em * fontScale,
                     maxLines = if (display == MAP) 1 else Int.MAX_VALUE,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    style = typography.bodyLarge,
                 )
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -108,51 +103,42 @@ fun ViewItem(
                         contentDescription = "",
                         colorFilter = ColorFilter.tint(colorScheme.secondary),
                         modifier = Modifier
-                            .size(
-                                36.dp * (ratioH ?: ratio!!),
-                                36.dp * (ratioV ?: ratio!!)
+                            .clickable(
+                                onClick = { screen.render.toggle(index) }
                             )
                             .padding(
                                 horizontal = 6.dp * (ratioH ?: ratio!!),
                                 vertical = 6.dp * (ratioV ?: ratio!!)
                             )
-                            .clickable(
-                                onClick = {
-                                    screen.render.toggle(index)
-                                }
-                            )
                             .rotate(if (toggle == true) 90f else -90f)
+                            .size(
+                                36.dp * (ratioH ?: ratio!!),
+                                36.dp * (ratioV ?: ratio!!)
+                            )
                     )
                 }
             }
             if (details.origin != null)
                 Text(
                     details.origin,
-               //     onTextLayout = { textLayoutResult ->
-                 //       qqq("Wo "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + details.title)
-                   // },
                     color = colorScheme.secondary,
-                    style = typography.bodyMedium,
                     fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
                     fontStyle = FontStyle.Italic,
                     lineHeight = 1.em * fontScale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    style = typography.bodyMedium,
                 )
             if (expand != null)
                 Text(
                     expand,
-                 //   onTextLayout = { textLayoutResult ->
-                   //     qqq("W "+textLayoutResult.size.width.toDp() + textLayoutResult.size.height.toDp() + expand)
-                    //},
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    style = typography.bodySmall,
-                    //lineHeight = 1.em,
                     maxLines =
                         if (display == MAP) 2
                         else Int.MAX_VALUE,
+                    modifier = Modifier
+                        .fillMaxWidth(),
                     overflow = TextOverflow.Ellipsis,
+                    style = typography.bodySmall,
                 )
         }
     }

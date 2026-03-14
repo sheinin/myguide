@@ -105,7 +105,7 @@ fun Control(screen: Screen) {
                                     MAP -> D3
                                     D3 -> LIST
                                 }
-                            screen.render.display()
+                            // screen.render.display()
                         }
                     )
                     .padding(6.dp)

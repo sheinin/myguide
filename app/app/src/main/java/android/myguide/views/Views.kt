@@ -6,6 +6,7 @@ import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
 import android.myguide.fontScale
+import android.myguide.lock
 import android.myguide.measures
 import android.myguide.toDp
 import android.myguide.toPx
@@ -67,7 +68,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 fun Main(
     screen: Screen
 ) {
-
     val bind = screen.vm
     val display by bind.display.observeAsState()
     val stateY by bind.stateY.observeAsState()
@@ -75,7 +75,7 @@ fun Main(
         Modifier
             .fillMaxSize()
             .onPlaced {
-                vmm.toolbar.pending()
+                screen.query()
             }
     ) {
         val singapore = LatLng(1.35, 103.86)
@@ -135,14 +135,8 @@ fun Main(
             val view = LocalView.current
             LaunchedEffect(bind.position.value) {
                 if (display != MAP)
-                    scrollStateY.scrollTo(
-                        bind.position.value!!.toPx().toInt()
-                    )
+                    scrollStateY.scrollTo(stateY!!)
             }
-            LaunchedEffect(stateY) {
-                scrollStateY.animateScrollTo(stateY!!)
-            }
-
             DisposableEffect(view, display) {
                 if (display == MAP) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
@@ -237,10 +231,9 @@ fun Main(
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
                 LaunchedEffect(bind.position.value) {
-                    if (display == MAP)
-                        scrollStateX.scrollTo(
-                            bind.position.value!!.toPx().toInt()
-                        )
+                 //   scrollStateX.scrollTo(
+                   //  ///////////////////   bind.position.value!!.toPx().toInt()
+                    //)
                 }
                 DisposableEffect(view, display) {
                     if (display == LIST) return@DisposableEffect onDispose {}
@@ -272,9 +265,11 @@ fun Main(
                     val xy by bind.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
-                            .size(w.value!!, h.value!!)// * (ratioV ?: ratio!!))
+                            .size(w.value!!, h.value!!)
                     ) {
                         fun callback(index: Int) {
+                            if (lock) return
+                            lock = true
                             vmm.toolbar.items.last().position =
                                 if (display == MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()

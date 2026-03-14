@@ -35,7 +35,8 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                        vmm.showSplash.value = false
+                        //vmm.current.value = null
+                        //vmm.showSplash.value = false
                         vmm.toolbar.navigate(
                             queryType = QueryType.SHOPS,
                             title = "All Shops"
@@ -57,7 +58,7 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                        vmm.showSplash.value = false
+                       // vmm.showSplash.value = false
                         vmm.toolbar.navigate(
                             queryType = QueryType.ITEMS,
                             title = "All Items"

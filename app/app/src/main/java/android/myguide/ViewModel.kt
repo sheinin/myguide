@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlin.collections.plus
 
 
-class ViewModel(private val repository: Repository) : ViewModel() {
+class ViewModel() {
 
     class Cycler {
         val isMap = MutableLiveData(true)
@@ -96,91 +96,17 @@ class ViewModel(private val repository: Repository) : ViewModel() {
             }
         }
     }
-/*
-    class Screen {
-        enum class Display {
-            D3,
-            LIST,
-            MAP;
-            val isMap: Boolean
-                get() = this == MAP
-        }
-        val display = MutableLiveData(Display.LIST)
-        val dialog = MutableLiveData(false)
-        val cycler = Cycler()
-        val filter = MutableLiveData<Boolean?>(null)
-        val position = MutableLiveData(0.dp)
-        val sort = MutableLiveData(false)
-        val w = MutableLiveData(0.dp)
-        val h = MutableLiveData(0.dp)
-        val description = MutableLiveData<String>()
-        val details = MutableLiveData<Details>()
-        private val _measures = MutableStateFlow<List<Pair<Int, String?>>>(emptyList())
-        fun clear() { _measures.update { emptyList() } }
-    }
-
- */
     val adjust = mapOf(
         false to MutableLiveData(false),
         true to MutableLiveData(false)
     )
     val current = MutableLiveData<Boolean?>(null)
     val dialog = MutableLiveData(false)
-    val mapShowing = MutableLiveData(true)
     val ratio = MutableLiveData(1f)
     val ratioH = MutableLiveData<Float?>(null)
     val ratioV = MutableLiveData<Float?>(null)
-    //val screen = mapOf(false to Screen(), true to Screen())
-    val showSplash = MutableLiveData(true)
     val toolbar = Toolbar()
-    fun fetchItemDetails(id: String, callback: (Item) -> Unit) {
-        repository.getItemDetails(id) {
-            callback.invoke(it!!)
-        }
-    }
-    fun fetchShopDetails(id: String, callback: (Shop) -> Unit) {
-        repository.getShopDetails(id) {
-            callback.invoke(it!!)
-        }
-    }
-    fun fetchShops(callback: (List<ListInterface>) -> Unit) {
-        repository.getShops { list ->
-            callback.invoke(list.map { it.toInterface() }.toList())
-        }
-    }
-    fun fetchShops(id: String, callback: (List<ListInterface>) -> Unit) {
-        repository.getShops(id) { list ->
-            callback.invoke(list.map { it.toInterface() }.toList())
-        }
-    }
-    fun fetchTree(callback: (List<ListInterface>) -> Unit) {
-        repository.getTree { list ->
-            callback.invoke(list.map {
-                it.toInterface()
-             }.toList() )
-        }
-    }
-    fun fetchTree(id: String, callback: (List<ListInterface>) -> Unit) {
-        repository.getTree(id) { list ->
-            callback.invoke(list.map { it.toInterface() }.toList())
-        }
-    }
-    fun updateItemList(callback: (List<Item>) -> Unit) {
-        repository.getItems {
-            callback.invoke(it)
-        }
-    }
-    fun updateShopList(callback: (List<Shop>) -> Unit) {
-        repository.getShops {
-            callback.invoke(it)
-        }
-    }
-    fun updateItem(drawable: Int, pic: String) {
-        repository.updateItem(drawable, pic)
-    }
-    fun updateShop(drawable: Int, id: String) {
-        repository.updateShop(drawable, id)
-    }
+
 }
 
 data class Details(

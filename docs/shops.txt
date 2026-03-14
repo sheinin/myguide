@@ -37,3 +37,4 @@ the_corner_pantry
 the_daily_grind
 vegetbleso_shop
 warner_spencer
+zhary_food

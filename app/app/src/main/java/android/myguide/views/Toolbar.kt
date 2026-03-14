@@ -1,9 +1,11 @@
 package android.myguide.views
 
 
+import android.R.attr.track
 import android.myguide.R
 import android.myguide.colorScheme
 import android.myguide.fontScale
+import android.myguide.screen
 import android.myguide.typography
 import android.myguide.vmm
 import androidx.compose.foundation.Image
@@ -110,14 +112,14 @@ fun Toolbar() {
                     else -> ratio!!
                 },
             onValueChange = {
-                vmm.adjust[vmm.toolbar.last!!.ident]!!.value = false
+                vmm.adjust[vmm.current.value!!]!!.value = false
                 when (mode.value) {
                     false -> vmm.ratioH.value = it
                     true -> vmm.ratioV.value = it
                     null -> vmm.ratio.value = it
                 }
             },
-            onValueChangeFinished = { vmm.adjust[vmm.toolbar.last!!.ident]!!.value = true },
+            onValueChangeFinished = { screen[vmm.current.value]!!.vm},//vmm.adjust[vmm.current.value]!!.value = true },
             valueRange = 0.5f..2.5f,
             modifier = Modifier
                 .weight(1f)

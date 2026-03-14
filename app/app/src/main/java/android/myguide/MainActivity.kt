@@ -39,15 +39,18 @@ import androidx.compose.ui.unit.em
 import kotlin.properties.Delegates
 
 const val batch = 21
-var screenHeight = 0.dp
-var screenWidth = 0.dp
 lateinit var colorScheme: ColorScheme
+lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
-lateinit var vmm: ViewModel
 lateinit var typography: Typography
+lateinit var vmm: ViewModel
 var fontScale by Delegates.notNull<Float>()
+var lock = false
+var screenHeight = 0.dp
+var screenWidth = 0.dp
+
 
 lateinit var screen: Map<Boolean, Screen>
 
@@ -57,12 +60,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
-        vmm = ViewModel(repository)
+        db = DB(repository)
+        vmm = ViewModel()
         vmm.toolbar.init(this)
-        vmm.updateItemList { list ->
+        db.updateItemList { list ->
             list.filter { it.pic != null }
                 .map {
-                    vmm.updateItem(
+                    db.updateItem(
                         this.resources.getIdentifier(
                             it.pic,
                             "drawable",
@@ -72,29 +76,21 @@ class MainActivity : ComponentActivity() {
                     )
                 }
         }
-        vmm.updateShopList { list ->
+        db.updateShopList { list ->
             list.map {
-                    vmm.updateShop(
-                        this.resources.getIdentifier(
-                            it.id,
-                            "drawable",
-                            this.packageName
-                        )
-                        , it.id
+                db.updateShop(
+                    this.resources.getIdentifier(
+                        it.id,
+                        "drawable",
+                        this.packageName
                     )
-                }
+                    , it.id
+                )
+            }
         }
         screen = mapOf(
-            false to
-                    Screen(
-                        activity = this@MainActivity,
-                        ident = false
-                    ),
-            true to
-                    Screen(
-                        activity = this@MainActivity,
-                        ident = true
-                    )
+            false to Screen(ident = false),
+            true to Screen(ident = true)
         )
         setContent {
             BackHandler(enabled = true) { vmm.toolbar.back() }
@@ -108,10 +104,9 @@ class MainActivity : ComponentActivity() {
                     .onGloballyPositioned { coordinates ->
                         measures = Measures(
                             itemHeight = coordinates.size.height.toDp(),
+                            mapViewWidth = screenWidth - 8.dp * 2,
                             padding = 8.dp
                         )
-                        // Convert the measured height from pixels (Int) to Dp
-                        qqq("START f:$fontScale itemHeight:${coordinates.size.height.toDp()}")
                     }
             ) {
                 Text(
@@ -141,21 +136,16 @@ class MainActivity : ComponentActivity() {
                     style = typography.bodySmall
                 )
             }
-            val h =
-                getLineHeightDp(typography.bodyLarge.fontSize) +
-                    getLineHeightDp(typography.bodyMedium.fontSize) +
-                    getLineHeightDp(typography.bodySmall.fontSize) * 2
-            qqq("START f:$fontScale itemHeight:$h w:$screenWidth h:$screenHeight}")
-
             MyGuideTheme {
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    if (vmm.showSplash.observeAsState().value!!)
+                    val ident = vmm.current.observeAsState()
+                    if (ident.value == null)//vmm.showSplash.observeAsState().value!!)
                         Splash(Modifier.padding(innerPadding))
                     else {
                         Column(Modifier.fillMaxSize().padding(innerPadding)) {
+
                             Toolbar()
-                            val ident = vmm.current.observeAsState()
                             AnimatedVisibility(
                                 visible = ident.value == false,
                                 enter = EnterTransition.None,
