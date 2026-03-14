@@ -262,24 +262,6 @@ class Render(
             return result
         }
     }
-    private fun ini1(ix: Int) {
-        val item = list.getOrNull(ix) ?: return
-        var m = 0.dp
-        val displayType =
-            if (item.description == null)
-                DisplayType.NODE
-            else {
-                m = measure(ix)
-                DisplayType.DEFAULT
-            }
-        data.display.add(
-            Data.Display(
-                height = displayType.height + m,
-                type = displayType
-            )
-        )
-        //qqq("?? "+item.title+ " "+ix+" "+item.description)
-    }
     private fun measure(ix: Int): Dp {
         if (list[ix].description == null || vm.display.value == MAP) return 0.dp
         val s = list[ix].title!!.trim()
@@ -520,13 +502,27 @@ class Render(
         var limit = 0
         var start = 0
         list.indices.map {
-            ini1(it)
+            val item = list[it]
+            var m = 0.dp
+            val displayType =
+                if (item.description == null)
+                    DisplayType.NODE
+                else {
+                    m = measure(it)
+                    DisplayType.DEFAULT
+                }
+            data.display.add(
+                Data.Display(
+                    height = displayType.height + m,
+                    type = displayType
+                )
+            )
+            //qqq("?? "+item.title+ " "+ix+" "+item.description)
         }
         ruler()
 
         qqq("SL "+ident+start + " "+limit + " "+list.size +" "+data.point.size)
         list.indices.map {
-         //   ini1(it)
             expandable(it)
             vm(data.point[it])
         }
@@ -535,52 +531,16 @@ class Render(
             data.point.size
         )
         start = max(0, limit - batch)
-       // CoroutineScope(Dispatchers.IO).launch {
-          //  if (data.point.isEmpty()) //return@launch
         when (vm.display.value!!) {
             D3 ->
                 (start until limit).map {
                     vm(data.point[it])
-                   // delay(1L)
                     //    activity.runOnUiThread { renderYD3(it) }
                 }
-
-            MAP ->
-                (start until limit).map {
-                    vm(data.point[it])
-                //    delay(1L)
-                    renderX(it)
-                }
-            LIST ->
-                (start until limit).map {
-                    data.point.getOrNull(it)?.also { point ->
-                    //    expandable(it)
-                     //   vm(point)
-                        renderYSync(it)
-                    }
-                }
+            MAP -> (start until limit).map { renderX(it) }
+            LIST -> (start until limit).map { renderYSync(it) }
         }
-            //////////callback?.invoke()
-            val t = System.currentTimeMillis()
-
-           /*
-           (data.display.size until list.size).map { ini1(it) }
-            ruler(false)
-            data.vm.details.withIndex()
-                .filter { it.value.title == "" }
-                .map {
-                    expandable(it.index)
-                    vm(it.index)
-                }
-
-            */
         sleep { lock = false }
-            /*(limit until min(
-                start + batch,
-                data.point.size
-            )).map { renderYSync(it) }*/
-            //qqq("T "+(System.currentTimeMillis() - t) + " "+ data.ruler)
-      // }
     }
     fun display() {
         handler = vm.display.value
