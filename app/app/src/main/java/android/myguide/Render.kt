@@ -1,9 +1,9 @@
 package android.myguide
 
 
-import android.R.attr.direction
-import android.R.attr.height
-import android.myguide.Screen.VM.Display.*
+import android.myguide.model.Cycler
+import android.myguide.model.VM
+import android.myguide.model.VM.Display.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -26,20 +26,21 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.getOrNull
+import kotlin.collections.mapIndexed
 import kotlin.collections.set
 import kotlin.collections.withIndex
 import kotlin.ranges.until
 
 class Render(
     val ident: Boolean,
-    val vm: Screen.VM
+    val vm: VM
 ) {
     private val cycler = vm.cycler
     val data = Data(
         point = CopyOnWriteArrayList(),
         ruler = CopyOnWriteArrayList(),
         stack = IntArray(batch) { -1 },
-        vm = Data.VM(
+        view = Data.View(
             details = mutableListOf(),
             expand = mutableListOf(),
             toggle = mutableListOf(),
@@ -47,10 +48,8 @@ class Render(
         ),
         display = CopyOnWriteArrayList()
     )
-    private var handler: Screen.VM.Display? = null
+    private var handler: VM.Display? = null
     private var list: List<ListInterface> = listOf()
-    private var ordinal = 0
-    var offset = 0
     init {
         fun zoom() {
             qqq("AB "+ident  + " " + scroll +(scroll * (vmm.ratioV.value ?: vmm.ratio.value!!)))//+ " "+x+" "+(height / h))
@@ -68,8 +67,8 @@ class Render(
                         ) {
                             data.display[point].height =
                                 data.display[point].type.height + measure(point)
-                            data.vm.xy[stack] =
-                                ViewModel.Cycler.XY(
+                            data.view.xy[stack] =
+                                Cycler.XY(
                                     x = 0.dp,
                                     y = ruler,
                                     w = screenWidth,
@@ -77,8 +76,8 @@ class Render(
                                 )
                             val index = stack.mod(batch)
                             expandable(stack)
-                            cycler.updateXY(index, data.vm.xy[point])
-                            cycler.updateExpandable(index, data.vm.expand[stack])
+                            cycler.updateXY(index, data.view.xy[point])
+                            cycler.updateExpandable(index, data.view.expand[stack])
                         }
                     }
 
@@ -93,8 +92,8 @@ class Render(
                             ruler != null &&
                             point != null
                         ) {
-                            data.vm.xy[stack] =
-                                ViewModel.Cycler.XY(
+                            data.view.xy[stack] =
+                                Cycler.XY(
                                     x = 0.dp,
                                     y = ruler,
                                     w = screenWidth,
@@ -102,8 +101,8 @@ class Render(
                                 )
                             val index = stack.mod(batch)
                             expandable(stack)
-                            cycler.updateXY(index, data.vm.xy[point])
-                            cycler.updateExpandable(index, data.vm.expand[stack])
+                            cycler.updateXY(index, data.view.xy[point])
+                            cycler.updateExpandable(index, data.view.expand[stack])
                         }
                     }
                 }
@@ -126,8 +125,8 @@ class Render(
                         if (point != null && ruler != null) {
                             data.display[point].height =
                                 data.display[point].type.height + measure(point)
-                            data.vm.xy[point] =
-                                ViewModel.Cycler.XY(
+                            data.view.xy[point] =
+                                Cycler.XY(
                                     x = 0.dp,
                                     y = ruler,
                                     w = screenWidth,
@@ -161,11 +160,11 @@ class Render(
                 val point = data.point.getOrNull(ix) ?: return
                 val index = ix.mod(batch)
                 data.stack[index] = ix
-                cycler.updateExpandable(index, data.vm.expand[point])
-                cycler.updateDetails(index, data.vm.details[point])
-                cycler.updateToggle(index, data.vm.toggle[point])
-                cycler.updateXY(index, data.vm.xy[point])
-                qqq("JOB dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll + " " + data.vm.xy[point].y + " " + data.vm.details.getOrNull(point)?.title)
+                cycler.updateExpandable(index, data.view.expand[point])
+                cycler.updateDetails(index, data.view.details[point])
+                cycler.updateToggle(index, data.view.toggle[point])
+                cycler.updateXY(index, data.view.xy[point])
+                qqq("JOB dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
             }
             if (ix == null) {
             //    qqq("ECHO dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll + " ")
@@ -192,11 +191,11 @@ class Render(
                         val index = ix.mod(batch)
                         data.stack[index] = ix
                        // qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index +"  ")
-                        cycler.updateDetails(index, data.vm.details[point])
-                        cycler.updateExpandable(index, data.vm.expand[point])
-                        cycler.updateXY(index, data.vm.xy[point])
+                        cycler.updateDetails(index, data.view.details[point])
+                        cycler.updateExpandable(index, data.view.expand[point])
+                        cycler.updateXY(index, data.view.xy[point])
                     //}
-                qqq("MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll + " " + data.vm.xy[point].y + " " + data.vm.details.getOrNull(point)?.title)
+                qqq("MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
 
             }
             if (ix == null) {
@@ -233,18 +232,17 @@ class Render(
         var point: CopyOnWriteArrayList<Int>,
         var ruler: CopyOnWriteArrayList<Dp>,
         var stack: IntArray,
-        var vm: VM,
+        var view: View,
     ) {
         class Display(
-            val ordinal: Int,
             var type: DisplayType,
             var height: Dp
         )
-        data class VM(
+        data class View(
             var details: MutableList<Details>,
             var expand: MutableList<AnnotatedString?>,
             var toggle: MutableList<Boolean?>,
-            var xy: MutableList<ViewModel.Cycler.XY>
+            var xy: MutableList<Cycler.XY>
         )
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -253,14 +251,14 @@ class Render(
             if (display != other.display) return false
             if (ruler != other.ruler) return false
             if (!stack.contentEquals(other.stack)) return false
-            if (vm != other.vm) return false
+            if (view != other.view) return false
             return true
         }
         override fun hashCode(): Int {
             var result = display.hashCode()
             result = 31 * result + ruler.hashCode()
             result = 31 * result + stack.contentHashCode()
-            result = 31 * result + vm.hashCode()
+            result = 31 * result + view.hashCode()
             return result
         }
     }
@@ -277,12 +275,10 @@ class Render(
         data.display.add(
             Data.Display(
                 height = displayType.height + m,
-                ordinal = ordinal,
                 type = displayType
             )
         )
         //qqq("?? "+item.title+ " "+ix+" "+item.description)
-        ordinal += 1
     }
     private fun measure(ix: Int): Dp {
         if (list[ix].description == null || vm.display.value == MAP) return 0.dp
@@ -314,7 +310,7 @@ class Render(
     private fun expandable(ix: Int, expand: Boolean = false) {
         val str = list.getOrNull(ix)?.description ?: return
         if (expand) {
-            data.vm.expand[ix] = buildAnnotatedString {
+            data.view.expand[ix] = buildAnnotatedString {
                 withStyle(ParagraphStyle(lineHeight = 1.em * (vmm.ratioV.value ?: vmm.ratio.value!!))) {
                     withStyle(
                         style = SpanStyle(
@@ -372,7 +368,7 @@ class Render(
                 }
             }
         if (vm.display.value == MAP) {
-            data.vm.expand[ix] = static()
+            data.view.expand[ix] = static()
             return
         }
         val result = androidx.compose.ui.text.Paragraph(
@@ -405,7 +401,7 @@ class Render(
             overflow = TextOverflow.Ellipsis
         )
         if (result.lineCount < 2) {
-            data.vm.expand[ix] = static()
+            data.view.expand[ix] = static()
             return
         }
         val take =
@@ -429,7 +425,7 @@ class Render(
 
          */
 
-        data.vm.expand[ix] =
+        data.view.expand[ix] =
        //     if (take == str) static()
         //    else
                 buildAnnotatedString {
@@ -594,7 +590,7 @@ class Render(
                 vm.w.value = measures.mapViewWidth * data.ruler.size
                 vm.h.value = measures.itemHeight
                 list.indices.map {
-                    data.vm.expand[it] = buildAnnotatedString {
+                    data.view.expand[it] = buildAnnotatedString {
                         withStyle(
                             ParagraphStyle(
                                 lineHeight = 1.em * (vmm.ratioV.value ?: vmm.ratio.value!!)
@@ -613,7 +609,7 @@ class Render(
                         }
                     }
                 }
-                data.vm.xy.mapIndexed { ix, it ->
+                data.view.xy.mapIndexed { ix, it ->
                     it.x = measures.mapViewWidth * ix
                     it.y = 0.dp
                     it.w = measures.mapViewWidth - measures.padding
@@ -622,7 +618,7 @@ class Render(
             }
             D3, LIST -> {
                 list.indices.map { expandable(it) }
-                data.vm.xy.mapIndexed { ix, it ->
+                data.view.xy.mapIndexed { ix, it ->
                     it.x = 0.dp
                     it.y = data.ruler[ix]
                     it.w = screenWidth
@@ -637,17 +633,16 @@ class Render(
             val point = data.point[it]
             val index = it.mod(batch)
             data.stack[index] = it
-            cycler.updateExpandable(index, data.vm.expand[point])
-            cycler.updateXY(index, data.vm.xy[point])
+            cycler.updateExpandable(index, data.view.expand[point])
+            cycler.updateXY(index, data.view.xy[point])
         }
     }
     fun load(list: List<ListInterface>, callback: (() -> Unit)? = null) {
         //job?.cancel()
         qqq("LOAD $ident "+list.size)
         this.list = list
-        ordinal = 0
         handler = vm.display.value
-        data.vm.details = MutableList(this@Render.list.size) {
+        data.view.details = MutableList(this@Render.list.size) {
             Details(
                 id = "",
                 title = "",
@@ -656,11 +651,11 @@ class Render(
                 level = 0
             )
         }
-        data.vm.expand = MutableList(this@Render.list.size) { null }
-        data.vm.xy = MutableList(this@Render.list.size) {
-            ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)
+        data.view.expand = MutableList(this@Render.list.size) { null }
+        data.view.xy = MutableList(this@Render.list.size) {
+            Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)
         }
-        data.vm.toggle = MutableList(this@Render.list.size) { null }
+        data.view.toggle = MutableList(this@Render.list.size) { null }
         val position = vmm.toolbar.items.lastOrNull()?.position ?: return
         if (position > 0.dp) {
             if (vm.display.value == MAP) {
@@ -793,13 +788,13 @@ class Render(
     }
     fun reset() {
         data.stack = IntArray(batch) { -1 }
-        data.vm.expand.clear()
-        data.vm.details.clear()
-        data.vm.toggle.clear()
-        data.vm.xy.clear()
+        data.view.expand.clear()
+        data.view.details.clear()
+        data.view.toggle.clear()
+        data.view.xy.clear()
         handler = null
         (0 until batch).map {
-            cycler.updateXY(it, ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
+            cycler.updateXY(it, Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
         }
         /*
         data.collapse.clear()
@@ -823,9 +818,9 @@ class Render(
         val index = ix.mod(batch)
         data.stack[index] = ix
         //qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index +data.vm[point].title+ "  "+data.vm[point].x)
-        cycler.updateDetails(index, data.vm.details[point])
-        cycler.updateExpandable(index, data.vm.expand[point])
-        cycler.updateXY(index, data.vm.xy[point])
+        cycler.updateDetails(index, data.view.details[point])
+        cycler.updateExpandable(index, data.view.expand[point])
+        cycler.updateXY(index, data.view.xy[point])
     }
     private fun renderYSync(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
@@ -833,10 +828,10 @@ class Render(
         ///val disp = data.display.find { it.ordinal == ix }!!
         //qqq("RS "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
         data.stack[index] = ix
-        cycler.updateExpandable(index, data.vm.expand[point])
-        cycler.updateDetails(index, data.vm.details[point])
-        cycler.updateToggle(index, data.vm.toggle[point])
-        cycler.updateXY(index, data.vm.xy[point])
+        cycler.updateExpandable(index, data.view.expand[point])
+        cycler.updateDetails(index, data.view.details[point])
+        cycler.updateToggle(index, data.view.toggle[point])
+        cycler.updateXY(index, data.view.xy[point])
     }
     fun expand(ix: Int, expand: Boolean) {
         qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))
@@ -876,8 +871,8 @@ class Render(
         data.stack = IntArray(batch) { -1 }
         data.point
             .mapIndexed { ix, it ->
-                data.vm.xy[it] =
-                    ViewModel.Cycler.XY(
+                data.view.xy[it] =
+                    Cycler.XY(
                         x = 0.dp,
                         y = data.ruler[ix],
                         w = screenWidth,
@@ -889,19 +884,19 @@ class Render(
             val index = ix.mod(batch)
             //qqq("RS "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
             data.stack[index] = ix
-            cycler.updateDetails(index, data.vm.details[point])
-            cycler.updateExpandable(index, data.vm.expand[point])
-            cycler.updateXY(index, data.vm.xy[point])
+            cycler.updateDetails(index, data.view.details[point])
+            cycler.updateExpandable(index, data.view.expand[point])
+            cycler.updateXY(index, data.view.xy[point])
         }
     }
     fun toggle(ix: Int) {
         val point = data.point[data.stack[ix]]
-        data.vm.toggle[point] = data.toggle[point]!!.second > 0
+        data.view.toggle[point] = data.toggle[point]!!.second > 0
         data.toggle[point] =
             data.toggle[point]!!.first to data.toggle[point]!!.second.unaryMinus()
         ruler()
         data.ruler.indices.map {
-            data.vm.xy[data.point[it]] = ViewModel.Cycler.XY(
+            data.view.xy[data.point[it]] = Cycler.XY(
                 x = 0.dp,
                 y = data.ruler[it] ?: 0.dp,
                 w = screenWidth,
@@ -909,7 +904,7 @@ class Render(
             )
         }
         (0 until batch).map {
-            cycler.updateXY(it, ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
+            cycler.updateXY(it, Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
         }
         data.stack.filter { it != -1 }.map {
             //cycler.updateXY(it.mod(batch), data.vm.xy[data.point[it]])
@@ -924,10 +919,10 @@ class Render(
         val ruler = data.ruler.getOrNull(ix) ?: return
         //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
        // data.vm.toggle.getOrNull(ix) ?: return
-        data.vm.xy[ix] =
+        data.view.xy[ix] =
             when (vm.display.value) {
                 LIST -> {
-                    ViewModel.Cycler.XY(
+                    Cycler.XY(
                         x = 0.dp,
                         y = ruler,
                         w = screenWidth,
@@ -935,15 +930,15 @@ class Render(
                     )
                 }
                 else ->
-                    ViewModel.Cycler.XY(
+                    Cycler.XY(
                         x = (screenWidth - 90.dp) * ix,
                         y = 0.dp,
                         w = screenWidth - 90.dp,
                         h = DisplayType.DEFAULT.height,
                     )
             }
-        data.vm.toggle[ix] = more ?: (data.vm.toggle.getOrNull(ix) ?: false)
-        data.vm.details[ix] =
+        data.view.toggle[ix] = more ?: (data.view.toggle.getOrNull(ix) ?: false)
+        data.view.details[ix] =
             Details(
                 id = item.id!!,
                 title = item.title!!.trim(),

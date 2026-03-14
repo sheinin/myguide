@@ -1,13 +1,14 @@
 package android.myguide.views
 
 import android.myguide.Screen
-import android.myguide.Screen.VM.Display.*
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
 import android.myguide.fontScale
 import android.myguide.lock
 import android.myguide.measures
+import android.myguide.model.VM
+import android.myguide.model.VM.Display.*
 import android.myguide.toDp
 import android.myguide.toPx
 import android.myguide.typography

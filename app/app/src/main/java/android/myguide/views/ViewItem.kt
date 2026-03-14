@@ -3,12 +3,12 @@ package android.myguide.views
 import android.myguide.Details
 import android.myguide.R
 import android.myguide.Screen
-import android.myguide.Screen.VM.Display
-import android.myguide.Screen.VM.Display.*
-import android.myguide.ViewModel
 import android.myguide.colorScheme
 import android.myguide.fontScale
 import android.myguide.measures
+import android.myguide.model.Cycler
+import android.myguide.model.VM
+import android.myguide.model.VM.Display.*
 import android.myguide.typography
 import android.myguide.vmm
 import androidx.compose.foundation.Image
@@ -44,16 +44,16 @@ fun ViewItem(
     index: Int,
     screen: Screen,
     details: Details,
-    display: Display?,
+    display: VM.Display?,
     expand: AnnotatedString?,
     toggle: Boolean?,
-    xy: ViewModel.Cycler.XY,
+    xy: Cycler.XY,
     callback: (Int) -> Unit
 ) {
     val ratio by vmm.ratio.observeAsState()
     val ratioH by vmm.ratioH.observeAsState()
     val ratioV by vmm.ratioV.observeAsState()
-    if (details.title.isEmpty() || xy == ViewModel.Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
+    if (details.title.isEmpty() || xy == Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     Row(
         modifier = Modifier
             .offset(xy.x, xy.y)

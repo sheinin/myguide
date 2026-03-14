@@ -1,12 +1,11 @@
 package android.myguide
 
 import android.myguide.QueryType.*
-import android.myguide.Screen.VM.Display.*
-import android.view.View
+import android.myguide.model.VM
+import android.myguide.model.VM.Display.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
-import java.time.temporal.TemporalAdjusters.next
 
 class Toolbar {
     class Item(
@@ -14,11 +13,10 @@ class Toolbar {
         val queryType: QueryType,
         val title: String,
         var ident: Boolean,
-        var display: Screen.VM.Display,
+        var display: VM.Display,
         var position: Dp
     )
     private lateinit var activity: MainActivity
-    //private var vmm.current.value!! = true
     var items = mutableListOf<Item>()
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
@@ -46,7 +44,7 @@ class Toolbar {
     fun init(activity: MainActivity) { this.activity = activity }
     fun navigate(
         id: String? = null,
-        display: Screen.VM.Display = LIST,
+        display: VM.Display = LIST,
         queryType: QueryType = SHOPS,
         title: String
     ) {

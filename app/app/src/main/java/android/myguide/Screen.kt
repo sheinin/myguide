@@ -4,33 +4,11 @@ import android.myguide.QueryType.ITEM
 import android.myguide.QueryType.ITEMS
 import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
-import android.myguide.ViewModel.Cycler
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.MutableLiveData
-
+import android.myguide.model.VM
 
 class Screen(
     val ident: Boolean
 ) {
-    class VM {
-        enum class Display {
-            D3,
-            LIST,
-            MAP;
-            val isMap: Boolean
-                get() = this == MAP
-        }
-        val display = MutableLiveData(Display.LIST)
-        val cycler = Cycler()
-        val filter = MutableLiveData<Boolean?>(null)
-        val position = MutableLiveData(0.dp)
-        val sort = MutableLiveData(false)
-        val stateY = MutableLiveData(0)
-        val w = MutableLiveData(0.dp)
-        val h = MutableLiveData(0.dp)
-        val description = MutableLiveData<String>()
-        val details = MutableLiveData<Details>()
-    }
     private var id: String? = null
     private var lock = false
     val vm = VM()
@@ -87,7 +65,7 @@ class Screen(
             }
         }
         this@Screen.lock = false
-        vm.cycler.isMap.value = display.isMap
+        //vm.cycler.isMap.value = display.isMap
         vm.display.value = display
         vm.stateY.value = 0
         render.reset()

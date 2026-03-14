@@ -3,8 +3,9 @@ package android.myguide.views
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
-import android.myguide.Screen.VM.Display.*
 import android.myguide.colorScheme
+import android.myguide.model.VM
+import android.myguide.model.VM.Display.*
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -105,7 +106,7 @@ fun Control(screen: Screen) {
                                     MAP -> D3
                                     D3 -> LIST
                                 }
-                            // screen.render.display()
+                            screen.render.display()
                         }
                     )
                     .padding(6.dp)
