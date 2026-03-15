@@ -15,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -28,9 +29,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -52,7 +55,6 @@ lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
 lateinit var typography: Typography
-// lateinit var vmm: ViewModel
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
 val toolbar = android.myguide.Toolbar()
@@ -60,7 +62,7 @@ var fontScale = MutableLiveData(1f)//by Delegates.notNull<Float>()
 var lock = false
 var screenHeight = 0.dp
 var screenWidth = 0.dp
-
+lateinit var state: MutableTransitionState<Boolean>
 
 lateinit var screen: Map<Boolean, Screen>
 
@@ -71,7 +73,6 @@ class MainActivity : ComponentActivity() {
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         db = DB(repository)
-       // vmm = ViewModel()
         db.updateItemList { list ->
             list.filter { it.pic != null }
                 .map {
@@ -107,50 +108,20 @@ class MainActivity : ComponentActivity() {
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
             fontScale.value =  resources.configuration.fontScale
+            state = remember { MutableTransitionState(false) }
             typography = MaterialTheme.typography
-            Column(
-                Modifier
-                    .onGloballyPositioned { coordinates ->
-                        measures = Measures(
-                            itemHeight = coordinates.size.height.toDp(),
-                            mapViewWidth = screenWidth - 8.dp * 2,
-                            padding = 8.dp,
-                            tableColumns = 3
-                        )
-                    }
-            ) {
-                Text(
-                    "1",
-                    style = typography.bodyLarge,
-                    fontSize = typography.bodyLarge.fontSize,
-                    lineHeight = 1.em * fontScale.value!!,
-                )
-                Text(
-                    "1",
-                    style = typography.bodyMedium,
-                    fontSize = typography.bodyMedium.fontSize,
-                    lineHeight = 1.em * fontScale.value!!,
-                )
-                Text(
-                    buildAnnotatedString {
-                        withStyle(
-                            style = SpanStyle(
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize,
-                                fontWeight = typography.bodySmall.fontWeight
-                            )
-                        ) { append("1\n1") }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    style = typography.bodySmall
-                )
-            }
+            measures = Measures(
+                itemHeight = 0.toDp(),
+                mapViewWidth = screenWidth - 8.dp * 2,
+                padding = 8.dp,
+                tableColumns = 3
+            )
             MyGuideTheme {
+                Measures()
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val ident = current.observeAsState()
-                    if (ident.value == null)//vmm.showSplash.observeAsState().value!!)
+                    if (ident.value == null)
                         Splash(Modifier.padding(innerPadding))
                     else {
                         Column(Modifier.fillMaxSize().padding(innerPadding)) {
@@ -158,10 +129,11 @@ class MainActivity : ComponentActivity() {
                             CompositionLocalProvider(
                                 LocalDensity provides
                                     Density(
-                                        density = density.density, // Keep the original density
-                                        fontScale = 1f
+                                        density = density.density,
+                                        fontScale = fontScale.observeAsState().value!!
                                     )
                             ) {
+                                Measures()
                                 Box {
                                     androidx.compose.animation.AnimatedVisibility(
                                         visible = ident.value == false,
@@ -194,3 +166,40 @@ class MainActivity : ComponentActivity() {
 }
 
 
+@Composable
+fun Measures() {
+    Column(
+        Modifier
+            .onGloballyPositioned { coordinates ->
+                qqq("MM")
+                measures.itemHeight = coordinates.size.height.toDp()
+            }
+    ) {
+        Text(
+            "1",
+            style = typography.bodyLarge,
+            fontSize = typography.bodyLarge.fontSize,
+            lineHeight = 1.em * fontScale.value!!,
+        )
+        Text(
+            "1",
+            style = typography.bodyMedium,
+            fontSize = typography.bodyMedium.fontSize,
+            lineHeight = 1.em * fontScale.value!!,
+        )
+        Text(
+            buildAnnotatedString {
+                withStyle(
+                    style = SpanStyle(
+                        fontStyle = typography.bodySmall.fontStyle,
+                        fontSize = typography.bodySmall.fontSize,
+                        fontWeight = typography.bodySmall.fontWeight
+                    )
+                ) { append("1\n1") }
+            },
+            modifier = Modifier
+                .fillMaxWidth(),
+            style = typography.bodySmall
+        )
+    }
+}

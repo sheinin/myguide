@@ -24,11 +24,10 @@ class Screen(val ident: Boolean) {
         this.id = id
         this.queryType = queryType
         qqq(
-            "SCREEN BUILD query:" + queryType
-                    + " ident:" +ident+toolbar.items.last().ident
+            "BUILD " + queryType +"/" + display
+                    + " ident:" +ident
                     + " id:" + id
-                    + " display:" + display
-            + " position:" + toolbar.items.last().position
+            + " xy:" + toolbar.items.last().position
         )
         when (queryType) {
             ITEM ->
@@ -44,6 +43,7 @@ class Screen(val ident: Boolean) {
                         )
                     )
                     current.postValue(!(current.value ?: true))
+                    sleep { query() }
                 }
             SHOP ->
                 db.fetchShopDetails(this.id!!) {
@@ -58,12 +58,13 @@ class Screen(val ident: Boolean) {
                         )
                     )
                     current.postValue(!(current.value ?: true))
-
+                    sleep { query() }
                 }
             else -> {
                 vm.description.value = null
                 vm.details.value = null
                 current.value = !(current.value ?: true)
+                query()
             }
         }
         this@Screen.lock = false
@@ -76,9 +77,9 @@ class Screen(val ident: Boolean) {
         this@Screen.lock = true
         render.reset()
         qqq("QU $ident $id ${toolbar.items.last().ident}")
-        if (ident != toolbar.items.last().ident) return
+       // if (ident != toolbar.items.last().ident) return
         fun callback(list: List<ListInterface>) {
-            qqq("CB"+list.size +ident + " "+toolbar.items.last().ident)
+            //qqq("CB"+list.size +ident + " "+toolbar.items.last().ident)
             if (ident != toolbar.items.last().ident) return
             var count = 0
             while (count <= list.lastIndex) {

@@ -83,13 +83,14 @@ class Toolbar {
         current.value?.let { screen[it] }?.reset()
         val item = items[ix]
         val next = screen[!current.value!!]!!
-        current.value = !current.value!!
-        //qqq("GOTO ix:" +ix+" current:" + current.ident +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
+        qqq("GOTO ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
+       // current.value = !current.value!!
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
-        items.last().ident = next.ident
-        current.value = next.ident
+        //items.last().ident = next.ident
+        //current.value = next.ident
         if (cached) {
+            current.value = !current.value!!
             cached = false
             next.update()
         } else {
@@ -106,7 +107,7 @@ class Toolbar {
                 display = item.display,
                 queryType = item.queryType
             )
-            next.query()
+           // next.query()
         }
     }
 }

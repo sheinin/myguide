@@ -82,9 +82,6 @@ fun Main(
     Box(
         Modifier
             .fillMaxSize()
-            .onPlaced {
-                screen.query()
-            }
     ) {
         val singapore = LatLng(1.35, 103.86)
         val cameraPositionState = rememberCameraPositionState {
@@ -191,7 +188,12 @@ fun Main(
                                     style = typography.bodyLarge,
                                     color = colorScheme.secondary,
                                     lineHeight = 1.em * fontScale.value!!,
-                                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!)
+                                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
+                                    modifier = Modifier
+                                        .onPlaced {
+                                            qqq("PLACED")
+                                        //screen.query()
+                                        }
                                 )
                                 Text(
                                     viewItem!!.origin!!,
@@ -227,7 +229,6 @@ fun Main(
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
                 LaunchedEffect(stateX) {
-                    qqq("STATE "+stateX)
                     scrollStateX.scrollBy(stateX!!)
                 }
                 DisposableEffect(view, display) {

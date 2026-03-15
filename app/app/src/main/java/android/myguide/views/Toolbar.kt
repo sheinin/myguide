@@ -97,11 +97,17 @@ fun Toolbar() {
                 .padding(6.dp)
                 .clickable(
                     onClick = {
+                        fontScale.value = fontScale.value!! + .1f
+
+                        vm.adjust.value = true
+                        /*
                         when (mode.value) {
                             false -> vm.ratioH.value = vm.ratioH.value!! - .01f
                             true -> vm.ratioV.value = vm.ratioH.value!! - .01f
                             null -> vm.ratio.value = vm.ratio.value!! - .01f
                         }
+
+                         */
                     }
                 )
         )
@@ -153,6 +159,7 @@ fun Toolbar() {
                             true -> vm.ratioV.value = vm.ratioH.value!! + .01f
                             null -> vm.ratio.value = vm.ratio.value!! + .01f
                         }
+                        vm.adjust.value = true
                     }
                 )
         )

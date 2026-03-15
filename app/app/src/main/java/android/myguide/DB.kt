@@ -3,13 +3,11 @@ package android.myguide
 class DB(private val repository: Repository) {
     fun fetchItemDetails(id: String, callback: (Item) -> Unit) {
         repository.getItemDetails(id) {
-            qqq("??? "+it+"-"+id)
             callback.invoke(it!!)
         }
     }
     fun fetchShopDetails(id: String, callback: (Shop) -> Unit) {
         repository.getShopDetails(id) {
-            qqq("sho "+it+"-"+id)
             callback.invoke(it!!)
         }
     }
