@@ -1,5 +1,6 @@
 package android.myguide
 
+import android.R.attr.padding
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.runtime.Composable
@@ -7,6 +8,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import kotlin.math.roundToInt
 
 
 fun qqq(q: String) { println("qqq $q") }
@@ -39,10 +41,16 @@ fun Float.toDp(): Dp {
     }
 }
 
+fun Dp.round(): Int {
+    return this@round.value.roundToInt()
+}
+
+
 @Composable
 fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
     sp.toDp()
 }
+
 
 class Measures(
     val itemHeight: Dp,

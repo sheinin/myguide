@@ -49,7 +49,6 @@ class Render(
         display = CopyOnWriteArrayList()
     )
     private var handler: VM.Display? = null
-    private var filter: List<Int> = listOf()
     private var list: List<ListInterface> = listOf()
     init {
         vm.adjust.observeForever { adjust ->
@@ -58,147 +57,15 @@ class Render(
                 return@observeForever
             }
             handler = vm.display.value
-            when (vm.display.value!!) {
-                LIST ->
-                    filter.indices
-                        .filter { it !in data.stack }
-                        .map {
-                            val point = data.point[it]
-                            data.display[point].height =
-                                data.display[point].type.height + measure(point)
-                            xy(point)
-                            expandable(point)
-                        }
-                MAP ->
-                    filter
-                        .withIndex()
-                        .filter { it.index !in data.stack }
-                        .map {
-                            expandable(it.value)
-                            xy(it.value)
-                        }
-                D3 ->
-                    filter.indices
-                        .filter { i -> i !in data.stack }
-                        .map { i -> xy(i) }
-            }
-            ruler()
+            adjust()
         }
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
-        fun d3() {
-            direction ?: return
-            fun go(ix: Int) {
-                val point = data.point.getOrNull(ix) ?: return
-                val index = ix.mod(batch)
-                data.stack[index] = ix
-                cycler.updateXY(index, data.view.xy[point])
-                qqq("JOB dir:$direction p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
-            }
-            val mn = data.stack.min()
-            qqq("S "+data.point
-                .withIndex()
-                .indexOfFirst {
-                    measures.itemHeight * it.index / 2 > scroll
-                } +" "+ mn + " "+ data.point
-                .withIndex()
-                .indexOfLast {
-                    measures.itemHeight * it.index / 2 < scroll
-                } + " "+direction)
-
-
-            if (direction!!)
-                if (
-                        data.point
-                            .withIndex()
-                            .indexOfFirst {
-                                measures.itemHeight * it.index / 2 > scroll
-                            } - batch / 4 < mn
-
-
-                    //data.ruler
-                      //  .indexOfFirst { it > scroll } - batch / 2 < mn
-                ) go(mn.dec())
-                else direction = null
-            else
-                if (
-                    data.point
-                        .withIndex()
-                        .indexOfLast {
-                            measures.itemHeight * it.index / 2 < scroll
-                        }.let { it / 2 > mn && it / 2 > batch / 3 }
-                   // data.ruler
-                     //   .indexOfLast { it < scroll }
-                       // .let { it > mn && it > batch / 2 }
-                ) go(data.stack.max().inc())
-                else direction = null
-        }
-        fun full() {
-            direction ?: return
-            fun go(ix: Int) {
-                val point = data.point.getOrNull(ix) ?: return
-                val index = ix.mod(batch)
-                data.stack[index] = ix
-                cycler.updateExpandable(index, data.view.expand[point])
-                cycler.updateDetails(index, data.view.details[point])
-                cycler.updateToggle(index, data.view.toggle[point])
-                cycler.updateXY(index, data.view.xy[point])
-                qqq("JOB dir:$direction p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
-            }
-            val mn = data.stack.min()
-            if (direction!!)
-                if (
-                    data.ruler
-                        .indexOfFirst { it > scroll } - batch / 2 < mn
-                ) go(mn.dec())
-                else direction = null
-            else
-                if (
-                    data.ruler
-                        .indexOfLast { it < scroll }
-                        .let { it > mn && it > batch / 2 }
-                ) go(data.stack.max().inc())
-                else direction = null
-        }
-        fun map() {
-            direction ?: return
-            val mx = data.stack.max()
-            val mn = data.stack.min()
-            var r = max(
-                (scroll / measures.mapViewWidth).toInt(),
-                0
-            )
-            val ix =
-                (
-                    if (direction ?: true && r < mn) mn.dec()
-                    else if (r > mn) mx.inc()
-                    else null
-                )
-            ix?.also { ix ->
-                val point = data.point.getOrNull(ix) ?: return
-                val index = ix.mod(batch)
-                data.stack[index] = ix
-                cycler.updateDetails(index, data.view.details[point])
-                cycler.updateExpandable(index, data.view.expand[point])
-                cycler.updateXY(index, data.view.xy[point])
-               // qqq("MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
-            }
-            if (ix == null) {
-                   // qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll + " ")
-                direction = null
-            }
-        }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(1)
-                handler?.also {
-                    mapOf(
-                        LIST to ::full,
-                        MAP to ::map,
-                        D3 to ::d3
-                    )[it]!!.invoke()
-                }
+                scroll()
             }
         }
     }
@@ -248,21 +115,155 @@ class Render(
             return result
         }
     }
+    private fun adjust() {
+        data.stack = IntArray(batch) { -1 }
+        when (vm.display.value!!) {
+            V ->
+                data.point
+                    .map {
+                        data.display[it].height =
+                            data.display[it].type.height + measure(it)
+                        expandable(it)
+                        xy(it)
+                    }
+            H ->
+                data.point
+                    .map {
+                        expandable(it)
+                        xy(it)
+                    }
+            T ->
+                data.point
+                    .map { xy(it) }
+        }
+        ruler()
+    }
+    private fun scroll() {
+        when (handler) {
+            T -> {
+                direction ?: return
+                fun go(ix: Int) {
+                    val point = data.point.getOrNull(ix) ?: return
+                    val index = ix.mod(batch)
+                    data.stack[index] = ix
+                    cycler.updateXY(index, data.view.xy[point])
+                    //      qqq("JOB dir:$direction p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(point)?.title)
+                }
+
+                val mn = data.stack.min()
+                /*qqq("S "+data.point
+                    .withIndex()
+                    .indexOfFirst {
+                        measures.itemHeight * it.index / 2 > scroll
+                    } +" "+ mn + " "+ data.point
+                    .withIndex()
+                    .indexOfLast {
+                        measures.itemHeight * it.index / 2 < scroll
+                    } + " "+direction)
+    */
+
+                if (direction!!)
+                    if (
+                        data.point
+                            .withIndex()
+                            .indexOfFirst {
+                                measures.itemHeight * it.index / 2 > scroll
+                            } - batch / 4 < mn
+                    ) go(mn.dec())
+                    else direction = null
+                else
+                    if (
+                        data.point
+                            .withIndex()
+                            .indexOfLast { measures.itemHeight * it.index / 2 < scroll }
+                            .let { it / 2 > mn && it / 2 > batch / 3 }
+                    ) go(data.stack.max().inc())
+                    else direction = null
+            }
+            V -> {
+                direction ?: return
+                fun go(ix: Int) {
+                    val point = data.point.getOrNull(ix) ?: return
+                    val index = ix.mod(batch)
+                    data.stack[index] = ix
+                    cycler.updateExpandable(index, data.view.expand[point])
+                    cycler.updateDetails(index, data.view.details[point])
+                    cycler.updateToggle(index, data.view.toggle[point])
+                    cycler.updateXY(index, data.view.xy[point])
+                    //qqq(
+                    //    "JOB dir:$direction p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(
+                    //        point
+                    //    )?.title
+                   // )
+                }
+                val mn = data.stack.min()
+                if (direction!!)
+                    if (
+                        data.ruler
+                            .indexOfFirst { it > scroll } - batch / 2 < mn
+                    ) go(mn.dec())
+                    else direction = null
+                else
+                    if (
+                        data.ruler
+                            .indexOfLast { it < scroll }
+                            .let { it > mn && it > batch / 2 }
+                    ) go(data.stack.max().inc())
+                    else direction = null
+            }
+            H -> {
+                direction ?: return
+                val mx = data.stack.max()
+                val mn = data.stack.min()
+                val r =
+                    max(
+                        (scroll / ((measures.mapViewWidth + measures.padding) * vm.ratioH())).toInt(),
+                        0
+                    )
+                val ix =
+                    (
+                        if (direction ?: true && r < mn) mn.dec()
+                        else if (r > mn) mx.inc()
+                        else null
+                    )
+                ix?.also { ix ->
+                    val point = data.point.getOrNull(ix) ?: return
+                    val index = ix.mod(batch)
+                    data.stack[index] = ix
+                    cycler.updateDetails(index, data.view.details[point])
+                    cycler.updateExpandable(index, data.view.expand[point])
+                    cycler.updateXY(index, data.view.xy[point])
+                    qqq(
+                        "MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll.round() + " " + " " + data.view.xy[point].x.round() + " " + data.view.details.getOrNull(
+                            point
+                        )?.title
+                    )
+                }
+                if (ix == null) {
+                   qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll.round() + " ")
+                    direction = null
+                }
+            }
+            null -> {}
+        }
+    }
     private fun zoom() {
         when (vm.display.value!!) {
-            D3 -> {
-                val from = max(
-                    data.point
-                        .withIndex()
-                        .indexOfLast { measures.itemHeight * vm.ratioV() * it.index < scroll }
-                            - batch/4,0
-                )
-                (from until min(from + batch, filter.size)).map {
+            T -> {
+                val from =
+                    max(
+                        data.point
+                            .withIndex()
+                            .indexOfLast { measures.itemHeight * vm.ratioV() * it.index < scroll }
+                                - batch / 4,
+                        0
+                    )
+                (from until min(from + batch, data.point.size)).map {
                     xy(it)
                     cycler.updateXY(it.mod(batch), data.view.xy[data.point[it]])
                 }
             }
-            LIST -> {
+            V -> {
                 val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
                 var sum = 0.dp
                 (from until min(from + batch, data.point.size)).map {
@@ -281,25 +282,35 @@ class Render(
                     expandable(point)
                     cycler.updateExpandable(index, data.view.expand[point])
                     cycler.updateXY(index, data.view.xy[point])
-                    //qqq("Z1 $it ${data.ruler[it]} $m $sum " + list[point].title + " " + data.display[point].height)
                 }
             }
-            MAP -> {
-                val x = max((scroll / measures.mapViewWidth).toInt(), 0)
-                (x until min(x + batch, filter.size)).map {
+            H -> {
+                val from =
+                    max(
+                        (scroll / (measures.mapViewWidth + measures.padding) / vm.ratioH()
+                        ).toInt() - batch / 4,
+                        0
+                    )
+
+                (from until min(from + batch, data.point.size)).map {
                     val point = data.point[it]
                     val index = it.mod(batch)
                     xy(point)
+
+
                     expandable(point)
                     cycler.updateExpandable(index, data.view.expand[point])
                     cycler.updateXY(index, data.view.xy[point])
+                   // listen()
                 }
+                qqq("MAP $from $scroll ")
+
             }
         }
         ruler()
     }
     private fun measure(ix: Int): Dp {
-        if (list[ix].description == null || vm.display.value == MAP) return 0.dp
+        if (list[ix].description == null || vm.display.value == H) return 0.dp
         val s = list[ix].title!!.trim()
         val p = androidx.compose.ui.text.Paragraph(
             text = s,
@@ -316,17 +327,14 @@ class Render(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-
         //qqq(ident.toString() + " MEASURE "
           //      + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
-        if (p.lineCount > 1) {
-           // qqq("?"+s.take(p.getLineEnd(1)))
+        if (p.lineCount > 1)
             return p.getLineHeight(1).toDp() * p.lineCount.dec() - 12.dp
-        }
         return 0.dp
     }
     private fun expandable(ix: Int, expand: Boolean = false) {
-        if (vm.display.value == MAP) {
+        if (vm.display.value == H) {
             data.view.expand[ix] = buildAnnotatedString {
                 withStyle(
                     ParagraphStyle(
@@ -406,7 +414,7 @@ class Render(
                     ) { append(str) }
                 }
             }
-        if (vm.display.value == MAP) {
+        if (vm.display.value == H) {
             data.view.expand[ix] = static()
             return
         }
@@ -577,8 +585,8 @@ class Render(
         filter()
         ruler()
 
-        qqq("SL "+filter.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
-        filter.indices.map {
+        qqq("SL "+data.point.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
+        data.point.indices.map {
             expandable(it)
             vm(data.point[it])
         }
@@ -588,61 +596,60 @@ class Render(
         )
         start = max(0, limit - batch)
         when (vm.display.value!!) {
-            D3 ->
+            T ->
                 (start until limit).map {
                     vm(data.point[it])
                     //    activity.runOnUiThread { renderYD3(it) }
                 }
-            MAP -> (start until limit).map { renderX(it) }
-            LIST -> (start until limit).map { renderYSync(it) }
+            H -> (start until limit).map { renderX(it) }
+            V -> (start until limit).map { renderYSync(it) }
         }
         sleep { lock = false }
     }
     private fun filter() {
         val toggle = data.toggle
-        filter =
+        data.point.clear()
+        data.point.addAll(
             data.display.withIndex().filter {
                 !toggle.any { c ->
                     c.value.first < it.index
                             && c.value.first + c.value.second.unaryMinus() > it.index
                 }
             }.map { it.index }.toList()
-        qqq("F"+filter.size)
+        )
     }
     private fun xy(ix: Int) {
         val point = data.point[ix]
-        data.view.xy[point] = when (vm.display.value!!) {
-            D3 ->
-                Cycler.XY(
-                    x = screenWidth / measures.tableColumns * ix.mod(measures.tableColumns),
-                    y = ((measures.itemHeight.times(2)) * (ix / measures.tableColumns)) * vm.ratioV(),
-                    w = screenWidth / measures.tableColumns,
-                    h = measures.itemHeight * 2,
-                )
-            LIST -> {
-              //  val point = data.point[ix]
-                val ruler = data.ruler[ix]
-                Cycler.XY(
-                    x = 0.dp,
-                    y = ruler,
-                    w = screenWidth,
-                    h = data.display[point].height,
-                )
+        data.view.xy[point] =
+            when (vm.display.value!!) {
+                T ->
+                    Cycler.XY(
+                        x = screenWidth / measures.tableColumns * ix.mod(measures.tableColumns),
+                        y = ((measures.itemHeight.times(2)) * (ix / measures.tableColumns)) * vm.ratioV(),
+                        w = screenWidth / measures.tableColumns,
+                        h = measures.itemHeight * 2,
+                    )
+                V ->
+                    Cycler.XY(
+                        x = 0.dp,
+                        y = data.ruler[ix],
+                        w = screenWidth,
+                        h = data.display[point].height,
+                    )
+                H ->
+                    Cycler.XY(
+                        x = measures.mapViewWidth * ix * vm.ratioH(),
+                        y = 0.dp,
+                        w = (measures.mapViewWidth - measures.padding) * vm.ratioH(),
+                        h = DisplayType.DEFAULT.height,
+                    )
             }
-            MAP ->
-                Cycler.XY(
-                    x = measures.mapViewWidth * ix,
-                    y = 0.dp,
-                    w = measures.mapViewWidth - measures.padding,
-                    h = DisplayType.DEFAULT.height,
-                )
-        }
     }
     fun display() {
         handler = vm.display.value
         toolbar.items.last().display = vm.display.value!!
         when (vm.display.value!!) {
-            MAP -> {
+            H -> {
                 vm.w.value = measures.mapViewWidth * data.ruler.size * vm.ratioH()
                 vm.h.value = measures.itemHeight * vm.ratioV()
                 list.indices.map {
@@ -650,14 +657,14 @@ class Render(
                     xy(it)
                 }
             }
-            D3 -> {
+            T -> {
                 list.indices.map {
                     xy(it)
                 }
                 vm.w.value = screenWidth
                 vm.h.value = (measures.itemHeight.times(2)) * (data.point.size / measures.tableColumns) * vm.ratioV()
             }
-            LIST -> {
+            V -> {
                 ruler()
                 list.indices.map {
                     expandable(it)
@@ -695,7 +702,7 @@ class Render(
         data.view.toggle = MutableList(this@Render.list.size) { null }
         val position = toolbar.items.lastOrNull()?.position ?: return
         if (position > 0.dp) {
-            if (vm.display.value == MAP) {
+            if (vm.display.value == H) {
                 vm.w.postValue(position + screenWidth)
                 vm.h.postValue(measures.itemHeight)
             } else {
@@ -709,11 +716,11 @@ class Render(
     private var height = 0.dp
     private fun ruler() {
         //data.point.clear()
-        data.ruler.clear()
-        height = 0.dp
         when (vm.display.value!!) {
-            D3 -> {}
-            LIST -> {
+            T -> {}
+            V -> {
+                data.ruler.clear()
+                height = 0.dp
                 data.point.map {
                  //   data.point.add(it)
                     data.ruler.add(height)
@@ -722,10 +729,9 @@ class Render(
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
             }
-            MAP -> {
-                data.point.addAll(filter)
-                vm.w.postValue(measures.mapViewWidth * data.ruler.size)
-                vm.h.postValue(measures.itemHeight)
+            H -> {
+                vm.w.postValue(measures.mapViewWidth * data.point.size * vm.ratioH())
+                vm.h.postValue(measures.itemHeight * vm.ratioH())
             }
         }
     }

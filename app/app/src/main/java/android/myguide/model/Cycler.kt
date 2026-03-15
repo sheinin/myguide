@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.collections.plus
 
-class Cycler: ViewModel() {
+class Cycler {
     data class XY(
         var x: Dp,
         var y: Dp,

@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -56,7 +54,7 @@ fun ViewItem(
     if (details.title.isEmpty() || xy == Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     @Composable
     fun Content() {
-        if (display != MAP && details.drawable != null)
+        if (display != H && details.drawable != null)
             Image(
                 painterResource(details.drawable),
                 "item icon",
@@ -69,7 +67,7 @@ fun ViewItem(
             )
         Column(
             horizontalAlignment =
-                if (display == D3) Alignment.CenterHorizontally
+                if (display == T) Alignment.CenterHorizontally
                 else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
@@ -81,15 +79,15 @@ fun ViewItem(
             ) {
                 Text(
                     details.title,
-                    textAlign = if (display == D3) TextAlign.Center else TextAlign.Start,
+                    textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
                     fontSize = typography.bodyLarge.fontSize * ratioV,
                     lineHeight = 1.em * fontScale,
                     maxLines =
                         when (display!!) {
-                            D3 -> 2
-                            LIST -> Int.MAX_VALUE
-                            MAP -> 1
+                            T -> 2
+                            V -> Int.MAX_VALUE
+                            H -> 1
                         },
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyLarge,
@@ -127,11 +125,11 @@ fun ViewItem(
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
                 )
-            if (expand != null && display != D3)
+            if (expand != null && display != T)
                 Text(
                     expand,
                     maxLines =
-                        if (display == MAP) 2
+                        if (display == H) 2
                         else Int.MAX_VALUE,
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -147,7 +145,7 @@ fun ViewItem(
             if (details.origin == null) Modifier
             else Modifier.clickable(onClick = { callback(index) })
         )
-    if (display != D3)
+    if (display != T)
         Row(
             modifier
                 .padding(

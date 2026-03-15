@@ -42,7 +42,7 @@ class Toolbar {
     }
     fun navigate(
         id: String? = null,
-        display: VM.Display = LIST,
+        display: VM.Display = V,
         queryType: QueryType = SHOPS,
         title: String
     ) {

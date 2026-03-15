@@ -4,7 +4,6 @@ import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.colorScheme
-import android.myguide.model.VM
 import android.myguide.model.VM.Display.*
 import android.myguide.typography
 import androidx.compose.foundation.Image
@@ -90,9 +89,9 @@ fun Control(screen: Screen) {
             Image(
                 painter = painterResource(
                     when (display!!) {
-                        LIST -> R.drawable.view_list
-                        MAP -> R.drawable.map
-                        D3 -> R.drawable.grid
+                        V -> R.drawable.view_list
+                        H -> R.drawable.map
+                        T -> R.drawable.grid
                     }
                 ),
                 contentDescription = "list",
@@ -102,9 +101,9 @@ fun Control(screen: Screen) {
                         onClick = {
                             screen.vm.display.value =
                                 when (screen.vm.display.value!!) {
-                                    LIST -> MAP
-                                    MAP -> D3
-                                    D3 -> LIST
+                                    V -> H
+                                    H -> T
+                                    T -> V
                                 }
                             screen.render.display()
                         }

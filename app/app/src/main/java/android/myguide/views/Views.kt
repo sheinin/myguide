@@ -9,6 +9,7 @@ import android.myguide.fontScale
 import android.myguide.lock
 import android.myguide.measures
 import android.myguide.model.VM.Display.*
+import android.myguide.qqq
 import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
@@ -16,6 +17,7 @@ import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -75,6 +77,7 @@ fun Main(
 ) {
     val bind = screen.vm
     val display by bind.display.observeAsState()
+    val stateX by bind.stateX.observeAsState()
     val stateY by bind.stateY.observeAsState()
     Box(
         Modifier
@@ -120,7 +123,7 @@ fun Main(
                             )
                         }
                     }
-                if (display == MAP) Control(screen)
+                if (display == H) Control(screen)
             }
             val scrollStateY = rememberScrollState()
             val view = LocalView.current
@@ -128,11 +131,11 @@ fun Main(
             val h = bind.h.observeAsState()
             val w = bind.w.observeAsState()
             LaunchedEffect(bind.position.value) {
-                if (display != MAP)
-                    scrollStateY.scrollTo(stateY!!)
+                if (display != H)
+                    scrollStateY.scrollBy(stateY!!)
             }
             DisposableEffect(view, display) {
-                if (display == MAP) return@DisposableEffect onDispose {}
+                if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     with(density) {
                         screen.render.observe((scrollStateY.value - viewItemHeight).toDp())
@@ -151,7 +154,7 @@ fun Main(
                     .verticalScroll(scrollStateY)
                     .weight(1f)
                     .then(
-                        if (display == MAP) Modifier
+                        if (display == H) Modifier
                             .height(h.value!!)
                             .background(Color.Transparent)
                         else Modifier
@@ -164,7 +167,7 @@ fun Main(
                 val ratioH by screen.vm.ratioH.observeAsState()
                 val ratioV by screen.vm.ratioV.observeAsState()
                 val viewItem by bind.details.observeAsState()
-                if (display != MAP && viewItem != null)
+                if (display != H && viewItem != null)
                     Column(
                         Modifier
                             .padding(8.dp)
@@ -219,17 +222,16 @@ fun Main(
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
-                if (display != MAP)
+                if (display != H)
                     Control(screen)
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
-                LaunchedEffect(bind.position.value) {
-                 //   scrollStateX.scrollTo(
-                   //  ///////////////////   bind.position.value!!.toPx().toInt()
-                    //)
+                LaunchedEffect(stateX) {
+                    qqq("STATE "+stateX)
+                    scrollStateX.scrollBy(stateX!!)
                 }
                 DisposableEffect(view, display) {
-                    if (display != MAP) return@DisposableEffect onDispose {}
+                    if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
                         with(density) {
                             screen.render.observe(scrollStateX.value.toDp())
@@ -246,7 +248,7 @@ fun Main(
                         .fillMaxWidth()
                         .horizontalScroll(scrollStateX)
                         .padding(
-                            bottom = if (display?.isMap == true) measures.padding * 4 else 0.dp
+                            bottom = if (display == H) measures.padding * 4 else 0.dp
                         )
                 ) {
                     val details by bind.cycler.details.collectAsStateWithLifecycle()
@@ -262,7 +264,7 @@ fun Main(
                             if (lock) return
                             lock = true
                             toolbar.items.last().position =
-                                if (display == MAP) scrollStateX.value.toDp()
+                                if (display == H) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
                             toolbar.navigate(
                                 id = details[index].id,
