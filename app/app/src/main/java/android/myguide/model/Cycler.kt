@@ -5,14 +5,13 @@ import android.myguide.batch
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlin.collections.plus
 
-class Cycler {
-    //val isMap = MutableLiveData(true)
+class Cycler: ViewModel() {
     data class XY(
         var x: Dp,
         var y: Dp,

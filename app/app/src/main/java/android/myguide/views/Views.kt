@@ -1,23 +1,17 @@
 package android.myguide.views
 
-import android.R.attr.bottom
-import android.R.attr.end
-import android.R.attr.height
-import android.R.attr.top
 import android.myguide.Screen
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
+import android.myguide.dialog
 import android.myguide.fontScale
 import android.myguide.lock
 import android.myguide.measures
-import android.myguide.model.VM
 import android.myguide.model.VM.Display.*
 import android.myguide.toDp
-import android.myguide.toPx
+import android.myguide.toolbar
 import android.myguide.typography
-import android.myguide.vmm
-import android.util.Log.w
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -50,13 +44,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
@@ -69,8 +61,6 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -111,20 +101,20 @@ fun Main(
                     .fillMaxWidth()
                     .background(colorScheme.background)
             ) {
-                if (vmm.toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
+                if (toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
                     Row(Modifier.padding(8.dp, 4.dp)) {
                         repeat(3) {
                             ArrowText(
-                                vmm.toolbar.crumbs[screen.ident]!!.value!![it],
+                                toolbar.crumbs[screen.ident]!!.value!![it],
                                 modifier = Modifier
                                     .weight(1f)
                                     .alpha(
-                                        if (vmm.toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
+                                        if (toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
                                         else 0f
                                     )
                                     .clickable(
                                         onClick = {
-                                            vmm.toolbar.click(it)
+                                            toolbar.click(it)
                                         }
                                     )
                             )
@@ -271,10 +261,10 @@ fun Main(
                         fun callback(index: Int) {
                             if (lock) return
                             lock = true
-                            vmm.toolbar.items.last().position =
+                            toolbar.items.last().position =
                                 if (display == MAP) scrollStateX.value.toDp()
                                 else scrollStateY.value.toDp()
-                            vmm.toolbar.navigate(
+                            toolbar.navigate(
                                 id = details[index].id,
                                 title = details[index].title,
                                 queryType = screen.queryType!!.next
@@ -341,7 +331,7 @@ fun ArrowText(
 @Composable
 fun MyDialog() {
     Dialog(
-        onDismissRequest = { vmm.dialog.postValue(false) },
+        onDismissRequest = { dialog.postValue(false) },
         properties = DialogProperties(
             usePlatformDefaultWidth = false
         )
@@ -351,7 +341,7 @@ fun MyDialog() {
             modifier = Modifier
                 .fillMaxSize()
                 .clickable(
-                    onClick = { vmm.dialog.value = false }
+                    onClick = { dialog.value = false }
                 )
                 .padding(top = 86.dp, start = 8.dp, end = 8.dp), // Adjust top padding as needed
             contentAlignment = Alignment.TopCenter // Aligns content to the top center
@@ -365,15 +355,15 @@ fun MyDialog() {
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    val list = vmm.toolbar.items.subList(1, vmm.toolbar.items.lastIndex.dec())
+                    val list = toolbar.items.subList(1, toolbar.items.lastIndex.dec())
                     items(list.size) {
                         Text(
                             text = list[it].title,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    vmm.toolbar.goto(it.inc())
-                                    vmm.dialog.value = false
+                                    toolbar.goto(it.inc())
+                                    dialog.value = false
                                 }
                                 .padding(16.dp)
                         )

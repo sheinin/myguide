@@ -27,10 +27,10 @@ class Screen(
         this.queryType = queryType
         qqq(
             "SCREEN BUILD query:" + queryType
-                    + " ident:" +ident+vmm.toolbar.items.last().ident
+                    + " ident:" +ident+toolbar.items.last().ident
                     + " id:" + id
                     + " display:" + display
-            + " position:" + vmm.toolbar.items.last().position
+            + " position:" + toolbar.items.last().position
         )
         when (queryType) {
             ITEM ->
@@ -74,11 +74,11 @@ class Screen(
     fun query() {
         if (this@Screen.lock) return
         this@Screen.lock = true
-        qqq("QU $ident $id ${vmm.toolbar.items.last().ident}")
-        if (ident != vmm.toolbar.items.last().ident) return
+        qqq("QU $ident $id ${toolbar.items.last().ident}")
+        if (ident != toolbar.items.last().ident) return
         fun callback(list: List<ListInterface>) {
-            qqq("CB"+list.size +ident + " "+vmm.toolbar.items.last().ident)
-            if (ident != vmm.toolbar.items.last().ident) return
+            qqq("CB"+list.size +ident + " "+toolbar.items.last().ident)
+            if (ident != toolbar.items.last().ident) return
             var count = 0
             while (count <= list.lastIndex) {
                  if ((list.getOrNull(count.inc())?.level ?: -1) > list[count].level) {
@@ -112,9 +112,9 @@ class Screen(
         render.listen(false)
     }
     fun update() {
-        qqq("UPDATE SCREEN " + ident + " " + vmm.toolbar.items.last().position)
+        qqq("UPDATE SCREEN " + ident + " " + toolbar.items.last().position)
         android.myguide.lock = false
-        vm.position.postValue(vmm.toolbar.items.last().position)
+        vm.position.postValue(toolbar.items.last().position)
         render.listen(true)
     }
 }

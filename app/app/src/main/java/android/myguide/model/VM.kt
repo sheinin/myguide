@@ -2,9 +2,11 @@ package android.myguide.model
 
 import android.myguide.Details
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.Dimension.Companion.ratio
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 
-class VM {
+class VM : ViewModel() {
     enum class Display {
         D3,
         LIST,

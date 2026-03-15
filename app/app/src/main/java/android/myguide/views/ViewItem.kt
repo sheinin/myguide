@@ -10,7 +10,6 @@ import android.myguide.model.Cycler
 import android.myguide.model.VM
 import android.myguide.model.VM.Display.*
 import android.myguide.typography
-import android.myguide.vmm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

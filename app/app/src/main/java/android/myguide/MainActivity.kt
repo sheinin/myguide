@@ -36,16 +36,20 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.lifecycle.MutableLiveData
 import kotlin.properties.Delegates
 
-const val batch = 21
+const val batch = 5
 lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var measures: Measures
 lateinit var typography: Typography
-lateinit var vmm: ViewModel
+// lateinit var vmm: ViewModel
+val current = MutableLiveData<Boolean?>(null)
+val dialog = MutableLiveData(false)
+val toolbar = android.myguide.Toolbar()
 var fontScale by Delegates.notNull<Float>()
 var lock = false
 var screenHeight = 0.dp
@@ -61,8 +65,7 @@ class MainActivity : ComponentActivity() {
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         db = DB(repository)
-        vmm = ViewModel()
-        vmm.toolbar.init(this)
+       // vmm = ViewModel()
         db.updateItemList { list ->
             list.filter { it.pic != null }
                 .map {
@@ -93,7 +96,7 @@ class MainActivity : ComponentActivity() {
             true to Screen(ident = true)
         )
         setContent {
-            BackHandler(enabled = true) { vmm.toolbar.back() }
+            BackHandler(enabled = true) { toolbar.back() }
             GetScreenSize()
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
@@ -105,7 +108,8 @@ class MainActivity : ComponentActivity() {
                         measures = Measures(
                             itemHeight = coordinates.size.height.toDp(),
                             mapViewWidth = screenWidth - 8.dp * 2,
-                            padding = 8.dp
+                            padding = 8.dp,
+                            tableColumns = 3
                         )
                     }
             ) {
@@ -139,7 +143,7 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val ident = vmm.current.observeAsState()
+                    val ident = current.observeAsState()
                     if (ident.value == null)//vmm.showSplash.observeAsState().value!!)
                         Splash(Modifier.padding(innerPadding))
                     else {
@@ -165,7 +169,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        val dialog by vmm.dialog.observeAsState()
+                        val dialog by dialog.observeAsState()
                         if (dialog == true) MyDialog()
                     }
                 }

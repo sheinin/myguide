@@ -302,3 +302,11 @@ fun Shop.toInterface(): ListInterface {
         override val level = 0
     }
 }
+
+data class Details(
+    val id: String,
+    val title: String,
+    val origin: String?,
+    val drawable: Int?,
+    val level: Int
+)

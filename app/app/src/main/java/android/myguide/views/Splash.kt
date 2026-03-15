@@ -3,8 +3,8 @@ package android.myguide.views
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.screenWidth
+import android.myguide.toolbar
 import android.myguide.typography
-import android.myguide.vmm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,9 +35,9 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                        //vmm.current.value = null
-                        //vmm.showSplash.value = false
-                        vmm.toolbar.navigate(
+                        //current.value = null
+                        //showSplash.value = false
+                        toolbar.navigate(
                             queryType = QueryType.SHOPS,
                             title = "All Shops"
                         )
@@ -58,8 +58,8 @@ fun Splash(modifier: Modifier) {
             modifier = Modifier
                 .clickable(
                     onClick = {
-                       // vmm.showSplash.value = false
-                        vmm.toolbar.navigate(
+                       // showSplash.value = false
+                        toolbar.navigate(
                             queryType = QueryType.ITEMS,
                             title = "All Items"
                         )

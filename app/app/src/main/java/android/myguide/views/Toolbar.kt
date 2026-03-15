@@ -1,13 +1,12 @@
 package android.myguide.views
 
 
-import android.R.attr.track
 import android.myguide.R
 import android.myguide.colorScheme
+import android.myguide.current
 import android.myguide.fontScale
 import android.myguide.screen
 import android.myguide.typography
-import android.myguide.vmm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -34,14 +33,13 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Toolbar() {
-    val current by vmm.current.observeAsState()
-    if (current == null) return
+    val ident by current.observeAsState()
+    if (ident == null) return
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(8.dp)
     ) {
-
-        val vm = screen[current!!]!!.vm
+        val vm = screen[ident!!]!!.vm
         val mode = remember { mutableStateOf<Boolean?>(null) }
         val ratio by vm.ratio.observeAsState()
         val ratioH by vm.ratioH.observeAsState()
