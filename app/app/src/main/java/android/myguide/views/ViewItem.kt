@@ -82,7 +82,7 @@ fun ViewItem(
                     textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
                     fontSize = typography.bodyLarge.fontSize * ratioV,
-                    lineHeight = 1.em * fontScale,
+                    lineHeight = 1.em * fontScale.value!!,
                     maxLines =
                         when (display!!) {
                             T -> 2
@@ -120,7 +120,7 @@ fun ViewItem(
                     color = colorScheme.secondary,
                     fontSize = typography.bodyMedium.fontSize * ratioV,
                     fontStyle = FontStyle.Italic,
-                    lineHeight = 1.em * fontScale,
+                    lineHeight = 1.em * fontScale.value!!,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,

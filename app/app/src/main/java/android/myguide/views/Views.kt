@@ -190,7 +190,7 @@ fun Main(
                                     viewItem!!.title,
                                     style = typography.bodyLarge,
                                     color = colorScheme.secondary,
-                                    lineHeight = 1.em * fontScale,
+                                    lineHeight = 1.em * fontScale.value!!,
                                     fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!)
                                 )
                                 Text(
@@ -198,7 +198,7 @@ fun Main(
                                     fontStyle = FontStyle.Italic,
                                     style = typography.bodyMedium,
                                     color = colorScheme.secondary,
-                                    lineHeight = 1.em * fontScale,
+                                    lineHeight = 1.em * fontScale.value!!,
                                     fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
@@ -216,7 +216,7 @@ fun Main(
                         }
                         Text(description!!,
                             style = typography.bodySmall,
-                            lineHeight = 1.em * fontScale,
+                            lineHeight = 1.em * fontScale.value!!,
                             color = colorScheme.secondary,
                             fontSize = typography.bodySmall.fontSize * (ratioV ?: ratio!!),
                             modifier = Modifier.padding(start = 8.dp)

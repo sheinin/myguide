@@ -118,7 +118,7 @@ class Render(
     private fun adjust() {
         data.stack = IntArray(batch) { -1 }
         when (vm.display.value!!) {
-            V ->
+            V -> {
                 data.point
                     .map {
                         data.display[it].height =
@@ -126,6 +126,8 @@ class Render(
                         expandable(it)
                         xy(it)
                     }
+                zoom()
+            }
             H ->
                 data.point
                     .map {
@@ -233,14 +235,14 @@ class Render(
                     cycler.updateDetails(index, data.view.details[point])
                     cycler.updateExpandable(index, data.view.expand[point])
                     cycler.updateXY(index, data.view.xy[point])
-                    qqq(
+                    /*qqq(
                         "MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll.round() + " " + " " + data.view.xy[point].x.round() + " " + data.view.details.getOrNull(
                             point
                         )?.title
-                    )
+                    )*/
                 }
                 if (ix == null) {
-                   qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll.round() + " ")
+                   //qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll.round() + " ")
                     direction = null
                 }
             }
@@ -598,7 +600,7 @@ class Render(
         when (vm.display.value!!) {
             T ->
                 (start until limit).map {
-                    vm(data.point[it])
+                    //vm(data.point[it])
                     //    activity.runOnUiThread { renderYD3(it) }
                 }
             H -> (start until limit).map { renderX(it) }
@@ -856,116 +858,64 @@ class Render(
     }
     fun expand(ix: Int, expand: Boolean) {
         qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))
-        val disp = data.display[data.point[ix]]//.find { it.ordinal == ix }!!
+        val disp = data.display[data.point[ix]]
         if (expand) {
             val s = list[ix].description!! + " \u2026"
-            val p = androidx.compose.ui.text.Paragraph(
-                text = s,
-                style = typography.bodySmall,
-                spanStyles = listOf(
-                    AnnotatedString.Range(
-                        SpanStyle(
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV(),
-                        ),
-                        0,
-                        s.length
-                    )
-                ),
-                constraints = Constraints(
-                    maxWidth = (
-                            (screenWidth - (
-                                    measures.itemHeight +
-                                            measures.padding.times(4) +
-                                            measures.padding.times(2) * list[ix].level
-                                    ) * vm.ratioH())
-                            ).toPx().toInt()
-                ),
-                density = density,
-                fontFamilyResolver = fontFamilyResolver,
-            )
+            val p =
+                androidx.compose.ui.text.Paragraph(
+                    text = s,
+                    style = typography.bodySmall,
+                    spanStyles = listOf(
+                        AnnotatedString.Range(
+                            SpanStyle(
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV(),
+                            ),
+                            0,
+                            s.length
+                        )
+                    ),
+                    constraints = Constraints(
+                        maxWidth = (
+                                (screenWidth - (
+                                        measures.itemHeight +
+                                                measures.padding.times(4) +
+                                                measures.padding.times(2) * list[ix].level
+                                        ) * vm.ratioH())
+                                ).toPx().toInt()
+                    ),
+                    density = density,
+                    fontFamilyResolver = fontFamilyResolver,
+                )
             data.display[ix].height += p.getLineHeight(1).toDp() * p.lineCount.minus(2)
         } else data.display[ix].height = disp.type.height + measure(ix)
         val start = data.point.indexOf(ix)
         expandable(ix, expand)
         ruler()
-        data.stack = IntArray(batch) { -1 }
-        data.point
-            .mapIndexed { ix, it ->
-                xy(ix)/*
-                data.view.xy[it] =
-                    Cycler.XY(
-                        x = 0.dp,
-                        y = data.ruler[ix],
-                        w = screenWidth,
-                        h = data.display[data.point[it]]!!.height,
-                    )
-                    */
-            }
-        (max(0, start - batch / 2) until min(data.ruler.size, start + batch / 2)).map { ix ->
-            val point = data.point[ix]
-            val index = ix.mod(batch)
-            //qqq("RS "+point+" "+ix+" "+data.vm.details.getOrNull(point)?.title + " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
-            data.stack[index] = ix
-            cycler.updateDetails(index, data.view.details[point])
-            cycler.updateExpandable(index, data.view.expand[point])
-            cycler.updateXY(index, data.view.xy[point])
-        }
+        //data.stack = IntArray(batch) { -1 }
+        data.point.indices
+            .map { xy(it) }
+        data.stack
+            .map { renderYSync(it) }
     }
     fun toggle(ix: Int) {
         val point = data.point[data.stack[ix]]
         data.view.toggle[point] = data.toggle[point]!!.second > 0
         data.toggle[point] =
             data.toggle[point]!!.first to data.toggle[point]!!.second.unaryMinus()
+        filter()
         ruler()
-        data.ruler.indices.map {
-            /*
-            data.view.xy[data.point[it]] = Cycler.XY(
-                x = 0.dp,
-                y = data.ruler[it] ?: 0.dp,
-                w = screenWidth,
-                h = data.display[data.point[it]].height,
-            )
-
-             */
-            xy(it)
-        }
-        (0 until batch).map {
-            cycler.updateXY(it, Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
-        }
-        data.stack.filter { it != -1 }.map {
-            //cycler.updateXY(it.mod(batch), data.vm.xy[data.point[it]])
-            //cycler.updateToggle(it.mod(batch), data.vm.toggle[data.point[it]])
-            renderYSync(it)
-
-        }
+        data.point.indices
+            .map { xy(it) }
+        (0 until min(batch, data.point.size))
+            .map {
+                cycler.updateXY(it, Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp))
+                renderYSync(it)
+            }
     }
     private fun vm(ix: Int, more: Boolean? = null) {
-        val item = list[ix]//.getOrNull(ix) ?: return
-        val disp = data.display[ix]//.getOrNull(ix) ?: return
-        val ruler = data.ruler[ix]//.getOrNull(ix) ?: return
+        val item = list[ix]
         //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
-       // data.vm.toggle.getOrNull(ix) ?: return
-        /*data.view.xy[ix] =
-            when (vm.display.value) {
-                LIST -> {
-                    Cycler.XY(
-                        x = 0.dp,
-                        y = ruler,
-                        w = screenWidth,
-                        h = disp.height,
-                    )
-                }
-                else ->
-                    Cycler.XY(
-                        x = (screenWidth - 90.dp) * ix,
-                        y = 0.dp,
-                        w = screenWidth - 90.dp,
-                        h = DisplayType.DEFAULT.height,
-                    )
-
-            }
-         */
         xy(ix)
         data.view.toggle[ix] = more ?: (data.view.toggle.getOrNull(ix) ?: false)
         data.view.details[ix] =

@@ -1,6 +1,7 @@
 package android.myguide
 
 
+import android.myguide.density
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
 import android.myguide.views.MyDialog
@@ -14,6 +15,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
@@ -50,7 +56,7 @@ lateinit var typography: Typography
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
 val toolbar = android.myguide.Toolbar()
-var fontScale by Delegates.notNull<Float>()
+var fontScale = MutableLiveData(1f)//by Delegates.notNull<Float>()
 var lock = false
 var screenHeight = 0.dp
 var screenWidth = 0.dp
@@ -100,7 +106,7 @@ class MainActivity : ComponentActivity() {
             GetScreenSize()
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
-            fontScale =  resources.configuration.fontScale
+            fontScale.value =  resources.configuration.fontScale
             typography = MaterialTheme.typography
             Column(
                 Modifier
@@ -117,13 +123,13 @@ class MainActivity : ComponentActivity() {
                     "1",
                     style = typography.bodyLarge,
                     fontSize = typography.bodyLarge.fontSize,
-                    lineHeight = 1.em * fontScale,
+                    lineHeight = 1.em * fontScale.value!!,
                 )
                 Text(
                     "1",
                     style = typography.bodyMedium,
                     fontSize = typography.bodyMedium.fontSize,
-                    lineHeight = 1.em * fontScale,
+                    lineHeight = 1.em * fontScale.value!!,
                 )
                 Text(
                     buildAnnotatedString {
@@ -148,25 +154,34 @@ class MainActivity : ComponentActivity() {
                         Splash(Modifier.padding(innerPadding))
                     else {
                         Column(Modifier.fillMaxSize().padding(innerPadding)) {
-
                             Toolbar()
-                            AnimatedVisibility(
-                                visible = ident.value == false,
-                                enter = EnterTransition.None,
-                                exit = ExitTransition.None
+                            CompositionLocalProvider(
+                                LocalDensity provides
+                                    Density(
+                                        density = density.density, // Keep the original density
+                                        fontScale = 1f
+                                    )
                             ) {
-                                Main(
-                                    screen = screen[false]!!
-                                )
-                            }
-                            AnimatedVisibility(
-                                ident.value == true,
-                                enter = EnterTransition.None,
-                                exit = ExitTransition.None
-                            ) {
-                                Main(
-                                    screen = screen[true]!!
-                                )
+                                Box {
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        visible = ident.value == false,
+                                        enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),//EnterTransition.None,
+                                        exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+                                    ) {
+                                        Main(
+                                            screen = screen[false]!!
+                                        )
+                                    }
+                                    androidx.compose.animation.AnimatedVisibility(
+                                        ident.value == true,
+                                        enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+                                        exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+                                    ) {
+                                        Main(
+                                            screen = screen[true]!!
+                                        )
+                                    }
+                                }
                             }
                         }
                         val dialog by dialog.observeAsState()

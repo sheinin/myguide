@@ -6,9 +6,7 @@ import android.myguide.QueryType.SHOP
 import android.myguide.QueryType.SHOPS
 import android.myguide.model.VM
 
-class Screen(
-    val ident: Boolean
-) {
+class Screen(val ident: Boolean) {
     private var id: String? = null
     private var lock = false
     val vm = VM()
@@ -45,6 +43,7 @@ class Screen(
                             level = 0
                         )
                     )
+                    current.postValue(!(current.value ?: true))
                 }
             SHOP ->
                 db.fetchShopDetails(this.id!!) {
@@ -58,21 +57,24 @@ class Screen(
                             level = 0
                         )
                     )
+                    current.postValue(!(current.value ?: true))
+
                 }
             else -> {
                 vm.description.value = null
                 vm.details.value = null
+                current.value = !(current.value ?: true)
             }
         }
         this@Screen.lock = false
         vm.display.value = display
         vm.h.value = screenHeight
         vm.stateY.value = 0f
-        render.reset()
     }
     fun query() {
         if (this@Screen.lock) return
         this@Screen.lock = true
+        render.reset()
         qqq("QU $ident $id ${toolbar.items.last().ident}")
         if (ident != toolbar.items.last().ident) return
         fun callback(list: List<ListInterface>) {

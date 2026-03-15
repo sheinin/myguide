@@ -53,30 +53,30 @@ class Toolbar {
                 return
             }
         }
-        current.value = !(current.value ?: false)
+        val current =  !(current.value ?: true)
         val item =
             Item(
                 id = id,
-                ident = current.value!!,
+                ident = current,
                 display = display,
                 title = title,
                 position = 0.dp,
                 queryType = queryType
             )
         cached = true
-        crumbs[current.value!!]!!.value =
+        crumbs[current]!!.value =
             listOf(
                 items.getOrNull(0)?.title ?: "",
                 if (items.size > 3) "• • •" else items.getOrNull(1)?.title ?: "",
                 if (items.size > 2) items.last().title else ""
             )
         items.add(item)
-        screen[current.value!!]!!.build(
+        screen[current]!!.build(
             id = id,
             display = display,
             queryType = queryType,
         )
-        screen[!current.value!!]!!.reset()
+        screen[!current]!!.reset()
     }
     private var cached = true
     fun goto(ix: Int) {

@@ -86,7 +86,7 @@ fun Toolbar() {
                 }
             ),
             style = typography.labelSmall,
-            modifier = Modifier.width(32.dp * fontScale)
+            modifier = Modifier.width(32.dp * fontScale.value!!)
         )
         Image(
             painter = painterResource(R.drawable.remove),
