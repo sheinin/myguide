@@ -115,13 +115,13 @@ class MainActivity : ComponentActivity() {
             state = remember { MutableTransitionState(false) }
             typography = MaterialTheme.typography
             measures = Measures(
-                itemHeight = 0.dp,
+                itemHeight = 68.dp,
                 mapViewWidth = screenWidth - 8.dp * 2,
                 padding = 8.dp,
                 tableColumns = 3
             )
             MyGuideTheme {
-                Measures()
+                //Measures()
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val ident = current.observeAsState()
@@ -171,7 +171,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                     ) { Main(screen = screen[false]!!)
 
-                                      //  Measures()
+                                        Measures()
                                     }
                                 }
                                 androidx.compose.animation.AnimatedVisibility(
@@ -187,7 +187,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                     ) { Main(screen = screen[true]!!)
 
-                                      //  Measures()
+                                        Measures()
                                     }
                                 }
                             }
@@ -211,20 +211,20 @@ fun Measures() {
             }
             .onGloballyPositioned { coordinates ->
                 qqq("MM"+measures.itemHeight+coordinates.size.height.toDp())
-                measures.itemHeight = coordinates.size.height.toDp()
+               // measures.itemHeight = coordinates.size.height.toDp()
             }
     ) {
         Text(
             "1",
             style = typography.bodyLarge,
             fontSize = typography.bodyLarge.fontSize,
-            lineHeight = 1.em,
+            lineHeight = typography.bodyMedium.fontSize,
         )
         Text(
             "1",
             style = typography.bodyMedium,
             fontSize = typography.bodyMedium.fontSize,
-            lineHeight = 1.em,
+            lineHeight = typography.bodyMedium.fontSize,
         )
         Text(
             buildAnnotatedString {

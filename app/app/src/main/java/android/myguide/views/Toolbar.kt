@@ -14,7 +14,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -102,8 +100,7 @@ fun Toolbar() {
         ) {
             Column {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color.Red).padding(0.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
                         painter = painterResource(R.drawable._text),
@@ -113,13 +110,12 @@ fun Toolbar() {
                             .size(36.dp)
                             .padding(10.dp)
                     )
-                    Spacer(Modifier.width(8.dp).height(0.dp))
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         "%.2f".format(vm.scale.value),
                         style = typography.labelSmall,
                         fontSize = 12.sp,
                         modifier = Modifier.width(32.dp)
-                            .background(Color.Yellow)
                     )
                     Image(
                         painter = painterResource(R.drawable.remove),
@@ -132,8 +128,10 @@ fun Toolbar() {
                                 onClick = {
                                     vm.scale.value = vm.scale.value!! - .01f
                                     vm.adjust.value = true
+
+                                    qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
                                 }
-                            ).background(Color.Green)
+                            )
                     )
                     Spacer(Modifier.width(8.dp))
                     Slider(
@@ -141,6 +139,8 @@ fun Toolbar() {
                         onValueChange = {
                             vm.adjust.value = false
                             vm.scale.value = it
+
+                            qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
                         },
                         onValueChangeFinished = { vm.adjust.value = true },
                         valueRange = 0.75f..2f,
@@ -170,8 +170,9 @@ fun Toolbar() {
                             .clickable(
                                 onClick = {
                                     vm.scale.value = vm.scale.value!! + .01f
-                                    qqq("IH " + measures.itemHeight * vm.scale.value!!)
                                     vm.adjust.postValue(true)
+
+                                    qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
                                 }
                             )
                     )

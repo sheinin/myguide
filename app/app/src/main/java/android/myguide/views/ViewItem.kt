@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -82,7 +83,7 @@ fun ViewItem(
                     textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
                     fontSize = typography.bodyLarge.fontSize * ratioV * scale,
-                    lineHeight = 1.em * scale,
+                    lineHeight = typography.bodyLarge.fontSize * ratioV * scale,
                     maxLines =
                         when (display!!) {
                             T -> 2
@@ -91,6 +92,7 @@ fun ViewItem(
                         },
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyLarge,
+                    modifier = Modifier.background(Color.Red)
                 )
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -119,8 +121,8 @@ fun ViewItem(
                     details.origin,
                     color = colorScheme.secondary,
                     fontSize = typography.bodyMedium.fontSize * ratioV * scale,
+                    lineHeight = typography.bodyMedium.fontSize * ratioV * scale,
                     fontStyle = FontStyle.Italic,
-                    lineHeight = 1.em * scale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
@@ -133,6 +135,7 @@ fun ViewItem(
                         else Int.MAX_VALUE,
                     modifier = Modifier
                         .fillMaxWidth(),
+                    lineHeight = typography.bodySmall.fontSize * ratioV * scale,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodySmall,
                 )

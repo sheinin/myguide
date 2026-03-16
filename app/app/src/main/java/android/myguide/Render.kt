@@ -64,8 +64,7 @@ class Render(
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
-
-        vm.scale.observeForever { zoom() }
+        vm.scale.observeForever { scale() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(1)
@@ -123,7 +122,6 @@ class Render(
         data.stack = IntArray(batch) { -1 }
         when (vm.display.value!!) {
             V -> {
-                qqq("ADJ")
                 data.point
                     .map {
                         data.display[it].height =
@@ -241,6 +239,72 @@ class Render(
             null -> {}
         }
     }
+    private fun scale() {
+        when (vm.display.value!!) {
+            T -> {
+                val from =
+                    max(
+                        data.point
+                            .withIndex()
+                            .indexOfLast { measures.itemHeight * vm.ratioV() * it.index < scroll }
+                                - batch / 4,
+                        0
+                    )
+                (from until min(from + batch, data.point.size)).map {
+                    xy(it)
+                    cycler.update(it.mod(batch), data.view.xy[data.point[it]])
+                }
+            }
+            V -> {
+                ruler()
+                val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
+                var sum = 0.dp
+                (from until min(from + batch, data.point.size)).map {
+                    val point = data.point[it]
+                    val index = it.mod(batch)
+                    val m = measure(point)
+
+                    val r = data.ruler[it]
+                    val p = measures.padding * it
+                    data.view.xy[point] =
+                        XY(
+                            x = 0.dp,
+                            y = ((r - p)) * vm.scale.value!! + p + sum,
+                            w = screenWidth,
+                            h = (data.display[point].type.height * vm.scale.value!! + m) //* vm.scale.value!!
+                        )
+                    if (data.display[point].height != data.display[point].type.height + m)
+                        sum += m * vm.ratioV()
+                    expandable(point)
+                    cycler.update(index, data.view.expand[point])
+                    cycler.update(index, data.view.xy[point])
+                }
+            }
+            H -> {
+                val from =
+                    max(
+                        (scroll / (measures.mapViewWidth + measures.padding) / vm.ratioH()
+                                ).toInt() - batch / 4,
+                        0
+                    )
+
+                (from until min(from + batch, data.point.size)).map {
+                    val point = data.point[it]
+                    val index = it.mod(batch)
+                    xy(point)
+
+
+                    expandable(point)
+                    cycler.update(index, data.view.expand[point])
+                    cycler.update(index, data.view.xy[point])
+                    // listen()
+                }
+                qqq("MAP $from $scroll ")
+
+            }
+        }
+        ruler()
+    }
     private fun zoom() {
         when (vm.display.value!!) {
             T -> {
@@ -322,8 +386,8 @@ class Render(
             density = density,
             fontFamilyResolver = fontFamilyResolver,
         )
-        //qqq(ident.toString() + " MEASURE "
-          //      + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+        qqq(ident.toString() + " MEASURE "
+                + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
             return p.getLineHeight(1).toDp() * p.lineCount.dec() - 12.dp
         return 0.dp
@@ -457,7 +521,7 @@ class Render(
                 )
             )
 
-/*        qqq(
+        qqq(
             ident.toString()
             + " EXPAND " + result.lineCount
             + str.take(result.getLineEnd(0, true))
@@ -466,10 +530,12 @@ class Render(
             + " == "
             + str
         )
-*/
+
         data.view.expand[ix] =
             buildAnnotatedString {
-                withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV())) {
+                withStyle(
+                    ParagraphStyle(lineHeight = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!)
+                ) {
                     withStyle(
                         style = SpanStyle(
                             color = colorScheme.secondary,
@@ -667,7 +733,9 @@ class Render(
                 data.point.map {
                  //   data.point.add(it)
                     data.ruler.add(height)
-                    height += (data.display[it].height * vm.scale.value!! + measures.padding) * vm.ratioV()
+                    height +=
+                        (data.display[it].height * vm.scale.value!! + measures.padding) *
+                                vm.ratioV()
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
