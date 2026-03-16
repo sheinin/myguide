@@ -257,7 +257,10 @@ fun Main(
                     val xy by bind.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
-                            .size(w.value!!, h.value!!)
+                            .size(
+                                width = w.value!!,
+                                height = h.value!! * (ratioV ?: ratio!!) * scale!!
+                            )
                     ) {
                         fun callback(index: Int) {
                             if (lock) return

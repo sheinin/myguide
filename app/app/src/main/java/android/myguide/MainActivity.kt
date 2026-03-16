@@ -1,9 +1,6 @@
 package android.myguide
 
 
-import android.R.attr.translationX
-import android.R.attr.visible
-import android.myguide.density
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
 import android.myguide.views.MyDialog
@@ -14,11 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
@@ -50,11 +43,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.lifecycle.MutableLiveData
-import kotlin.properties.Delegates
 
-const val batch = 5
+const val batch = 21
 lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density
@@ -104,10 +95,6 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        screen = mapOf(
-            false to Screen(ident = false),
-            true to Screen(ident = true)
-        )
         setContent {
             BackHandler(enabled = true) { toolbar.back() }
             GetScreenSize()
@@ -116,13 +103,18 @@ class MainActivity : ComponentActivity() {
             state = remember { MutableTransitionState(false) }
             typography = MaterialTheme.typography
             measures = Measures(
-                itemHeight = 68.dp,
+                itemHeight = 0.dp,
                 mapViewWidth = screenWidth - 8.dp * 2,
                 padding = 8.dp,
                 tableColumns = 3
             )
             MyGuideTheme {
-                Measures()
+                Measures {
+                    screen = mapOf(
+                        false to Screen(ident = false),
+                        true to Screen(ident = true)
+                    )
+                }
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val ident = current.observeAsState()
@@ -141,7 +133,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun Measures() {
+fun Measures(callback: () -> Unit = {}) {
     Column(
         Modifier
             .graphicsLayer {
@@ -150,6 +142,7 @@ fun Measures() {
             .onGloballyPositioned { coordinates ->
                 qqq("MM"+measures.itemHeight+coordinates.size.height.toDp())
                 measures.itemHeight = coordinates.size.height.toDp()
+                callback()
             }
     ) {
         Text(

@@ -106,10 +106,17 @@ fun Toolbar() {
                     Image(
                         painter = painterResource(R.drawable._text),
                         "font scale",
-                        colorFilter = ColorFilter.tint(colorScheme.secondary),
+                        colorFilter =
+                            ColorFilter.tint(
+                                if (scale == 1f) colorScheme.secondary
+                                else colorScheme.primary
+                            ),
                         modifier = Modifier
                             .size(36.dp)
-                            .padding(10.dp)
+                            .padding(6.dp)
+                            .clickable(
+                                onClick = { vm.scale.value = 1f }
+                            )
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -215,11 +222,12 @@ fun Toolbar() {
                                         vm.ratioH.value = vm.ratio.value
                                         vm.ratioV.value = vm.ratio.value
                                     }
-                                    mode.value = when (mode.value) {
-                                        false -> true
-                                        true -> null
-                                        null -> false
-                                    }
+                                    mode.value =
+                                        when (mode.value) {
+                                            false -> true
+                                            true -> null
+                                            null -> false
+                                        }
                                     if (mode.value == null) {
                                         vm.ratio.value = 1f
                                         vm.ratioH.value = null
@@ -233,8 +241,8 @@ fun Toolbar() {
                     Text(
                         "%.2f".format(
                             when (mode.value) {
-                                false -> vm.ratioH.value ?: ""
-                                true -> vm.ratioV.value ?: ""
+                                false -> vm.ratioH.value ?: 1f
+                                true -> vm.ratioV.value ?: 1f
                                 null -> vm.ratio.value!!
                             }
                         ),

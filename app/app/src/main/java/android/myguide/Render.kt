@@ -128,9 +128,18 @@ class Render(
                         data.display[it].height =// data.display[it].type.height +
                                 measure(it)
                         expandable(it)
+                        //xy(it)
+                    }
+                ruler()
+                data.point
+                    .map {
+                      //  data.display[it].height =// data.display[it].type.height +
+                        //    measure(it)
+                        //expandable(it)
                         xy(it)
                     }
-                zoom()
+                data.stack.map { renderYSync(it) }
+                //zoom()
             }
             H ->
                 data.point
@@ -269,7 +278,7 @@ class Render(
                             y = data.ruler[it] + sum,
                             w = screenWidth,
                             h = //data.display[point].type.height +
-                                data.display[point].height,
+                                data.display[point].height + m,
                             i = it
                         )
                     if (data.display[point].height != //data.display[point].type.height +
@@ -327,32 +336,33 @@ class Render(
             ),
             fontFamilyResolver = fontFamilyResolver,
         )
-      //  qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
-        //        + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+        qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
+                + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
-            return measures.titleHeight * p.lineCount.dec() - 12.dp
+            return measures.titleHeight * p.lineCount.dec()// * vm.ratioV() * vm.scale.value!!// - 12.dp
         return 0.dp
     }
     private fun expandable(ix: Int, expand: Boolean = false) {
         if (vm.display.value == H) {
-            data.view.expand[ix] = buildAnnotatedString {
-                withStyle(
-                    ParagraphStyle(
-                        lineHeight = 1.em * vm.ratioV()
-                    )
-                ) {
+            data.view.expand[ix] =
+                buildAnnotatedString {
                     withStyle(
-                        style = SpanStyle(
-                            color = colorScheme.secondary,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * (vm.ratioV.value
-                                ?: vm.ratio.value!!),
-                            fontWeight = typography.bodySmall.fontWeight
+                        ParagraphStyle(
+                            lineHeight = 1.em * vm.ratioV()
                         )
-                    ) { append(list[ix].description) }
+                    ) {
+                        withStyle(
+                            style = SpanStyle(
+                                color = colorScheme.secondary,
+                                textDecoration = TextDecoration.None,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * (vm.ratioV.value
+                                    ?: vm.ratio.value!!),
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append(list[ix].description) }
+                    }
                 }
-            }
             return
         }
         val str = list.getOrNull(ix)?.description ?: return
@@ -462,7 +472,11 @@ class Render(
                 )
             )
 
-        /*
+        if (str.length == take.length) {
+            data.view.expand[ix] = static()
+            return
+        }
+/*
         qqq(
             ident.toString()
             + " EXPAND " + result.lineCount
@@ -472,7 +486,9 @@ class Render(
             + " == "
             + str
         )
-        */
+
+
+ */
 
 
         data.view.expand[ix] =
