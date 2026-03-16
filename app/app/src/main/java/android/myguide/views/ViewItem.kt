@@ -1,5 +1,6 @@
 package android.myguide.views
 
+import android.R.attr.onClick
 import android.myguide.Details
 import android.myguide.R
 import android.myguide.Screen
@@ -8,6 +9,8 @@ import android.myguide.measures
 import android.myguide.model.Cycler
 import android.myguide.model.VM
 import android.myguide.model.VM.Display.*
+import android.myguide.qqq
+import android.myguide.screenWidth
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +26,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -82,8 +88,8 @@ fun ViewItem(
                     details.title,
                     textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyLarge.fontSize * ratioV * scale,
-                    lineHeight = typography.bodyLarge.fontSize * ratioV * scale,
+                    fontSize = typography.bodyLarge.fontSize,
+                    lineHeight = typography.bodyLarge.fontSize,
                     maxLines =
                         when (display!!) {
                             T -> 2
@@ -91,8 +97,7 @@ fun ViewItem(
                             H -> 1
                         },
                     overflow = TextOverflow.Ellipsis,
-                    style = typography.bodyLarge,
-                    modifier = Modifier.background(Color.Red)
+                    style = typography.bodyLarge
                 )
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -120,8 +125,8 @@ fun ViewItem(
                 Text(
                     details.origin,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyMedium.fontSize * ratioV * scale,
-                    lineHeight = typography.bodyMedium.fontSize * ratioV * scale,
+                    fontSize = typography.bodyMedium.fontSize,
+                    lineHeight = typography.bodyMedium.fontSize,
                     fontStyle = FontStyle.Italic,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -135,18 +140,26 @@ fun ViewItem(
                         else Int.MAX_VALUE,
                     modifier = Modifier
                         .fillMaxWidth(),
-                    lineHeight = typography.bodySmall.fontSize * ratioV * scale,
+                    lineHeight = typography.bodySmall.fontSize,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodySmall,
                 )
         }
     }
+    //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+measures.itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
     val modifier = Modifier
-        .offset(xy.x, xy.y)
-        .size(xy.w, xy.h * ratioV * scale)
+        .offset(xy.x, xy.y//measures.itemHeight * xy.i
+                * ratioV * scale)
+        .size(
+            width = screenWidth,
+            height = (measures.itemHeight + measures.padding + xy.h) * ratioV * scale
+        )
+        .padding(bottom = measures.padding * ratioV)
         .then(
             if (details.origin == null) Modifier
-            else Modifier.clickable(onClick = { callback(index) })
+            else
+                Modifier
+                    .clickable(onClick = { callback(index) })
         )
     if (display != T)
         Row(

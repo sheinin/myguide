@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
 
@@ -53,8 +54,9 @@ fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
 
 
 class Measures(
-    var itemHeight: Dp,
+    var titleHeight: Dp = 0.dp,
+    var itemHeight: Dp = 0.dp,
     val mapViewWidth: Dp,
     val padding: Dp,
-    val tableColumns: Int
+    val tableColumns: Int,
 )

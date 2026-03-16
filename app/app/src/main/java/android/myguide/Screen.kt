@@ -69,6 +69,7 @@ class Screen(val ident: Boolean) {
             }
         }
         this@Screen.lock = false
+        render.reset()
         vm.display.value = display
         vm.h.value = screenHeight
         vm.stateY.value = 0f
@@ -76,7 +77,6 @@ class Screen(val ident: Boolean) {
     fun query() {
         if (this@Screen.lock) return
         this@Screen.lock = true
-        render.reset()
         qqq("QU $ident $id ${toolbar.items.last().ident}")
        // if (ident != toolbar.items.last().ident) return
         fun callback(list: List<ListInterface>) {

@@ -2,6 +2,7 @@ package android.myguide.model
 
 import android.myguide.Details
 import android.myguide.batch
+import android.util.Log.i
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -15,7 +16,8 @@ class Cycler {
         var x: Dp,
         var y: Dp,
         var w: Dp,
-        var h: Dp
+        var h: Dp,
+        var i: Int = 2
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
     val description = _description.asStateFlow()
@@ -84,7 +86,8 @@ class Cycler {
                         x = xy.x,
                         y = xy.y,
                         w = xy.w,
-                        h = xy.h
+                        h = xy.h,
+                        i = xy.i
                     )
                 else it
             }

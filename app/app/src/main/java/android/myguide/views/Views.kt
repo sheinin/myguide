@@ -96,17 +96,6 @@ fun Main(
         Modifier
             .fillMaxSize()
     ) {
-        /*
-        val singapore = LatLng(1.35, 103.86)
-        val cameraPositionState = rememberCameraPositionState {
-            position = CameraPosition.fromLatLngZoom(singapore, 10f)
-        }
-        GoogleMap(
-            modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
-        )
-
-         */
         Image(
             painter = painterResource(R.drawable.logo),
             contentDescription = "logo",
@@ -168,12 +157,14 @@ fun Main(
                     .verticalScroll(scrollStateY)
                     .weight(1f)
                     .then(
-                        if (display == H) Modifier
-                            .height(h.value!!)
-                            .background(Color.Transparent)
-                        else Modifier
-                            .fillMaxHeight()
-                            .background(colorScheme.surface)
+                        if (display == H)
+                            Modifier
+                                .height(h.value!!)
+                                .background(Color.Transparent)
+                        else
+                            Modifier
+                                .fillMaxHeight()
+                                .background(colorScheme.surface)
                     )
             ) {
                 if (display != H && viewItem != null)
@@ -281,6 +272,7 @@ fun Main(
                             )
                         }
                         repeat(batch) {
+                           // qqq("V"+measures.itemHeight)
                             ViewItem(
                                 index = it,
                                 screen = screen,

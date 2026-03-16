@@ -1,6 +1,7 @@
 package android.myguide
 
 
+import android.R.attr.direction
 import android.myguide.model.Cycler
 import android.myguide.model.Cycler.XY
 import android.myguide.model.VM
@@ -64,7 +65,7 @@ class Render(
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
-        vm.scale.observeForever { scale() }
+        vm.scale.observeForever { zoom() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(1)
@@ -78,7 +79,7 @@ class Render(
         val height: Dp
             get() =
                 when (this) {
-                    DEFAULT -> measures.itemHeight
+                    DEFAULT -> measures.itemHeight + measures.padding
                     NODE -> 44.dp
                 }
     }
@@ -124,8 +125,8 @@ class Render(
             V -> {
                 data.point
                     .map {
-                        data.display[it].height =
-                            (data.display[it].type.height + measure(it))// * vm.scale.value!!
+                        data.display[it].height =// data.display[it].type.height +
+                                measure(it)
                         expandable(it)
                         xy(it)
                     }
@@ -141,7 +142,6 @@ class Render(
                 data.point
                     .map { xy(it) }
         }
-        ruler()
     }
     private fun scroll() {
         when (handler) {
@@ -239,72 +239,6 @@ class Render(
             null -> {}
         }
     }
-    private fun scale() {
-        when (vm.display.value!!) {
-            T -> {
-                val from =
-                    max(
-                        data.point
-                            .withIndex()
-                            .indexOfLast { measures.itemHeight * vm.ratioV() * it.index < scroll }
-                                - batch / 4,
-                        0
-                    )
-                (from until min(from + batch, data.point.size)).map {
-                    xy(it)
-                    cycler.update(it.mod(batch), data.view.xy[data.point[it]])
-                }
-            }
-            V -> {
-                ruler()
-                val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
-                var sum = 0.dp
-                (from until min(from + batch, data.point.size)).map {
-                    val point = data.point[it]
-                    val index = it.mod(batch)
-                    val m = measure(point)
-
-                    val r = data.ruler[it]
-                    val p = measures.padding * it
-                    data.view.xy[point] =
-                        XY(
-                            x = 0.dp,
-                            y = ((r - p)) * vm.scale.value!! + p + sum,
-                            w = screenWidth,
-                            h = (data.display[point].type.height * vm.scale.value!! + m) //* vm.scale.value!!
-                        )
-                    if (data.display[point].height != data.display[point].type.height + m)
-                        sum += m * vm.ratioV()
-                    expandable(point)
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.xy[point])
-                }
-            }
-            H -> {
-                val from =
-                    max(
-                        (scroll / (measures.mapViewWidth + measures.padding) / vm.ratioH()
-                                ).toInt() - batch / 4,
-                        0
-                    )
-
-                (from until min(from + batch, data.point.size)).map {
-                    val point = data.point[it]
-                    val index = it.mod(batch)
-                    xy(point)
-
-
-                    expandable(point)
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.xy[point])
-                    // listen()
-                }
-                qqq("MAP $from $scroll ")
-
-            }
-        }
-        ruler()
-    }
     private fun zoom() {
         when (vm.display.value!!) {
             T -> {
@@ -322,7 +256,7 @@ class Render(
                 }
             }
             V -> {
-                ruler()
+              //  ruler()
                 val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
                 var sum = 0.dp
                 (from until min(from + batch, data.point.size)).map {
@@ -332,16 +266,22 @@ class Render(
                     data.view.xy[point] =
                         XY(
                             x = 0.dp,
-                            y = (data.ruler[it] + sum) * vm.scale.value!!,
+                            y = data.ruler[it] + sum,
                             w = screenWidth,
-                            h = (data.display[point].type.height + m) * vm.scale.value!!
+                            h = //data.display[point].type.height +
+                                data.display[point].height,
+                            i = it
                         )
-                    if (data.display[point].height != data.display[point].type.height + m)
-                        sum += m * vm.ratioV()
+                    if (data.display[point].height != //data.display[point].type.height +
+                        m)
+                        sum += m
+                   // ruler()
                     expandable(point)
                     cycler.update(index, data.view.expand[point])
                     cycler.update(index, data.view.xy[point])
                 }
+                if (sum > 0.dp)
+                    ruler()
             }
             H -> {
                 val from =
@@ -366,16 +306,14 @@ class Render(
 
             }
         }
-        ruler()
+       // ruler()
     }
     private fun measure(ix: Int): Dp {
         if (list[ix].description == null || vm.display.value == H) return 0.dp
         val s = list[ix].title!!.trim()
         val p = androidx.compose.ui.text.Paragraph(
             text = s,
-            style = typography.bodyLarge.copy(
-                fontSize = typography.bodyLarge.fontSize * vm.ratioV()
-            ),
+            style = typography.bodyLarge,
             constraints = Constraints(
                 maxWidth =
                     (screenWidth - (
@@ -383,13 +321,16 @@ class Render(
                             measures.padding.times(4) +
                             measures.padding.times(2) * list[ix].level
                     ) * vm.ratioH()).toPx().toInt()),
-            density = density,
+            density = Density(
+                density = density.density,
+                fontScale = 1f * vm.scale.value!! * vm.ratioV()
+            ),
             fontFamilyResolver = fontFamilyResolver,
         )
-        qqq(ident.toString() + " MEASURE "
-                + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+      //  qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
+        //        + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
-            return p.getLineHeight(1).toDp() * p.lineCount.dec() - 12.dp
+            return measures.titleHeight * p.lineCount.dec() - 12.dp
         return 0.dp
     }
     private fun expandable(ix: Int, expand: Boolean = false) {
@@ -484,7 +425,7 @@ class Render(
                 AnnotatedString.Range(
                     SpanStyle(
                         fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                        fontSize = typography.bodySmall.fontSize,// * (vm.scale.value!! + vm.ratioV()),
                         fontWeight = typography.bodySmall.fontWeight,
                     ),
                     0,
@@ -503,7 +444,7 @@ class Render(
             ),
             density = Density(
                 density = density.density,
-                fontScale = vm.scale.value!!
+                fontScale = 1f * vm.scale.value!! * vm.ratioV()
             ),
             fontFamilyResolver = fontFamilyResolver,
             maxLines = 2,
@@ -521,6 +462,7 @@ class Render(
                 )
             )
 
+        /*
         qqq(
             ident.toString()
             + " EXPAND " + result.lineCount
@@ -530,18 +472,20 @@ class Render(
             + " == "
             + str
         )
+        */
+
 
         data.view.expand[ix] =
             buildAnnotatedString {
                 withStyle(
-                    ParagraphStyle(lineHeight = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!)
+                    ParagraphStyle(lineHeight = typography.bodySmall.fontSize)
                 ) {
                     withStyle(
                         style = SpanStyle(
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                            fontSize = typography.bodySmall.fontSize,
                             fontWeight = typography.bodySmall.fontWeight
                         )
                     ) { append(take.dropLast(1)) }
@@ -550,7 +494,7 @@ class Render(
                             color = Color.Transparent,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                            fontSize = typography.bodySmall.fontSize,
                             fontWeight = typography.bodySmall.fontWeight
                         )
                     ) { append("\u200A") }
@@ -567,12 +511,10 @@ class Render(
                                 textDecoration = TextDecoration.None,
                                 color = colorScheme.primary,
                                 fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                                fontSize = typography.bodySmall.fontSize,
                                 fontWeight = typography.bodySmall.fontWeight,
                             )
-                        ) {
-                            append("\u2026")
-                        }
+                        ) { append("\u2026") }
                     }
                 }
             }
@@ -591,7 +533,8 @@ class Render(
                 }
             data.display.add(
                 Data.Display(
-                    height = displayType.height + m,
+                    height = //displayType.height +
+                            m,
                     type = displayType
                 )
             )
@@ -642,8 +585,9 @@ class Render(
                     XY(
                         x = 0.dp,
                         y = data.ruler[ix],// * vm.scale.value!!,
-                        w = screenWidth,
-                        h = data.display[point].height //* vm.scale.value!!,
+                        w = data.display[point].type.height,
+                        h = data.display[point].height,
+                        i = point//* vm.scale.value!!,
                     )
                 H ->
                     XY(
@@ -674,7 +618,7 @@ class Render(
                 vm.h.value = (measures.itemHeight.times(2)) * (data.point.size / measures.tableColumns) * vm.ratioV()
             }
             V -> {
-                ruler()
+              //  ruler()
                 list.indices.map {
                     expandable(it)
                     xy(it)
@@ -730,12 +674,11 @@ class Render(
             V -> {
                 data.ruler.clear()
                 height = 0.dp
+                var m = 0.dp
                 data.point.map {
-                 //   data.point.add(it)
+                    m = data.display[it].height
                     data.ruler.add(height)
-                    height +=
-                        (data.display[it].height * vm.scale.value!! + measures.padding) *
-                                vm.ratioV()
+                    height += data.display[it].type.height + m
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
@@ -753,68 +696,10 @@ class Render(
     }
     var direction: Boolean? = null
     var scroll = 0.dp
-    fun observe(p: Dp) {
-        direction = scroll > p
-      //  qqq("sp $ident"+scroll + " "+p + " "+direction)
-
-        scroll = p
-        /*
-        when (bind.display.value) {
-            LIST -> {
-                //qqq("A")
-
-                val pos = p //+ screenHeight / 3
-
-                val mx = data.stack.max()
-                val mn = data.stack.min()//min(data.stack.min() - 5, data.ruler.size)
-                val v = (mx + mn) / 2 // - 10//-  batch / 4
-                val a = data.ruler[mn] - data.display[data.point[mn]].height
-                var r: Int =  data.ruler.withIndex().indexOfFirst { it.value > p && it.index > mx }
-                //qqq("R"+r+" " )
-                if (pos > 180.dp && prev != r
-                    ) {
-                    //r = data.ruler.withIndex().indexOfFirst { it.value > p && it.index > mx }//.inc() //+ batch//+ 5
-                  //  renderY(mx.inc())
-                    qqq("O pos $pos/$a mx/mn:$mx/$mn v:$v prev:$prev r:$r")
-                    if (data.ruler.size - 4 < r) r =data.ruler.size
-                   // prev = prev ?: r
-                   // if (false)
-                    (mx.inc() until  r.inc())
-                        //.filter { it !in data.stack }
-                        .map { renderY(it) }
-                    prev = r.inc()
-                }
-                else {
-                    qqq("A pos $pos/$a mx/mn:$mx/$mn v:$v prev:$prev r:$r")
-                    /*
-                    r = data.ruler.indexOfLast { it < pos }
-                    if (r > -1 && prev != null) {
-                        prev = prev ?: r
-                        (mn downTo mn - prev!! + r.dec())
-                          //  .filter { it !in data.stack }
-                            .map { renderY(it) }
-                        prev = r
-                    }
-
-                     */
-                }
-
-               // qqq("B")
-            }
-                /*max(data.ruler.indexOfLast { it < pos } - offset, 0).also { f ->
-                    (f..min(data.ruler.size, f + batch).dec()).filter {
-                        !data.stack.contains(it)
-                    }.map { renderY(it) }
-                }*/
-            else ->
-                max((p / (screenWidth - 90.dp)).toInt() - batch / 2, 0).also { from ->
-                    (from .. min(data.ruler.size, from + batch).dec())
-                        .filter { !data.stack.contains(it) }
-                        .map { renderX(it) }
-                }
-        }
-
-         */
+    fun observe(scroll: Dp) {
+        val s = scroll / vm.ratioV() / vm.scale.value!!
+        direction = this.scroll > s
+        this.scroll = s
     }
     fun reset() {
         data.display.clear()
@@ -828,22 +713,6 @@ class Render(
         (0 until batch).map {
             cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
         }
-        /*
-        data.collapse.clear()
-        data.display.clear()
-        data.point.clear()
-        data.ruler.clear()
-
-        data.vm.details.clear()
-        data.vm.toggle.clear()
-        vm.cycler.reset()
-        handler = null
-        height = 0.dp
-        job?.cancel()
-        offset = 0
-        ordinal = 0
-
-         */
     }
     private fun renderX(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return

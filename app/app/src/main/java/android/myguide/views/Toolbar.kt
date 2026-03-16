@@ -4,6 +4,7 @@ package android.myguide.views
 import android.myguide.R
 import android.myguide.colorScheme
 import android.myguide.current
+import android.myguide.getLineHeightDp
 import android.myguide.measures
 import android.myguide.qqq
 import android.myguide.screen
@@ -159,6 +160,22 @@ fun Toolbar() {
                             )
                         }
                     )
+                    @Composable
+                    fun t() {
+                        val x=
+                        getLineHeightDp(
+                            typography.bodyLarge.fontSize
+                        )
+                        val y=getLineHeightDp(
+                            typography.bodyMedium.fontSize
+                        )
+                        val z=getLineHeightDp(
+                            typography.bodySmall.fontSize*2
+                        )
+                        qqq("x"+(x+y+z)+ " "+((x+y+z)*vm.scale.value!!))
+                    }
+
+                    t()
                     Spacer(Modifier.width(8.dp))
                     Image(
                         painter = painterResource(R.drawable.add),

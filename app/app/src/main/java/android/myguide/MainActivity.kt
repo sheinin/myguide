@@ -23,6 +23,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -121,77 +122,14 @@ class MainActivity : ComponentActivity() {
                 tableColumns = 3
             )
             MyGuideTheme {
-                //Measures()
+                Measures()
                 colorScheme = MaterialTheme.colorScheme
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val ident = current.observeAsState()
                     if (ident.value == null)
                         Splash(Modifier.padding(innerPadding))
                     else {
-                        Column(Modifier.fillMaxSize().padding(innerPadding)) {
-                            Toolbar()
-                            Box {
-                                val visibleState = remember(ident.value == false) {
-                                    MutableTransitionState(!ident.value!!)
-                                }
-                                val visibleState1 = remember(ident.value == true) {
-                                    MutableTransitionState(ident.value!!)
-                                }
-                                LaunchedEffect(visibleState) {
-                                    snapshotFlow { visibleState.currentState == visibleState.targetState }
-                                        .collect { isIdle ->
-                                            if (isIdle) {
-                                                if (!visibleState.targetState) {
-                                                    screen[current.value!!]!!.query()
-                                                }
-                                            }
-                                        }
-                                }
-                                LaunchedEffect(visibleState1) {
-                                    snapshotFlow { visibleState1.currentState == visibleState1.targetState }
-                                        .collect { isIdle ->
-                                            if (isIdle) {
-                                                if (!visibleState1.targetState) {
-                                                    qqq("END1")
-                                                    screen[current.value!!]!!.query()
-                                                }
-                                            }
-                                        }
-                                }
-                                androidx.compose.animation.AnimatedVisibility(
-                                    visibleState = visibleState,
-                                    enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-                                    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-                                ) {
-                                    CompositionLocalProvider(
-                                        LocalDensity provides
-                                                Density(
-                                                    density = density.density,
-                                                    fontScale = screen[false]!!.vm.scale.observeAsState().value!!
-                                                )
-                                    ) { Main(screen = screen[false]!!)
-
-                                        Measures()
-                                    }
-                                }
-                                androidx.compose.animation.AnimatedVisibility(
-                                    visibleState = visibleState1,
-                                    enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-                                    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-                                ) {
-                                    CompositionLocalProvider(
-                                        LocalDensity provides
-                                                Density(
-                                                    density = density.density,
-                                                    fontScale = screen[true]!!.vm.scale.observeAsState().value!!
-                                                )
-                                    ) { Main(screen = screen[true]!!)
-
-                                        Measures()
-                                    }
-                                }
-                            }
-                        }
+                        Content(innerPadding)
                         val dialog by dialog.observeAsState()
                         if (dialog == true) MyDialog()
                     }
@@ -211,7 +149,7 @@ fun Measures() {
             }
             .onGloballyPositioned { coordinates ->
                 qqq("MM"+measures.itemHeight+coordinates.size.height.toDp())
-               // measures.itemHeight = coordinates.size.height.toDp()
+                measures.itemHeight = coordinates.size.height.toDp()
             }
     ) {
         Text(
@@ -219,6 +157,11 @@ fun Measures() {
             style = typography.bodyLarge,
             fontSize = typography.bodyLarge.fontSize,
             lineHeight = typography.bodyMedium.fontSize,
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                qqq("MT"+measures.itemHeight+coordinates.size.height.toDp())
+                measures.titleHeight = coordinates.size.height.toDp()
+                // measures.itemHeight = coordinates.size.height.toDp()
+            }
         )
         Text(
             "1",
@@ -240,5 +183,76 @@ fun Measures() {
                 .fillMaxWidth(),
             style = typography.bodySmall
         )
+    }
+}
+
+@Composable
+fun Content(innerPadding: PaddingValues) {
+    val ident = current.observeAsState()
+    Column(Modifier.fillMaxSize().padding(innerPadding)) {
+        Toolbar()
+        Box {
+            val visibleState = remember(ident.value == false) {
+                MutableTransitionState(!ident.value!!)
+            }
+            val visibleState1 = remember(ident.value == true) {
+                MutableTransitionState(ident.value!!)
+            }
+            LaunchedEffect(visibleState) {
+                snapshotFlow { visibleState.currentState == visibleState.targetState }
+                    .collect { isIdle ->
+                        if (isIdle) {
+                            if (!visibleState.targetState) {
+                                screen[current.value!!]!!.query()
+                            }
+                        }
+                    }
+            }
+            LaunchedEffect(visibleState1) {
+                snapshotFlow { visibleState1.currentState == visibleState1.targetState }
+                    .collect { isIdle ->
+                        if (isIdle) {
+                            if (!visibleState1.targetState) {
+                                qqq("END1")
+                                screen[current.value!!]!!.query()
+                            }
+                        }
+                    }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visibleState = visibleState,
+                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+            ) {
+                CompositionLocalProvider(
+                    LocalDensity provides
+                            Density(
+                                density = density.density,
+                                fontScale =
+                                    (
+                                        screen[false]!!.vm.ratioV.observeAsState().value ?: screen[false]!!.vm.ratio.observeAsState().value!!) *
+                                    screen[false]!!.vm.scale.observeAsState().value!!
+                            )
+                ) { Main(screen = screen[false]!!)
+
+                  //  Measures()
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visibleState = visibleState1,
+                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+            ) {
+                CompositionLocalProvider(
+                    LocalDensity provides
+                            Density(
+                                density = density.density,
+                                fontScale = screen[true]!!.vm.scale.observeAsState().value!!
+                            )
+                ) { Main(screen = screen[true]!!)
+               //     Measures()
+                }
+            }
+        }
     }
 }
