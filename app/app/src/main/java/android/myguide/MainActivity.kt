@@ -1,6 +1,8 @@
 package android.myguide
 
 
+import android.R.attr.translationX
+import android.R.attr.visible
 import android.myguide.density
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Main
@@ -31,10 +33,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -58,7 +63,7 @@ lateinit var typography: Typography
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
 val toolbar = android.myguide.Toolbar()
-var fontScale = MutableLiveData(1f)//by Delegates.notNull<Float>()
+//var fontScale = MutableLiveData(1f)//by Delegates.notNull<Float>()
 var lock = false
 var screenHeight = 0.dp
 var screenWidth = 0.dp
@@ -107,11 +112,10 @@ class MainActivity : ComponentActivity() {
             GetScreenSize()
             density = LocalDensity.current
             fontFamilyResolver = LocalFontFamilyResolver.current
-            fontScale.value =  resources.configuration.fontScale
             state = remember { MutableTransitionState(false) }
             typography = MaterialTheme.typography
             measures = Measures(
-                itemHeight = 0.toDp(),
+                itemHeight = 0.dp,
                 mapViewWidth = screenWidth - 8.dp * 2,
                 padding = 8.dp,
                 tableColumns = 3
@@ -126,32 +130,64 @@ class MainActivity : ComponentActivity() {
                     else {
                         Column(Modifier.fillMaxSize().padding(innerPadding)) {
                             Toolbar()
-                            CompositionLocalProvider(
-                                LocalDensity provides
-                                    Density(
-                                        density = density.density,
-                                        fontScale = fontScale.observeAsState().value!!
-                                    )
-                            ) {
-                                Measures()
-                                Box {
-                                    androidx.compose.animation.AnimatedVisibility(
-                                        visible = ident.value == false,
-                                        enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),//EnterTransition.None,
-                                        exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-                                    ) {
-                                        Main(
-                                            screen = screen[false]!!
-                                        )
+                            Box {
+                                val visibleState = remember(ident.value == false) {
+                                    MutableTransitionState(!ident.value!!)
+                                }
+                                val visibleState1 = remember(ident.value == true) {
+                                    MutableTransitionState(ident.value!!)
+                                }
+                                LaunchedEffect(visibleState) {
+                                    snapshotFlow { visibleState.currentState == visibleState.targetState }
+                                        .collect { isIdle ->
+                                            if (isIdle) {
+                                                if (!visibleState.targetState) {
+                                                    screen[current.value!!]!!.query()
+                                                }
+                                            }
+                                        }
+                                }
+                                LaunchedEffect(visibleState1) {
+                                    snapshotFlow { visibleState1.currentState == visibleState1.targetState }
+                                        .collect { isIdle ->
+                                            if (isIdle) {
+                                                if (!visibleState1.targetState) {
+                                                    qqq("END1")
+                                                    screen[current.value!!]!!.query()
+                                                }
+                                            }
+                                        }
+                                }
+                                androidx.compose.animation.AnimatedVisibility(
+                                    visibleState = visibleState,
+                                    enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+                                    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+                                ) {
+                                    CompositionLocalProvider(
+                                        LocalDensity provides
+                                                Density(
+                                                    density = density.density,
+                                                    fontScale = screen[false]!!.vm.scale.observeAsState().value!!
+                                                )
+                                    ) { Main(screen = screen[false]!!)
+
+                                      //  Measures()
                                     }
-                                    androidx.compose.animation.AnimatedVisibility(
-                                        ident.value == true,
-                                        enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-                                        exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-                                    ) {
-                                        Main(
-                                            screen = screen[true]!!
-                                        )
+                                }
+                                androidx.compose.animation.AnimatedVisibility(
+                                    visibleState = visibleState1,
+                                    enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
+                                    exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
+                                ) {
+                                    CompositionLocalProvider(
+                                        LocalDensity provides
+                                                Density(
+                                                    density = density.density,
+                                                    fontScale = screen[true]!!.vm.scale.observeAsState().value!!
+                                                )
+                                    ) { Main(screen = screen[true]!!)
+
+                                      //  Measures()
                                     }
                                 }
                             }
@@ -170,8 +206,11 @@ class MainActivity : ComponentActivity() {
 fun Measures() {
     Column(
         Modifier
+            .graphicsLayer {
+                translationX = screenWidth.toPx()
+            }
             .onGloballyPositioned { coordinates ->
-                qqq("MM")
+                qqq("MM"+measures.itemHeight+coordinates.size.height.toDp())
                 measures.itemHeight = coordinates.size.height.toDp()
             }
     ) {
@@ -179,13 +218,13 @@ fun Measures() {
             "1",
             style = typography.bodyLarge,
             fontSize = typography.bodyLarge.fontSize,
-            lineHeight = 1.em * fontScale.value!!,
+            lineHeight = 1.em,
         )
         Text(
             "1",
             style = typography.bodyMedium,
             fontSize = typography.bodyMedium.fontSize,
-            lineHeight = 1.em * fontScale.value!!,
+            lineHeight = 1.em,
         )
         Text(
             buildAnnotatedString {

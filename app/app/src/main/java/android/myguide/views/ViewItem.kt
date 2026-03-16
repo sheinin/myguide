@@ -4,7 +4,6 @@ import android.myguide.Details
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.colorScheme
-import android.myguide.fontScale
 import android.myguide.measures
 import android.myguide.model.Cycler
 import android.myguide.model.VM
@@ -47,6 +46,7 @@ fun ViewItem(
     expand: AnnotatedString?,
     ratioH: Float,
     ratioV: Float,
+    scale: Float,
     toggle: Boolean?,
     xy: Cycler.XY,
     callback: (Int) -> Unit
@@ -81,8 +81,8 @@ fun ViewItem(
                     details.title,
                     textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyLarge.fontSize * ratioV,
-                    lineHeight = 1.em * fontScale.value!!,
+                    fontSize = typography.bodyLarge.fontSize * ratioV * scale,
+                    lineHeight = 1.em * scale,
                     maxLines =
                         when (display!!) {
                             T -> 2
@@ -118,9 +118,9 @@ fun ViewItem(
                 Text(
                     details.origin,
                     color = colorScheme.secondary,
-                    fontSize = typography.bodyMedium.fontSize * ratioV,
+                    fontSize = typography.bodyMedium.fontSize * ratioV * scale,
                     fontStyle = FontStyle.Italic,
-                    lineHeight = 1.em * fontScale.value!!,
+                    lineHeight = 1.em * scale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
@@ -140,7 +140,7 @@ fun ViewItem(
     }
     val modifier = Modifier
         .offset(xy.x, xy.y)
-        .size(xy.w, xy.h * ratioV)
+        .size(xy.w, xy.h * ratioV * scale)
         .then(
             if (details.origin == null) Modifier
             else Modifier.clickable(onClick = { callback(index) })
@@ -155,7 +155,7 @@ fun ViewItem(
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }
-    else// (display == D3)
+    else
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
@@ -165,16 +165,4 @@ fun ViewItem(
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }
-    /*else
-        Row(
-            modifier
-                .padding(
-                    start = measures.padding * ratioH
-                            + measures.padding.times(2) * ratioH * details.level,
-                    end = measures.padding * ratioH
-                )
-                .background(color = colorScheme.surfaceContainer)
-        ) { Content() }
-
-     */
 }

@@ -5,6 +5,7 @@ import android.myguide.model.Cycler
 import android.myguide.model.Cycler.XY
 import android.myguide.model.VM
 import android.myguide.model.VM.Display.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -16,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -62,6 +64,8 @@ class Render(
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
+
+        vm.scale.observeForever { zoom() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(1)
@@ -119,10 +123,11 @@ class Render(
         data.stack = IntArray(batch) { -1 }
         when (vm.display.value!!) {
             V -> {
+                qqq("ADJ")
                 data.point
                     .map {
                         data.display[it].height =
-                            data.display[it].type.height + measure(it)
+                            (data.display[it].type.height + measure(it))// * vm.scale.value!!
                         expandable(it)
                         xy(it)
                     }
@@ -253,6 +258,7 @@ class Render(
                 }
             }
             V -> {
+                ruler()
                 val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
                 var sum = 0.dp
                 (from until min(from + batch, data.point.size)).map {
@@ -262,9 +268,9 @@ class Render(
                     data.view.xy[point] =
                         XY(
                             x = 0.dp,
-                            y = data.ruler[it] + sum,
+                            y = (data.ruler[it] + sum) * vm.scale.value!!,
                             w = screenWidth,
-                            h = data.display[point].type.height + m
+                            h = (data.display[point].type.height + m) * vm.scale.value!!
                         )
                     if (data.display[point].height != data.display[point].type.height + m)
                         sum += m * vm.ratioV()
@@ -414,7 +420,7 @@ class Render(
                 AnnotatedString.Range(
                     SpanStyle(
                         fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize * vm.ratioV() * fontScale.value!!,
+                        fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
                         fontWeight = typography.bodySmall.fontWeight,
                     ),
                     0,
@@ -431,7 +437,10 @@ class Render(
                         ).toPx()
                     .toInt()
             ),
-            density = density,
+            density = Density(
+                density = density.density,
+                fontScale = vm.scale.value!!
+            ),
             fontFamilyResolver = fontFamilyResolver,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -447,9 +456,9 @@ class Render(
                     true
                 )
             )
-        /*
-        qqq(
-            screen.ident.toString()
+
+/*        qqq(
+            ident.toString()
             + " EXPAND " + result.lineCount
             + str.take(result.getLineEnd(0, true))
             + "=="
@@ -457,7 +466,7 @@ class Render(
             + " == "
             + str
         )
-         */
+*/
         data.view.expand[ix] =
             buildAnnotatedString {
                 withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV())) {
@@ -466,7 +475,7 @@ class Render(
                             color = colorScheme.secondary,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * fontScale.value!!,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
                             fontWeight = typography.bodySmall.fontWeight
                         )
                     ) { append(take.dropLast(1)) }
@@ -475,7 +484,7 @@ class Render(
                             color = Color.Transparent,
                             textDecoration = TextDecoration.None,
                             fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * fontScale.value!!,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
                             fontWeight = typography.bodySmall.fontWeight
                         )
                     ) { append("\u200A") }
@@ -492,7 +501,7 @@ class Render(
                                 textDecoration = TextDecoration.None,
                                 color = colorScheme.primary,
                                 fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * fontScale.value!!,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
                                 fontWeight = typography.bodySmall.fontWeight,
                             )
                         ) {
@@ -566,9 +575,9 @@ class Render(
                 V ->
                     XY(
                         x = 0.dp,
-                        y = data.ruler[ix],
+                        y = data.ruler[ix],// * vm.scale.value!!,
                         w = screenWidth,
-                        h = data.display[point].height,
+                        h = data.display[point].height //* vm.scale.value!!,
                     )
                 H ->
                     XY(
@@ -658,7 +667,7 @@ class Render(
                 data.point.map {
                  //   data.point.add(it)
                     data.ruler.add(height)
-                    height += (data.display[it].height + measures.padding) * vm.ratioV()
+                    height += (data.display[it].height * vm.scale.value!! + measures.padding) * vm.ratioV()
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)

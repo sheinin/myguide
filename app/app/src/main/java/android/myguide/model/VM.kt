@@ -21,6 +21,7 @@ class VM {
     val ratio = MutableLiveData(1f)
     val ratioH = MutableLiveData<Float?>(null)
     val ratioV = MutableLiveData<Float?>(null)
+    val scale = MutableLiveData(1f)
     val sort = MutableLiveData(false)
     val stateX = MutableLiveData(0f)
     val stateY = MutableLiveData(0f)

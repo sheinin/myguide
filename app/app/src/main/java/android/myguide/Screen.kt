@@ -43,10 +43,11 @@ class Screen(val ident: Boolean) {
                         )
                     )
                     current.postValue(!(current.value ?: true))
-                    sleep { query() }
+                    //sleep { query() }
                 }
             SHOP ->
                 db.fetchShopDetails(this.id!!) {
+                    qqq("db"+it.title)
                     vm.description.postValue(it.description)
                     vm.details.postValue(
                         Details(
@@ -58,13 +59,13 @@ class Screen(val ident: Boolean) {
                         )
                     )
                     current.postValue(!(current.value ?: true))
-                    sleep { query() }
+                    //sleep { query() }
                 }
             else -> {
                 vm.description.value = null
                 vm.details.value = null
                 current.value = !(current.value ?: true)
-                query()
+                //query()
             }
         }
         this@Screen.lock = false

@@ -1,11 +1,11 @@
 package android.myguide.views
 
+import android.myguide.R
 import android.myguide.Screen
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
 import android.myguide.dialog
-import android.myguide.fontScale
 import android.myguide.lock
 import android.myguide.measures
 import android.myguide.model.VM.Display.*
@@ -13,6 +13,7 @@ import android.myguide.qqq
 import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
+import android.util.Log.w
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
@@ -76,13 +78,25 @@ fun Main(
     screen: Screen
 ) {
     val bind = screen.vm
+    val description by bind.description.observeAsState()
     val display by bind.display.observeAsState()
+    val ratio by screen.vm.ratio.observeAsState()
+    val ratioH by screen.vm.ratioH.observeAsState()
+    val ratioV by screen.vm.ratioV.observeAsState()
+    val scale by screen.vm.scale.observeAsState()
+    val scrollStateY = rememberScrollState()
     val stateX by bind.stateX.observeAsState()
     val stateY by bind.stateY.observeAsState()
+    val h = bind.h.observeAsState()
+    val w = bind.w.observeAsState()
+    val view = LocalView.current
+    val viewItem by bind.details.observeAsState()
+    var viewItemHeight by remember { mutableIntStateOf(0) }
     Box(
         Modifier
             .fillMaxSize()
     ) {
+        /*
         val singapore = LatLng(1.35, 103.86)
         val cameraPositionState = rememberCameraPositionState {
             position = CameraPosition.fromLatLngZoom(singapore, 10f)
@@ -90,6 +104,14 @@ fun Main(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
+        )
+
+         */
+        Image(
+            painter = painterResource(R.drawable.logo),
+            contentDescription = "logo",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
         Column(
             modifier = Modifier
@@ -122,11 +144,6 @@ fun Main(
                     }
                 if (display == H) Control(screen)
             }
-            val scrollStateY = rememberScrollState()
-            val view = LocalView.current
-            var viewItemHeight by remember { mutableIntStateOf(0) }
-            val h = bind.h.observeAsState()
-            val w = bind.w.observeAsState()
             LaunchedEffect(bind.position.value) {
                 if (display != H)
                     scrollStateY.scrollBy(stateY!!)
@@ -159,11 +176,6 @@ fun Main(
                             .background(colorScheme.surface)
                     )
             ) {
-                val description by bind.description.observeAsState()
-                val ratio by screen.vm.ratio.observeAsState()
-                val ratioH by screen.vm.ratioH.observeAsState()
-                val ratioV by screen.vm.ratioV.observeAsState()
-                val viewItem by bind.details.observeAsState()
                 if (display != H && viewItem != null)
                     Column(
                         Modifier
@@ -187,20 +199,15 @@ fun Main(
                                     viewItem!!.title,
                                     style = typography.bodyLarge,
                                     color = colorScheme.secondary,
-                                    lineHeight = 1.em * fontScale.value!!,
+                                    lineHeight = 1.em * scale!!,
                                     fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
-                                    modifier = Modifier
-                                        .onPlaced {
-                                            qqq("PLACED")
-                                        //screen.query()
-                                        }
                                 )
                                 Text(
                                     viewItem!!.origin!!,
                                     fontStyle = FontStyle.Italic,
                                     style = typography.bodyMedium,
                                     color = colorScheme.secondary,
-                                    lineHeight = 1.em * fontScale.value!!,
+                                    lineHeight = 1.em * scale!!,
                                     fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
                                     modifier = Modifier.padding(bottom = 4.dp)
                                 )
@@ -218,7 +225,7 @@ fun Main(
                         }
                         Text(description!!,
                             style = typography.bodySmall,
-                            lineHeight = 1.em * fontScale.value!!,
+                            lineHeight = 1.em * scale!!,
                             color = colorScheme.secondary,
                             fontSize = typography.bodySmall.fontSize * (ratioV ?: ratio!!),
                             modifier = Modifier.padding(start = 8.dp)
@@ -282,6 +289,7 @@ fun Main(
                                 expand = expand[it],
                                 ratioH = ratioH ?: ratio!!,
                                 ratioV = ratioV ?: ratio!!,
+                                scale = scale!!,
                                 toggle = toggle[it],
                                 xy = xy[it],
                                 callback = ::callback
