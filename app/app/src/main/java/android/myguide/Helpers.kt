@@ -41,8 +41,8 @@ fun Float.toDp(): Dp {
     }
 }
 
-fun Dp.round(): Int {
-    return this@round.value.roundToInt()
+fun Dp.round(): String {
+    return this@round.value.roundToInt().toString() + ".dp"
 }
 
 
@@ -56,6 +56,7 @@ object UI {
     var TITLE_HEIGHT: Dp = 0.dp
     var ITEM_HEIGHT: Dp = 0.dp
     val mapViewWidth: Dp = 100.dp
-    val PADDING: Dp = 8.dp
+    val MARGIN: Dp = 8.dp
+    val BUTTON = 36.dp
     const val COLUMNS: Int = 2
 }

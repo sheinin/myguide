@@ -1,11 +1,8 @@
 package android.myguide
 
 
-import android.myguide.UI.COLUMNS
 import android.myguide.UI.ITEM_HEIGHT
-import android.myguide.UI.PADDING
 import android.myguide.UI.TITLE_HEIGHT
-import android.myguide.UI.mapViewWidth
 import android.myguide.data.DB
 import android.myguide.data.Repository
 import android.myguide.data.StoreDatabase
@@ -50,14 +47,12 @@ lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
-//lateinit var measures: UI
 lateinit var state: MutableTransitionState<Boolean>
 lateinit var screen: Map<Boolean, Screen>
 lateinit var typography: Typography
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
 val toolbar = Toolbar()
-var lock = false
 var screenHeight = 0.dp
 var screenWidth = 0.dp
 

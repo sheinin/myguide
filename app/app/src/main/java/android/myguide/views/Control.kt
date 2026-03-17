@@ -1,7 +1,8 @@
 package android.myguide.views
 
 import android.myguide.R
-import android.myguide.UI.PADDING
+import android.myguide.UI.BUTTON
+import android.myguide.UI.MARGIN
 import android.myguide.colorScheme
 import android.myguide.current
 import android.myguide.data.VM
@@ -25,6 +26,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 
 
 @Composable
@@ -42,14 +44,15 @@ fun Control(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                horizontal = PADDING * ratioH,
-                vertical = PADDING * ratioV
+                horizontal = MARGIN * ratioH,
+                vertical = MARGIN * ratioV
             )
     ) {
         Text(
             title,
             style = typography.titleMedium,
             fontWeight = FontWeight.Bold,
+            lineHeight = 1.em,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -77,8 +80,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = 36.dp * ratioH,
-                        height = 36.dp * ratioH
+                        width = BUTTON * ratioH,
+                        height = BUTTON * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,
@@ -99,8 +102,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = 36.dp * ratioH,
-                        height = 36.dp * ratioH
+                        width = BUTTON * ratioH,
+                        height = BUTTON * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,
@@ -132,8 +135,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = 36.dp * ratioH,
-                        height = 36.dp * ratioH
+                        width = BUTTON * ratioH,
+                        height = BUTTON * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,

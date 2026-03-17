@@ -3,7 +3,7 @@ package android.myguide.views
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
-import android.myguide.UI.PADDING
+import android.myguide.UI.MARGIN
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
@@ -66,6 +66,7 @@ fun Main(screen: Screen) {
     val expand by bind.cycler.description.collectAsStateWithLifecycle()
     val filter by screen.vm.filter.observeAsState()
     val h = bind.h.observeAsState()
+    val margin by bind.margin.collectAsStateWithLifecycle()
     val ratio by screen.vm.ratio.observeAsState()
     val ratioH by screen.vm.ratioH.observeAsState()
     val ratioV by screen.vm.ratioV.observeAsState()
@@ -178,8 +179,8 @@ fun Main(screen: Screen) {
                             Modifier
                                 .fillMaxWidth()
                                 .padding(
-                                    horizontal = PADDING * (ratioH ?: ratio!!),
-                                    vertical = PADDING * (ratioV ?: ratio!!)
+                                    horizontal = MARGIN * margin * (ratioH ?: ratio!!),
+                                    vertical = MARGIN * margin * (ratioV ?: ratio!!)
                                 )
                         ) {
                             Column {
@@ -249,9 +250,9 @@ fun Main(screen: Screen) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(scrollStateX)
-                        .padding(
-                            bottom = if (display == H) PADDING * 4 else 0.dp
-                        )
+                   //     .padding(
+                     //       bottom = if (display == H) margin * 4 else 0.dp
+                       // )
                 ) {
                     Box(
                         modifier = Modifier
@@ -269,6 +270,7 @@ fun Main(screen: Screen) {
                                 details = details[it],
                                 display = display,
                                 expand = expand[it],
+                                margin = margin,
                                 ratioH = ratioH ?: ratio!!,
                                 ratioV = ratioV ?: ratio!!,
                                 scale = scale!!,

@@ -85,7 +85,6 @@ class Screen(val ident: Boolean) {
     }
     fun update() {
         qqq("UPDATE SCREEN " + ident + " " + toolbar.items.last().position)
-        lock = false
         vm.position.postValue(toolbar.items.last().position)
         render.listen(true)
     }

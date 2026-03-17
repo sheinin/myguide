@@ -2,14 +2,14 @@ package android.myguide.views
 
 import android.myguide.data.Details
 import android.myguide.R
+import android.myguide.UI.BUTTON
 import android.myguide.UI.ITEM_HEIGHT
-import android.myguide.UI.PADDING
+import android.myguide.UI.MARGIN
 import android.myguide.colorScheme
 import android.myguide.current
 import android.myguide.data.Cycler.XY
 import android.myguide.data.VM
 import android.myguide.data.VM.Display.*
-import android.myguide.lock
 import android.myguide.screen
 import android.myguide.screenWidth
 import android.myguide.toolbar
@@ -46,12 +46,12 @@ fun ViewItem(
     details: Details,
     display: VM.Display?,
     expand: AnnotatedString?,
+    margin: Float,
     ratioH: Float,
     ratioV: Float,
     scale: Float,
     toggle: Boolean?,
     xy: XY,
-   // callback: (Int) -> Unit
 ) {
     @Composable
     fun Content() {
@@ -72,7 +72,7 @@ fun ViewItem(
                 else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp * ratioH),
+                .padding(horizontal = MARGIN * margin * ratioH),
             verticalArrangement = Arrangement.Center
         ) {
             Row(
@@ -105,8 +105,8 @@ fun ViewItem(
                             )
                             .rotate(if (toggle == true) 90f else -90f)
                             .size(
-                                36.dp * ratioH,
-                                36.dp * ratioV
+                                BUTTON * ratioH,
+                                BUTTON * ratioV
                             )
                             .padding(
                                 horizontal = 6.dp * ratioH,
@@ -150,23 +150,20 @@ fun ViewItem(
             width = screenWidth,
             height = (xy.d + xy.h) * ratioV * scale
         )
-        .padding(bottom = PADDING * ratioV)
+        .padding(bottom = MARGIN * margin * ratioV)
         .then(
             if (details.origin == null) Modifier
             else
                 Modifier
                     .clickable(
                         onClick = {
-                            if (!lock) {
-                                lock = true
-                                toolbar.navigate(
-                                    id =
-                                        screen[current.value!!]!!.render.let {
-                                            it.list[it.data.point[xy.i]].id
-                                        },
-                                    title = details.title
-                                )
-                            }
+                            toolbar.navigate(
+                                id =
+                                    screen[current.value!!]!!.render.let {
+                                        it.list[it.data.point[xy.i]].id
+                                    },
+                                title = details.title
+                            )
                         }
                     )
         )
@@ -174,9 +171,9 @@ fun ViewItem(
         Row(
             modifier
                 .padding(
-                    start = PADDING * ratioH
-                            + PADDING.times(2) * ratioH * details.level,
-                    end = PADDING * ratioH
+                    start = MARGIN * margin * ratioH
+                            + MARGIN * margin.times(2) * ratioH * details.level,
+                    end = MARGIN * margin * ratioH
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }
@@ -185,8 +182,8 @@ fun ViewItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .padding(
-                    horizontal = PADDING * ratioH,
-                    vertical = PADDING * ratioV
+                    horizontal = MARGIN * margin * ratioH,
+                    vertical = MARGIN * margin * ratioV
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }

@@ -1,7 +1,7 @@
 package android.myguide
 
 import android.myguide.UI.ITEM_HEIGHT
-import android.myguide.UI.PADDING
+import android.myguide.UI.MARGIN
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -15,6 +15,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
+import java.lang.Integer.max
+import kotlin.math.max
 
 object Expandable {
     fun expanded(ix: Int, ratioV: Float, txt: String) : AnnotatedString =
@@ -76,6 +78,7 @@ object Expandable {
     fun expandable(
         ix: Int,
         level: Int,
+        margin: Float,
         ratioH: Float,
         ratioV: Float,
         scale: Float,
@@ -97,13 +100,17 @@ object Expandable {
                 )
             ),
             constraints = Constraints(
-                maxWidth = (
-                        (screenWidth - (
+                maxWidth =
+                    max(
+                        MARGIN.toPx(),
+                        (
+                            (screenWidth - (
                                 ITEM_HEIGHT +
-                                        PADDING.times(4) +
-                                        PADDING.times(2) * level
+                                        MARGIN.times(4) * margin +
+                                        MARGIN.times(2) * margin * level
                                 ) * ratioH)
                         ).toPx()
+                    )
                     .toInt()
             ),
             density = Density(

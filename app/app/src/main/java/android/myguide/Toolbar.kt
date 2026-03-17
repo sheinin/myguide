@@ -16,11 +16,12 @@ class Toolbar {
         var display: VM.Display,
         var position: Dp
     )
-    var items = mutableListOf<Item>()
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
         true to MutableLiveData(List(3) { "" })
     )
+    var items = mutableListOf<Item>()
+    var lock = false
     private fun splash() {
        crumbs[false]!!.value = List(3) { "" }
        crumbs[true]!!.value = List(3) { "" }
@@ -46,6 +47,8 @@ class Toolbar {
         queryType: QueryType = screen[current.value!!]!!.queryType!!.next,
         title: String
     ) {
+        if (lock) return
+        lock = true
         qqq("NAVIGATE items:"+ items.size+" id:"+id+" title:"+title+" query:"+queryType + " "+(items.getOrNull(0)?.title ?: ""))
         items.mapIndexed { ix, it ->
             if (it.queryType == queryType && it.id == id) {
@@ -80,6 +83,8 @@ class Toolbar {
     }
     private var cached = true
     fun goto(ix: Int) {
+        if (lock) return
+        lock = true
         current.value?.let { screen[it] }?.reset()
         val item = items[ix]
         val next = screen[!current.value!!]!!
@@ -92,6 +97,7 @@ class Toolbar {
         if (cached) {
             current.value = !current.value!!
             cached = false
+            lock = false
             next.update()
         } else {
             crumbs[next.ident]!!.value =
