@@ -132,7 +132,6 @@ fun Main(screen: Screen) {
                         title = screen.queryType!!.title
                     )
             }
-            qqq("SCRO "+stateY!!)
             LaunchedEffect(stateY!!) {
                 qqq("SCRO1 "+stateY!!)
                 //if (display != H)
