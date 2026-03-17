@@ -1,26 +1,19 @@
 package android.myguide
 
 
+import android.myguide.Expandable.expandable
+import android.myguide.Expandable.expanded
 import android.myguide.data.Cycler.XY
 import android.myguide.data.Details
 import android.myguide.data.ListInterface
 import android.myguide.data.VM
 import android.myguide.data.VM.Display.*
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withLink
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -33,67 +26,15 @@ import kotlin.collections.set
 import kotlin.collections.withIndex
 import kotlin.ranges.until
 
-class Render(
-    val ident: Boolean,
-    val vm: VM
-) {
-    private val cycler = vm.cycler
-    val data = Data(
-        point = CopyOnWriteArrayList(),
-        ruler = CopyOnWriteArrayList(),
-        stack = IntArray(batch) { -1 },
-        view = Data.View(
-            details = mutableListOf(),
-            expand = mutableListOf(),
-            toggle = mutableListOf(),
-            xy = mutableListOf()
-        ),
-        display = CopyOnWriteArrayList()
-    )
-    private var handler: VM.Display? = null
-    var list: List<ListInterface> = listOf()
-    init {
-        vm.adjust.observeForever { adjust ->
-            if (!adjust) {
-                handler = null
-                return@observeForever
-            }
-            handler = vm.display.value
-            adjust()
-        }
-        vm.ratio.observeForever { zoom() }
-        vm.ratioH.observeForever { zoom() }
-        vm.ratioV.observeForever { zoom() }
-        vm.scale.observeForever { zoom() }
-        CoroutineScope(Dispatchers.IO).launch {
-            while (true) {
-                delay(1)
-                scroll()
-            }
-        }
-    }
-    enum class DisplayType {
-        DEFAULT,
-        NODE;
-        val height: Dp
-            get() =
-                when (this) {
-                    DEFAULT -> measures.itemHeight + measures.padding
-                    NODE -> 42.dp
-                }
-    }
+class Render(private val vm: VM) {
     data class Data(
         var toggle: MutableMap<Int, Pair<Int, Int>> = mutableMapOf(),
-        var display: CopyOnWriteArrayList<Display>,
+        var display: CopyOnWriteArrayList<Pair<Dp, Dp>>,
         var point: CopyOnWriteArrayList<Int>,
         var ruler: CopyOnWriteArrayList<Dp>,
         var stack: IntArray,
         var view: View,
     ) {
-        class Display(
-            var type: DisplayType,
-            var height: Dp
-        )
         data class View(
             var details: MutableList<Details>,
             var expand: MutableList<AnnotatedString?>,
@@ -118,17 +59,58 @@ class Render(
             return result
         }
     }
+    val data = Data(
+        point = CopyOnWriteArrayList(),
+        ruler = CopyOnWriteArrayList(),
+        stack = IntArray(batch) { -1 },
+        view = Data.View(
+            details = mutableListOf(),
+            expand = mutableListOf(),
+            toggle = mutableListOf(),
+            xy = mutableListOf()
+        ),
+        display = CopyOnWriteArrayList()
+    )
+    var list: List<ListInterface> = listOf()
+    private var handler: VM.Display? = null
+    init {
+        vm.adjust.observeForever { adjust ->
+            if (!adjust) {
+                handler = null
+                return@observeForever
+            }
+            handler = vm.display.value
+            adjust()
+        }
+        vm.ratio.observeForever { zoom() }
+        vm.ratioH.observeForever { zoom() }
+        vm.ratioV.observeForever { zoom() }
+        vm.scale.observeForever { zoom() }
+        CoroutineScope(Dispatchers.IO).launch {
+            while (true) {
+                delay(1)
+                scroll()
+            }
+        }
+    }
     private fun adjust() {
-        data.stack = IntArray(batch) { -1 }
+        //data.stack = IntArray(batch) { -1 }
         when (vm.display.value!!) {
             V -> {
+                var height = 0.dp
                 data.ruler.clear()
-                height = 0.dp
                 data.point.map {
-                    data.display[it].height = measure(it)
-                    expandable(it)
+                    data.display[it] = data.display[it].first to measure(it)
+                    data.view.expand[it] = expandable(
+                        ix = it,
+                        level = list[it].level,
+                        ratioH = vm.ratioH(),
+                        ratioV = vm.ratioV(),
+                        scale = vm.scale.value!!,
+                        txt = list[it].description
+                    )
                     data.ruler.add(height)
-                    height += data.display[it].type.height + data.display[it].height
+                    height += data.display[it].first + data.display[it].second
                     xy(it)
                 }
                 vm.w.postValue(screenWidth)
@@ -138,7 +120,7 @@ class Render(
             H ->
                 data.point
                     .map {
-                        expandable(it)
+                      //  expandable(it)
                         xy(it)
                     }
             T ->
@@ -167,9 +149,9 @@ class Render(
                     val point = data.point.getOrNull(ix) ?: return
                     val index = ix.mod(batch)
                     data.stack[index] = ix
-                    cycler.update(index, data.view.details[point])
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.xy[point])
+                    vm.cycler.update(index, data.view.details[point])
+                    vm.cycler.update(index, data.view.expand[point])
+                    vm.cycler.update(index, data.view.xy[point])
                     /*qqq(
                         "MAP dir:$direction mn/mx:$mn/$mx r:$r p:" + point + " ix:" + ix + " " + scroll.round() + " " + " " + data.view.xy[point].x.round() + " " + data.view.details.getOrNull(
                             point
@@ -186,7 +168,7 @@ class Render(
                 fun go(ix: Int) {
                     val point = data.point.getOrNull(ix) ?: return
                     val index = ix.mod(batch)
-                    cycler.update(index, data.view.xy[point])
+                    vm.cycler.update(index, data.view.xy[point])
                     data.stack[index] = ix
                 }
                 val mn = data.stack.min()
@@ -214,10 +196,10 @@ class Render(
                     val point = data.point.getOrNull(ix) ?: return
                     val index = ix.mod(batch)
                     data.stack[index] = ix
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.details[point])
-                    cycler.update(index, data.view.toggle[point])
-                    cycler.update(index, data.view.xy[point])
+                    vm.cycler.update(index, data.view.expand[point])
+                    vm.cycler.update(index, data.view.details[point])
+                    vm.cycler.update(index, data.view.toggle[point])
+                    vm.cycler.update(index, data.view.xy[point])
                     //qqq(
                     //    "JOB dir:$direction p:" + point + " ix:" + ix + " " + scroll + " " + data.view.xy[point].y + " " + data.view.details.getOrNull(
                     //        point
@@ -255,7 +237,7 @@ class Render(
                     )
                 (from until min(from + batch, data.point.size)).map {
                     xy(it)
-                    cycler.update(it.mod(batch), data.view.xy[data.point[it]])
+                    vm.cycler.update(it.mod(batch), data.view.xy[data.point[it]])
                 }
             }
             V -> {
@@ -269,18 +251,25 @@ class Render(
                         XY(
                             x = 0.dp,
                             y = data.ruler[it] + sum,
-                            d = data.display[point].type.height,
+                            d = data.display[point].first,
                             h = m,
                             i = it
                         )
                     //qqq("Z p:"+point+ " m:" + m + data.display[point].height + " sum:" +sum + " r:"+data.ruler[it])
-                    if (data.display[point].height < m)
+                    if (data.display[point].second < m)
                         sum += m
-                    else if (data.display[point].height > m)
+                    else if (data.display[point].second > m)
                         sum -= m
-                    expandable(point)
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.xy[point])
+                    data.view.expand[point] = expandable(
+                        ix = point,
+                        level = list[point].level,
+                        ratioH = vm.ratioH(),
+                        ratioV = vm.ratioV(),
+                        scale = vm.scale.value!!,
+                        txt = list[point].description
+                    )
+                    vm.cycler.update(index, data.view.expand[point])
+                    vm.cycler.update(index, data.view.xy[point])
                 }
             }
             H -> {
@@ -297,9 +286,9 @@ class Render(
                     xy(point)
 
 
-                    expandable(point)
-                    cycler.update(index, data.view.expand[point])
-                    cycler.update(index, data.view.xy[point])
+                   // expandable(point)
+                    vm.cycler.update(index, data.view.expand[point])
+                    vm.cycler.update(index, data.view.xy[point])
                    // listen()
                 }
                 qqq("MAP $from $scroll ")
@@ -330,226 +319,29 @@ class Render(
         //qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
           //      + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
-            return measures.titleHeight * p.lineCount.dec()// * vm.ratioV() * vm.scale.value!!// - 12.dp
+            return measures.titleHeight * p.lineCount.dec()
         return 0.dp
-    }
-    private fun expandable(ix: Int, expand: Boolean = false) {
-        if (vm.display.value == H) {
-            data.view.expand[ix] =
-                buildAnnotatedString {
-                    withStyle(
-                        ParagraphStyle(
-                            lineHeight = 1.em * vm.ratioV()
-                        )
-                    ) {
-                        withStyle(
-                            style = SpanStyle(
-                                color = colorScheme.secondary,
-                                textDecoration = TextDecoration.None,
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * (vm.ratioV.value
-                                    ?: vm.ratio.value!!),
-                                fontWeight = typography.bodySmall.fontWeight
-                            )
-                        ) { append(list[ix].description) }
-                    }
-                }
-            return
-        }
-        val str = list.getOrNull(ix)?.description ?: return
-        if (expand) {
-            data.view.expand[ix] = buildAnnotatedString {
-                withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV())) {
-                    withStyle(
-                        style = SpanStyle(
-                            color = colorScheme.secondary,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV(),
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append(list[ix].description) }
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color.Transparent,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV(),
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append("\u200A") }
-                    withLink(
-                        LinkAnnotation.Clickable(
-                            tag = "lastThree",
-                            linkInteractionListener = {
-                                expand(ix, false)
-                            }
-                        )
-                    ) {
-                        withStyle(
-                            style = SpanStyle(
-                                textDecoration = TextDecoration.None,
-                                color = colorScheme.primary,
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * vm.ratioV(),
-                                fontWeight = typography.bodySmall.fontWeight
-                            )
-                        ) {
-                            append("\u2026")
-                        }
-                    }
-                }
-            }
-            return
-        }
-        fun static(): AnnotatedString =
-            buildAnnotatedString {
-                withStyle(ParagraphStyle(lineHeight = 1.em * vm.ratioV())) {
-                    withStyle(
-                        style = SpanStyle(
-                            color = colorScheme.secondary,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize * vm.ratioV(),
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append(str) }
-                }
-            }
-        if (vm.display.value == H) {
-            data.view.expand[ix] = static()
-            return
-        }
-        val result = androidx.compose.ui.text.Paragraph(
-            text = str,
-            style = typography.bodySmall,
-            spanStyles = listOf(
-                AnnotatedString.Range(
-                    SpanStyle(
-                        fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize,// * (vm.scale.value!! + vm.ratioV()),
-                        fontWeight = typography.bodySmall.fontWeight,
-                    ),
-                    0,
-                    str.length
-                )
-            ),
-            constraints = Constraints(
-                maxWidth = (
-                        (screenWidth - (
-                                measures.itemHeight +
-                                        measures.padding.times(4) +
-                                        measures.padding.times(2) * list[ix].level
-                                ) * vm.ratioH())
-                        ).toPx()
-                    .toInt()
-            ),
-            density = Density(
-                density = density.density,
-                fontScale = 1f * vm.scale.value!! * vm.ratioV()
-            ),
-            fontFamilyResolver = fontFamilyResolver,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (result.lineCount < 2) {
-            data.view.expand[ix] = static()
-            return
-        }
-        val take =
-            str.take(
-                result.getLineEnd(
-                    1,
-                    true
-                )
-            )
-
-        if (str.length == take.length) {
-            data.view.expand[ix] = static()
-            return
-        }
-/*
-        qqq(
-            ident.toString()
-            + " EXPAND " + result.lineCount
-            + str.take(result.getLineEnd(0, true))
-            + "=="
-            + take
-            + " == "
-            + str
-        )
-
-
- */
-
-
-        data.view.expand[ix] =
-            buildAnnotatedString {
-                withStyle(
-                    ParagraphStyle(lineHeight = typography.bodySmall.fontSize)
-                ) {
-                    withStyle(
-                        style = SpanStyle(
-                            color = colorScheme.secondary,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append(take.dropLast(1)) }
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color.Transparent,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append("\u200A") }
-                    withLink(
-                        LinkAnnotation.Clickable(
-                            tag = "lastThree",
-                            linkInteractionListener = {
-                                expand(ix, true)
-                            }
-                        )
-                    ) {
-                        withStyle(
-                            style = SpanStyle(
-                                textDecoration = TextDecoration.None,
-                                color = colorScheme.primary,
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize,
-                                fontWeight = typography.bodySmall.fontWeight,
-                            )
-                        ) { append("\u2026") }
-                    }
-                }
-            }
     }
     private fun job() {
         var start = 0
         list.indices.map {
-            val item = list[it]
-            var m = 0.dp
-            val displayType =
-                if (item.description == null)
-                    DisplayType.NODE
-                else {
-                    m = measure(it)
-                    DisplayType.DEFAULT
-                }
             data.display.add(
-                Data.Display(
-                    height = m,
-                    type = displayType
-                )
+                (if (data.toggle[it] != null) 36.dp else measures.itemHeight) +
+                        measures.padding to measure(it)
             )
         }
         filter()
         ruler()
         //qqq("SL "+data.point.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
         data.point.indices.map {
-            expandable(it)
+            data.view.expand[it] = expandable(
+                ix = it,
+                level = list[it].level,
+                ratioH = vm.ratioH(),
+                ratioV = vm.ratioV(),
+                scale = vm.scale.value!!,
+                txt = list[it].description
+            )
             val ix = data.point[it]
             val item = list[ix]
             //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
@@ -591,31 +383,31 @@ class Render(
                 .toList()
         )
     }
-    private fun xy(ix: Int) {
-        val point = data.point[ix]
-        data.view.xy[point] =
+    private fun xy(index: Int) {
+        val ix = data.point[index]
+        data.view.xy[ix] =
             when (vm.display.value!!) {
                 T ->
                     XY(
-                        x = screenWidth / measures.tableColumns * ix.mod(measures.tableColumns),
-                        y = ((measures.itemHeight.times(2)) * (ix / measures.tableColumns)) * vm.ratioV(),
+                        x = screenWidth / measures.tableColumns * index.mod(measures.tableColumns),
+                        y = ((measures.itemHeight.times(2)) * (index / measures.tableColumns)) * vm.ratioV(),
                         d = screenWidth / measures.tableColumns,
                         h = measures.itemHeight * 2,
                     )
                 V ->
                     XY(
                         x = 0.dp,
-                        y = data.ruler[ix],
-                        d = data.display[point].type.height,
-                        h = data.display[point].height,
-                        i = ix
+                        y = data.ruler[index],
+                        d = data.display[ix].first,
+                        h = data.display[ix].second,
+                        i = index
                     )
                 H ->
                     XY(
-                        x = measures.mapViewWidth * ix * vm.ratioH(),
+                        x = measures.mapViewWidth * index * vm.ratioH(),
                         y = 0.dp,
                         d = (measures.mapViewWidth - measures.padding) * vm.ratioH(),
-                        h = DisplayType.DEFAULT.height,
+                        h =0.dp,
                     )
             }
     }
@@ -627,7 +419,7 @@ class Render(
                 vm.w.value = measures.mapViewWidth * data.ruler.size * vm.ratioH()
                 vm.h.value = measures.itemHeight * vm.ratioV()
                 list.indices.map {
-                    expandable(it)
+             //       expandable(it)
                     xy(it)
                 }
             }
@@ -641,19 +433,26 @@ class Render(
             V -> {
               //  ruler()
                 list.indices.map {
-                    expandable(it)
+                    expandable(
+                        ix = it,
+                        level = list[it].level,
+                        ratioH = vm.ratioH(),
+                        ratioV = vm.ratioV(),
+                        scale = vm.scale.value!!,
+                        txt = list[it].description
+                    )
                     xy(it)
                 }
                 vm.w.value = screenWidth
-                vm.h.value = height
+               // vm.h.value = height
             }
         }
         (0 until min(batch, data.point.size)).map {
             val point = data.point[it]
             val index = it.mod(batch)
             data.stack[index] = it
-            cycler.update(index, data.view.expand[point])
-            cycler.update(index, data.view.xy[point])
+            vm.cycler.update(index, data.view.expand[point])
+            vm.cycler.update(index, data.view.xy[point])
         }
     }
     fun load(list: List<ListInterface>) {
@@ -697,16 +496,16 @@ class Render(
             job()
         } else job()
     }
-    private var height = 0.dp
+    //private var height = 0.dp
     private fun ruler() {
         when (vm.display.value!!) {
             T -> {}
             V -> {
                 data.ruler.clear()
-                height = 0.dp
+                var height = 0.dp
                 data.point.map {
                     data.ruler.add(height)
-                    height += data.display[it].type.height + data.display[it].height
+                    height += data.display[it].first + data.display[it].second
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
@@ -734,24 +533,23 @@ class Render(
         val index = ix.mod(batch)
         data.stack[index] = ix
         //qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index +data.vm[point].title+ "  "+data.vm[point].x)
-        cycler.update(index, data.view.details[point])
-        cycler.update(index, data.view.expand[point])
-        cycler.update(index, data.view.xy[point])
+        vm.cycler.update(index, data.view.details[point])
+        vm.cycler.update(index, data.view.expand[point])
+        vm.cycler.update(index, data.view.xy[point])
     }
-    private fun renderYSync(ix: Int) {
-        val point = data.point.getOrNull(ix) ?: return
-        val index = ix.mod(batch)
+    private fun renderYSync(index: Int) {
+        val ix = data.point.getOrNull(index) ?: return
+        val mod = index.mod(batch)
         ///val disp = data.display.find { it.ordinal == ix }!!
-        //qqq("RS "+point+" "+ix+" "+data.view.details.getOrNull(point)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
-        data.stack[index] = ix
-        cycler.update(index, data.view.expand[point])
-        cycler.update(index, data.view.details[point])
-        cycler.update(index, data.view.toggle[point])
-        cycler.update(index, data.view.xy[point])
+        //qqq("RS "+ix+" "+index+" "+data.view.xy[ix].y+data.view.details.getOrNull(ix)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
+        data.stack[mod] = index
+        vm.cycler.update(mod, data.view.expand[ix])
+        vm.cycler.update(mod, data.view.details[ix])
+        vm.cycler.update(mod, data.view.toggle[ix])
+        vm.cycler.update(mod, data.view.xy[ix])
     }
     fun expand(ix: Int, expand: Boolean) {
         qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))
-        val disp = data.display[data.point[ix]]
         if (expand) {
             val s = list[ix].description!! + " \u2026"
             val p =
@@ -780,12 +578,19 @@ class Render(
                     density = density,
                     fontFamilyResolver = fontFamilyResolver,
                 )
-            data.display[ix].height += p.getLineHeight(1).toDp() * p.lineCount.minus(2)
-        } else data.display[ix].height = disp.type.height + measure(ix)
-        val start = data.point.indexOf(ix)
-        expandable(ix, expand)
+            data.display[ix] =
+                data.display[ix].first to
+                        data.display[ix].second +
+                        p.getLineHeight(1).toDp() * p.lineCount.minus(2)
+        }
+        else data.display[ix] =
+            data.display[ix].first to data.display[ix].second + measure(ix)
+        data.view.expand[ix] = expanded(
+            ix,
+            vm.ratioV(),
+            list[ix].description!!
+        )
         ruler()
-        //data.stack = IntArray(batch) { -1 }
         data.point.indices
             .map { xy(it) }
         data.stack
@@ -802,7 +607,7 @@ class Render(
             .map { xy(it) }
         (0 until min(batch, data.point.size))
             .map {
-                cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
+                vm.cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
                 renderYSync(it)
             }
     }

@@ -69,9 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Main(
-    screen: Screen
-) {
+fun Main(screen: Screen) {
     val bind = screen.vm
     val description by bind.description.observeAsState()
     val details by bind.cycler.details.collectAsStateWithLifecycle()
@@ -277,18 +275,6 @@ fun Main(
                                 else 1f
                             )
                     ) {
-                        fun callback(index: Int) {
-                            if (lock) return
-                            lock = true
-                            toolbar.items.last().position =
-                                if (display == H) scrollStateX.value.toDp()
-                                else scrollStateY.value.toDp()
-                            toolbar.navigate(
-                                id = details[index].id,
-                                title = details[index].title,
-                                queryType = screen.queryType!!.next
-                            )
-                        }
                         repeat(batch) {
                             ViewItem(
                                 details = details[it],

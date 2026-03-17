@@ -11,11 +11,7 @@ import android.myguide.data.VM
 class Screen(val ident: Boolean) {
     private var id: String? = null
     val vm = VM()
-    val render =
-        Render(
-            ident = ident,
-            vm = vm
-        )
+    val render = Render(vm = vm)
     var queryType: QueryType? = null
     fun build(
         id: String?,

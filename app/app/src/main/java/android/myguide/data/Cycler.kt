@@ -35,7 +35,6 @@ class Cycler {
             _description.value += null
             _details.value +=
                 Details(
-                    id = "",
                     title = "",
                     origin = null,
                     drawable = null,
@@ -58,7 +57,6 @@ class Cycler {
             it.mapIndexed { ix, it ->
                 if (ix == index)
                     it.copy(
-                        id = details.id,
                         title = details.title,
                         origin = details.origin,
                         drawable = details.drawable,
