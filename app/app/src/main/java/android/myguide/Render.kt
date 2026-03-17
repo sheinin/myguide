@@ -1,6 +1,7 @@
 package android.myguide
 
 
+import android.R.attr.direction
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.UI.BUTTON
@@ -83,9 +84,12 @@ class Render(private val vm: VM) {
     private var handler: VM.Display? = null
     init {
         vm.adjust.observeForever { adjust ->
-            //return@observeForever
+            qqq("AD "+adjust)
             if (!adjust) {
+
+                data.stack = IntArray(batch) { -1 }
                 handler = null
+                vm.stateY.value  = 0f
                 return@observeForever
             }
             handler = vm.display.value
@@ -96,10 +100,10 @@ class Render(private val vm: VM) {
         CoroutineScope(Dispatchers.IO).launch {
             vm.margin.collect { m ->
                 margin = m
-                list.indices.map {
-                    data.display[it] =
-                        (if (data.toggle[it] != null) BUTTON else ITEM_HEIGHT) +
-                                margin() to measure(it)
+                data.point.map { index ->
+                    data.display[index] =
+                        (if (data.toggle[index] != null) BUTTON else ITEM_HEIGHT) +
+                                margin() to measure(index)
                 }
                 ruler()
                 zoom()
@@ -117,9 +121,9 @@ class Render(private val vm: VM) {
                             )
                         }
                 )
-            ruler()
+            //ruler()
             data.point.indices.map { xy(it) }
-            data.stack
+            /*data.stack
                 .withIndex()
                 .filter { it.value != -1 }
                 .map {
@@ -127,9 +131,11 @@ class Render(private val vm: VM) {
                     renderYSync(data.stack[it.index])
                 }
 
+
+             */
+            data.stack = IntArray(batch) { -1 }
             qqq("SOR "+data.stack.map { it }.toList())
             qqq("POINT "+data.point)
-         //   vm.adjust.postValue(true)
         }
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
@@ -137,13 +143,14 @@ class Render(private val vm: VM) {
         vm.scale.observeForever { zoom() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(1)
+                delay(1000)
                 scroll()
             }
         }
     }
     private fun adjust() {
         //data.stack = IntArray(batch) { -1 }
+        direction = null
         when (vm.display.value!!) {
             V -> {
                 var height = 0.dp
@@ -165,7 +172,8 @@ class Render(private val vm: VM) {
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
-               // data.stack.map { renderYSync(it) }
+                data.stack = IntArray(batch) { -1 }
+                data.stack.map { renderYSync(it) }
             }
             H ->
                 data.point
@@ -180,7 +188,7 @@ class Render(private val vm: VM) {
     }
     private fun scroll() {
         when (handler) {
-            H -> {
+            H -> {/*
                 direction ?: return
                 val mx = data.stack.max()
                 val mn = data.stack.min()
@@ -209,9 +217,10 @@ class Render(private val vm: VM) {
                     )*/
                 }
                 if (ix == null) {
-                    //qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll.round() + " ")
-                    direction = null
+                    qqq("ECHO MAP dir:$direction mn/mx:$mn/$mx r:$r ix:" + ix + " " + scroll.round() + " ")
+
                 }
+                */
             }
             T -> {
                 direction ?: return
@@ -237,11 +246,10 @@ class Render(private val vm: VM) {
                             .indexOfLast { ITEM_HEIGHT * it.index / 2 < scroll }
                             .let { it / 2 > mn && it / 2 > batch / 3 }
                     ) go(data.stack.max().inc())
-                direction = null
             }
             V -> {
-                direction ?: return
                 fun go(ix: Int) {
+                   // qqq("GO $ix ${data.point.getOrNull(ix)}")
                     val index = data.point.getOrNull(ix) ?: return
                     val mod = ix.mod(batch)
                     data.stack[mod] = ix
@@ -249,32 +257,140 @@ class Render(private val vm: VM) {
                     vm.cycler.update(mod, data.view.details[index])
                     vm.cycler.update(mod, data.view.toggle[index])
                     vm.cycler.update(mod, data.view.xy[index])
-                    qqq("JOB dir:$direction p:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
+                    qqq("JOB dir:$direction index:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
                 }
-                val mn =
-                    data.point
-                        .indexOfFirst { index ->
-                            index in data.stack.map { ix -> data.point.getOrNull(ix) }
+                var mn = 0
+                var mx = 0
+                when (direction) {
+                    null -> {
+
+                        val a =
+                            data.ruler
+                                .indexOfFirst {
+                                    it > scroll
+                                    //              &&
+                                    //        it.index <= data.stack.min()
+                                }
+                        val b =
+                            data.point
+                                .withIndex()
+                                .indexOfLast {
+                                    it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                            &&
+                                            data.ruler[it.index] < scroll
+                                }
+                        val c =
+                            data.point
+                                .withIndex()
+                                .indexOfFirst {
+                                    it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                            &&
+                                            data.ruler[it.index] > scroll
+                                }
+                        val d =
+                            data.point
+                                .withIndex()
+                                .indexOfLast {
+                                    it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                            &&
+                                            data.ruler[it.index] > scroll
+                                }
+                        qqq("MX a:$a b:$b c:$c d:$d scroll:$scroll")
+                    }
+                    true -> {
+                        mn = data.point
+                            .withIndex()
+                            .indexOfFirst {
+                                it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                        &&
+                                        data.ruler[it.index] > scroll
+                                //              &&
+                                //        it.index <= data.stack.min()
+                            }
+                        if (
+                            data.ruler
+                                .indexOfFirst { ix -> ix > scroll } - batch / 2 < mn
+                        ) go(mn + batch.dec())
+                        else direction = null
+                    }
+                    else -> {
+                        mn =
+                            data.point
+                                .withIndex()
+                                .indexOfFirst {
+                                    it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                            &&
+                                            data.ruler[it.index] > scroll
+                                    //              &&
+                                    //        it.index <= data.stack.min()
+                                }
+
+                    }
+                }
+
+
+
+
+
+                qqq("MN mx:$mx mn:$mn $direction")
+                if (mn == -1) {return
+                    mn =
+                        max(
+                            0,
+                        data.point
+                            .withIndex()
+                            .indexOfFirst {
+                             //   it.value in data.stack.map { ix -> data.point.getOrNull(ix) }
+                              //  &&
+                                data.ruler[it.index] > scroll
+                            } //- batch - batch / 2
+                        )
+
+                            (mn until mn + batch).map { ix -> go(ix) }
+
+                    return
+                   // direction = null
+                }
+                if (direction == null) {
+                  //  direction = false
+                    go(mn-batch)
+                }
+                else if (direction!!) {
+                    mn = data.point
+                        .withIndex()
+                        .indexOfFirst {
+                            it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                    &&
+                                    data.ruler[it.index] > scroll
+                            //              &&
+                            //        it.index <= data.stack.min()
                         }
-                qqq("MN"+mn)
-                if (direction!!)
                     if (
                         data.ruler
                             .indexOfFirst { ix -> ix > scroll } - batch / 2 < mn
-                    ) go(mn.dec())
+                    ) go(mn + batch.dec())
                     else direction = null
-                else
-                    if (
+                }
+                else {
+                 //   mn = min(data.point.size, mn + batch)
+                    /*if (
                         data.ruler
                             .indexOfLast { ix -> ix < scroll }
                             .let { ix -> ix > mn + batch / 2 }
-                    ) go(
-                        data.point
-                            .indexOfLast { index ->
-                                index in data.stack.map { ix -> data.point.getOrNull(ix) }
-                            }.inc()
                     )
+                        go(
+                            data.point
+                                .indexOfLast { index ->
+                                    index in data.stack.map { ix -> data.point.getOrNull(ix) }
+                                }.inc()
+                        )
                     else direction = null
+
+
+                     */
+                    go(mn)
+                }
+
             }
             null -> {}
         }
@@ -354,6 +470,9 @@ class Render(private val vm: VM) {
             }
         }
        // ruler()
+        qqq("ZSOR "+data.stack.map { it }.toList())
+        qqq("ZPOINT "+data.point)
+        qqq("ZRUL "+data.ruler)
     }
     private fun measure(ix: Int): Dp {
         if (list[ix].description == null || vm.display.value == H) return 0.dp
@@ -369,7 +488,7 @@ class Render(private val vm: VM) {
                         (screenWidth - (
                             ITEM_HEIGHT +
                             margin().times(4) +
-                            margin().times(2) * list[ix].level
+                            margin() * list[ix].level / 2
                         ) * vm.ratioH()).toPx()
                     ).toInt()
             ),
@@ -669,11 +788,7 @@ class Render(private val vm: VM) {
         filter()
         ruler()
         data.point.indices
-            .map { xy(it) }
-        (0 until min(batch, data.point.size))
-            .map {
-                vm.cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
-                renderYSync(it)
-            }
+            .map { ix -> xy(ix) }
+        data.stack = IntArray(batch) { -1 }
     }
 }

@@ -171,8 +171,9 @@ fun ViewItem(
         Row(
             modifier
                 .padding(
-                    start = MARGIN * margin * ratioH
-                            + MARGIN * margin.times(2) * ratioH * details.level,
+                    start =
+                        MARGIN * margin * ratioH
+                        + MARGIN * margin * ratioH * details.level / 2,
                     end = MARGIN * margin * ratioH
                 )
                 .background(color = colorScheme.surfaceContainer)

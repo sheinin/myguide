@@ -107,7 +107,7 @@ object Expandable {
                             (screenWidth - (
                                 ITEM_HEIGHT +
                                         MARGIN.times(4) * margin +
-                                        MARGIN.times(2) * margin * level
+                                        MARGIN * margin * level / 2
                                 ) * ratioH)
                         ).toPx()
                     )

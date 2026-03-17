@@ -8,6 +8,7 @@ import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
 import android.myguide.data.VM.Display.*
+import android.myguide.qqq
 import android.myguide.toolbar
 import android.myguide.typography
 import android.view.ViewTreeObserver
@@ -131,9 +132,13 @@ fun Main(screen: Screen) {
                         title = screen.queryType!!.title
                     )
             }
-            LaunchedEffect(bind.position.value) {
-                if (display != H)
-                    scrollStateY.scrollBy(stateY!!)
+            qqq("SCRO "+stateY!!)
+            LaunchedEffect(stateY!!) {
+                qqq("SCRO1 "+stateY!!)
+                //if (display != H)
+                if (stateY != -1f)
+                    scrollStateY.scrollTo(stateY!!.toInt())
+                bind.stateY.value = -1f
             }
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}

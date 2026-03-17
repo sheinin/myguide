@@ -185,7 +185,8 @@ fun Toolbar() {
                                 true -> vm.ratioV.value ?: 1f
                                 null -> vm.ratio.value!!
                             }
-                        )
+                        ),
+                    valueRange = 0.75f .. 1.5f
                 )
                 SliderRow(
                     action = { vm.margin(1f) },
@@ -205,7 +206,7 @@ fun Toolbar() {
                     },
                     sliderFinished =  { vm.adjust.value = true },
                     txt = "%.2f".format(margin),
-                    valueRange = 0.5f .. 5f
+                    valueRange = 0.5f .. 2.5f
                 )
             }
         }
@@ -224,7 +225,7 @@ fun SliderRow(
     sliderChange: (Float) -> Unit,
     sliderFinished: () -> Unit,
     txt: String,
-    valueRange: ClosedFloatingPointRange<Float> = .75f..2f
+    valueRange: ClosedFloatingPointRange<Float>
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically
