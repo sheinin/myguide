@@ -1,5 +1,7 @@
 package android.myguide.views
 
+import android.R.id.toggle
+import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.batch
@@ -8,12 +10,10 @@ import android.myguide.density
 import android.myguide.dialog
 import android.myguide.lock
 import android.myguide.measures
-import android.myguide.model.VM.Display.*
-import android.myguide.qqq
+import android.myguide.data.VM.Display.*
 import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
-import android.util.Log.w
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,7 +55,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -66,10 +65,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.rememberCameraPositionState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,18 +74,24 @@ fun Main(
 ) {
     val bind = screen.vm
     val description by bind.description.observeAsState()
+    val details by bind.cycler.details.collectAsStateWithLifecycle()
     val display by bind.display.observeAsState()
+    val expand by bind.cycler.description.collectAsStateWithLifecycle()
+    val filter by screen.vm.filter.observeAsState()
+    val h = bind.h.observeAsState()
     val ratio by screen.vm.ratio.observeAsState()
     val ratioH by screen.vm.ratioH.observeAsState()
     val ratioV by screen.vm.ratioV.observeAsState()
     val scale by screen.vm.scale.observeAsState()
     val scrollStateY = rememberScrollState()
+    val sort by screen.vm.sort.observeAsState()
     val stateX by bind.stateX.observeAsState()
     val stateY by bind.stateY.observeAsState()
-    val h = bind.h.observeAsState()
-    val w = bind.w.observeAsState()
+    val toggle by bind.cycler.toggle.collectAsStateWithLifecycle()
     val view = LocalView.current
     val viewItem by bind.details.observeAsState()
+    val w = bind.w.observeAsState()
+    val xy by bind.cycler.xy.collectAsStateWithLifecycle()
     var viewItemHeight by remember { mutableIntStateOf(0) }
     Box(
         Modifier
@@ -131,7 +132,16 @@ fun Main(
                             )
                         }
                     }
-                if (display == H) Control(screen)
+                if (display == H)
+                    Control(
+                        control = screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS,
+                        filter = filter,
+                        display = display,
+                        ratioH = ratioH ?: ratio!!,
+                        ratioV = ratioV ?: ratio!!,
+                        sort = sort,
+                        title = screen.queryType!!.title
+                    )
             }
             LaunchedEffect(bind.position.value) {
                 if (display != H)
@@ -223,12 +233,18 @@ fun Main(
                         )
                     }
                 if (display != H)
-                    Control(screen)
+                    Control(
+                        control = screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS,
+                        display = display,
+                        filter = filter,
+                        ratioH = ratioH ?: ratio!!,
+                        ratioV = ratioV ?: ratio!!,
+                        sort = sort,
+                        title = screen.queryType!!.title
+                    )
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
-                LaunchedEffect(stateX) {
-                    scrollStateX.scrollBy(stateX!!)
-                }
+                LaunchedEffect(stateX) { scrollStateX.scrollBy(stateX!!) }
                 DisposableEffect(view, display) {
                     if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
@@ -250,16 +266,15 @@ fun Main(
                             bottom = if (display == H) measures.padding * 4 else 0.dp
                         )
                 ) {
-                    val details by bind.cycler.details.collectAsStateWithLifecycle()
-                    val display by bind.display.observeAsState()
-                    val expand by bind.cycler.description.collectAsStateWithLifecycle()
-                    val toggle by bind.cycler.toggle.collectAsStateWithLifecycle()
-                    val xy by bind.cycler.xy.collectAsStateWithLifecycle()
                     Box(
                         modifier = Modifier
                             .size(
                                 width = w.value!!,
                                 height = h.value!! * (ratioV ?: ratio!!) * scale!!
+                            )
+                            .alpha(
+                                if (bind.loading.value == true) 0f
+                                else 1f
                             )
                     ) {
                         fun callback(index: Int) {
@@ -275,10 +290,7 @@ fun Main(
                             )
                         }
                         repeat(batch) {
-                           // qqq("V"+measures.itemHeight)
                             ViewItem(
-                                index = it,
-                                screen = screen,
                                 details = details[it],
                                 display = display,
                                 expand = expand[it],
@@ -286,8 +298,7 @@ fun Main(
                                 ratioV = ratioV ?: ratio!!,
                                 scale = scale!!,
                                 toggle = toggle[it],
-                                xy = xy[it],
-                                callback = ::callback
+                                xy = xy[it]
                             )
                         }
                     }
@@ -333,50 +344,4 @@ fun ArrowText(
     }
 }
 
-
-@Composable
-fun MyDialog() {
-    Dialog(
-        onDismissRequest = { dialog.postValue(false) },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        (LocalView.current.parent as DialogWindowProvider).window.setDimAmount(0f)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable(
-                    onClick = { dialog.value = false }
-                )
-                .padding(top = 86.dp, start = 8.dp, end = 8.dp), // Adjust top padding as needed
-            contentAlignment = Alignment.TopCenter // Aligns content to the top center
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = colorScheme.surface,
-                modifier = Modifier.padding(8.dp)
-            ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    val list = toolbar.items.subList(1, toolbar.items.lastIndex.dec())
-                    items(list.size) {
-                        Text(
-                            text = list[it].title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    toolbar.goto(it.inc())
-                                    dialog.value = false
-                                }
-                                .padding(16.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 

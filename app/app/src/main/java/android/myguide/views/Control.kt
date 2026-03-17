@@ -4,7 +4,11 @@ import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.colorScheme
-import android.myguide.model.VM.Display.*
+import android.myguide.current
+import android.myguide.data.VM
+import android.myguide.measures
+import android.myguide.data.VM.Display.*
+import android.myguide.screen
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -12,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,29 +29,37 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.Dimension.Companion.ratio
 
 
 @Composable
-fun Control(screen: Screen) {
-    val display by screen.vm.display.observeAsState()
-    val filter by screen.vm.filter.observeAsState()
-    val sort by screen.vm.sort.observeAsState()
+fun Control(
+    control: Boolean,
+    filter: Boolean?,
+    sort: Boolean?,
+    display: VM.Display?,
+    ratioH: Float,
+    ratioV: Float,
+    title: String
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(0.dp)
-            .padding(8.dp)
+            .padding(
+                horizontal = measures.padding * ratioH,
+                vertical = measures.padding * ratioV
+            )
     ) {
         Text(
-            screen.queryType?.title ?: "",
+            title,
             style = typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         )
-        if (screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS) {
+        if (control) {
             Image(
                 painter = painterResource(
                     when (filter) {
@@ -60,15 +73,22 @@ fun Control(screen: Screen) {
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            screen.vm.filter.value =
-                                when (screen.vm.filter.value) {
+                            screen[current.value!!]!!.vm.filter.value =
+                                when (screen[current.value!!]!!.vm.filter.value) {
                                     false -> true
                                     true -> null
                                     null -> false
                                 }
                         }
                     )
-                    .padding(6.dp)
+                    .size(
+                        width = 36.dp * ratioH,
+                        height = 36.dp * ratioH
+                    )
+                    .padding(
+                        horizontal = 6.dp * ratioH,
+                        vertical = 6.dp * ratioV
+                    )
             )
             Spacer(Modifier.width(8.dp))
             Image(
@@ -79,11 +99,18 @@ fun Control(screen: Screen) {
                     .scale(scaleX = 1f, scaleY = if (sort == true) -1f else 1f)
                     .clickable(
                         onClick = {
-                            screen.vm.sort.value =
-                                !screen.vm.sort.value!!
+                            screen[current.value!!]!!.vm.sort.value =
+                                !screen[current.value!!]!!.vm.sort.value!!
                         }
                     )
-                    .padding(6.dp)
+                    .size(
+                        width = 36.dp * ratioH,
+                        height = 36.dp * ratioH
+                    )
+                    .padding(
+                        horizontal = 6.dp * ratioH,
+                        vertical = 6.dp * ratioV
+                    )
             )
             Spacer(Modifier.width(8.dp))
             Image(
@@ -99,16 +126,24 @@ fun Control(screen: Screen) {
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            screen.vm.display.value =
-                                when (screen.vm.display.value!!) {
+                            screen[current.value!!]!!.vm.display.value =
+                                when (screen[current.value!!]!!.vm.display.value!!) {
                                     V -> H
                                     H -> T
                                     T -> V
                                 }
-                            screen.render.display()
+                            screen[current.value!!]!!.render.display()
+//!!!??????
                         }
                     )
-                    .padding(6.dp)
+                    .size(
+                        width = 36.dp * ratioH,
+                        height = 36.dp * ratioH
+                    )
+                    .padding(
+                        horizontal = 6.dp * ratioH,
+                        vertical = 6.dp * ratioV
+                    )
             )
         }
     }

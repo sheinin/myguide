@@ -1,12 +1,11 @@
 package android.myguide
 
 
-import android.R.attr.direction
-import android.myguide.model.Cycler
-import android.myguide.model.Cycler.XY
-import android.myguide.model.VM
-import android.myguide.model.VM.Display.*
-import androidx.compose.runtime.livedata.observeAsState
+import android.myguide.data.Cycler.XY
+import android.myguide.data.Details
+import android.myguide.data.ListInterface
+import android.myguide.data.VM
+import android.myguide.data.VM.Display.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -52,7 +51,7 @@ class Render(
         display = CopyOnWriteArrayList()
     )
     private var handler: VM.Display? = null
-    private var list: List<ListInterface> = listOf()
+    var list: List<ListInterface> = listOf()
     init {
         vm.adjust.observeForever { adjust ->
             if (!adjust) {
@@ -80,7 +79,7 @@ class Render(
             get() =
                 when (this) {
                     DEFAULT -> measures.itemHeight + measures.padding
-                    NODE -> 44.dp
+                    NODE -> 42.dp
                 }
     }
     data class Data(
@@ -123,23 +122,18 @@ class Render(
         data.stack = IntArray(batch) { -1 }
         when (vm.display.value!!) {
             V -> {
-                data.point
-                    .map {
-                        data.display[it].height =// data.display[it].type.height +
-                                measure(it)
-                        expandable(it)
-                        //xy(it)
-                    }
-                ruler()
-                data.point
-                    .map {
-                      //  data.display[it].height =// data.display[it].type.height +
-                        //    measure(it)
-                        //expandable(it)
-                        xy(it)
-                    }
+                data.ruler.clear()
+                height = 0.dp
+                data.point.map {
+                    data.display[it].height = measure(it)
+                    expandable(it)
+                    data.ruler.add(height)
+                    height += data.display[it].type.height + data.display[it].height
+                    xy(it)
+                }
+                vm.w.postValue(screenWidth)
+                vm.h.postValue(height)
                 data.stack.map { renderYSync(it) }
-                //zoom()
             }
             H ->
                 data.point
@@ -265,7 +259,6 @@ class Render(
                 }
             }
             V -> {
-              //  ruler()
                 val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
                 var sum = 0.dp
                 (from until min(from + batch, data.point.size)).map {
@@ -276,21 +269,19 @@ class Render(
                         XY(
                             x = 0.dp,
                             y = data.ruler[it] + sum,
-                            w = screenWidth,
-                            h = //data.display[point].type.height +
-                                data.display[point].height + m,
+                            d = data.display[point].type.height,
+                            h = m,
                             i = it
                         )
-                    if (data.display[point].height != //data.display[point].type.height +
-                        m)
+                    //qqq("Z p:"+point+ " m:" + m + data.display[point].height + " sum:" +sum + " r:"+data.ruler[it])
+                    if (data.display[point].height < m)
                         sum += m
-                   // ruler()
+                    else if (data.display[point].height > m)
+                        sum -= m
                     expandable(point)
                     cycler.update(index, data.view.expand[point])
                     cycler.update(index, data.view.xy[point])
                 }
-                if (sum > 0.dp)
-                    ruler()
             }
             H -> {
                 val from =
@@ -336,8 +327,8 @@ class Render(
             ),
             fontFamilyResolver = fontFamilyResolver,
         )
-        qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
-                + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
+        //qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
+          //      + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
             return measures.titleHeight * p.lineCount.dec()// * vm.ratioV() * vm.scale.value!!// - 12.dp
         return 0.dp
@@ -549,8 +540,7 @@ class Render(
                 }
             data.display.add(
                 Data.Display(
-                    height = //displayType.height +
-                            m,
+                    height = m,
                     type = displayType
                 )
             )
@@ -560,7 +550,18 @@ class Render(
         //qqq("SL "+data.point.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
         data.point.indices.map {
             expandable(it)
-            vm(data.point[it])
+            val ix = data.point[it]
+            val item = list[ix]
+            //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
+            xy(ix)
+            data.view.toggle[ix] = data.view.toggle.getOrNull(ix) ?: false
+            data.view.details[ix] =
+                Details(
+                    title = item.title!!.trim(),
+                    origin = item.origin,
+                    drawable = item.drawable,
+                    level = item.level
+                )
         }
         start = 0
         when (vm.display.value!!) {
@@ -572,18 +573,22 @@ class Render(
             H -> (start until start + batch).map { renderX(it) }
             V -> (start until start + batch).map { renderYSync(it) }
         }
-        sleep { lock = false }
+        lock = false
     }
     private fun filter() {
         val toggle = data.toggle
         data.point.clear()
         data.point.addAll(
-            data.display.withIndex().filter {
-                !toggle.any { c ->
-                    c.value.first < it.index
-                            && c.value.first + c.value.second.unaryMinus() > it.index
+            data.display
+                .withIndex()
+                .filter {
+                    !toggle.any { c ->
+                        c.value.first < it.index &&
+                        c.value.first + c.value.second.unaryMinus() > it.index
+                    }
                 }
-            }.map { it.index }.toList()
+                .map { it.index }
+                .toList()
         )
     }
     private fun xy(ix: Int) {
@@ -594,22 +599,22 @@ class Render(
                     XY(
                         x = screenWidth / measures.tableColumns * ix.mod(measures.tableColumns),
                         y = ((measures.itemHeight.times(2)) * (ix / measures.tableColumns)) * vm.ratioV(),
-                        w = screenWidth / measures.tableColumns,
+                        d = screenWidth / measures.tableColumns,
                         h = measures.itemHeight * 2,
                     )
                 V ->
                     XY(
                         x = 0.dp,
-                        y = data.ruler[ix],// * vm.scale.value!!,
-                        w = data.display[point].type.height,
+                        y = data.ruler[ix],
+                        d = data.display[point].type.height,
                         h = data.display[point].height,
-                        i = point//* vm.scale.value!!,
+                        i = ix
                     )
                 H ->
                     XY(
                         x = measures.mapViewWidth * ix * vm.ratioH(),
                         y = 0.dp,
-                        w = (measures.mapViewWidth - measures.padding) * vm.ratioH(),
+                        d = (measures.mapViewWidth - measures.padding) * vm.ratioH(),
                         h = DisplayType.DEFAULT.height,
                     )
             }
@@ -655,20 +660,30 @@ class Render(
         //qqq("LOAD $ident "+list.size)
         this.list = list
         handler = vm.display.value
-        data.view.details = MutableList(this@Render.list.size) {
-            Details(
-                id = "",
-                title = "",
-                origin = null,
-                drawable = null,
-                level = 0
-            )
-        }
+        data.display.clear()
+        data.stack = IntArray(batch) { -1 }
+        data.toggle.clear()
+        data.view.details = MutableList(this@Render.list.size) { Details() }
         data.view.expand = MutableList(this@Render.list.size) { null }
-        data.view.xy = MutableList(this@Render.list.size) {
-            XY(0.dp, 0.dp, 0.dp, 0.dp)
-        }
         data.view.toggle = MutableList(this@Render.list.size) { null }
+        data.view.xy = MutableList(this@Render.list.size) { XY() }
+        var count = 0
+        while (count <= list.lastIndex) {
+            if (
+                (list.getOrNull(count.inc())?.level ?: -1) > list[count].level
+            ) {
+                var i =
+                    list
+                        .withIndex()
+                        .indexOfFirst { (ix, it) ->
+                            ix > count && it.level <= list[count].level
+                                    || ix == list.size
+                        }
+                if (i == -1) i = list.size
+                data.toggle[count] = count to i - count
+            }
+            count++
+        }
         val position = toolbar.items.lastOrNull()?.position ?: return
         if (position > 0.dp) {
             if (vm.display.value == H) {
@@ -684,17 +699,14 @@ class Render(
     }
     private var height = 0.dp
     private fun ruler() {
-        //data.point.clear()
         when (vm.display.value!!) {
             T -> {}
             V -> {
                 data.ruler.clear()
                 height = 0.dp
-                var m = 0.dp
                 data.point.map {
-                    m = data.display[it].height
                     data.ruler.add(height)
-                    height += data.display[it].type.height + m
+                    height += data.display[it].type.height + data.display[it].height
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
@@ -716,19 +728,6 @@ class Render(
         val s = scroll / vm.ratioV() / vm.scale.value!!
         direction = this.scroll > s
         this.scroll = s
-    }
-    fun reset() {
-        data.display.clear()
-        data.stack = IntArray(batch) { -1 }
-        data.toggle.clear()
-        data.view.expand.clear()
-        data.view.details.clear()
-        data.view.toggle.clear()
-        data.view.xy.clear()
-        handler = null
-        (0 until batch).map {
-            cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
-        }
     }
     private fun renderX(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
@@ -806,19 +805,5 @@ class Render(
                 cycler.update(it, XY(0.dp, 0.dp, 0.dp, 0.dp))
                 renderYSync(it)
             }
-    }
-    private fun vm(ix: Int, more: Boolean? = null) {
-        val item = list[ix]
-        //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
-        xy(ix)
-        data.view.toggle[ix] = more ?: (data.view.toggle.getOrNull(ix) ?: false)
-        data.view.details[ix] =
-            Details(
-                id = item.id!!,
-                title = item.title!!.trim(),
-                origin = item.origin,
-                drawable = item.drawable,
-                level = item.level
-            )
     }
 }

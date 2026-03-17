@@ -1,7 +1,11 @@
 package android.myguide
 
 
+import android.myguide.data.DB
+import android.myguide.data.Repository
+import android.myguide.data.StoreDatabase
 import android.myguide.ui.theme.MyGuideTheme
+import android.myguide.views.Content
 import android.myguide.views.Main
 import android.myguide.views.MyDialog
 import android.myguide.views.Splash
@@ -176,76 +180,5 @@ fun Measures(callback: () -> Unit = {}) {
                 .fillMaxWidth(),
             style = typography.bodySmall
         )
-    }
-}
-
-@Composable
-fun Content(innerPadding: PaddingValues) {
-    val ident = current.observeAsState()
-    Column(Modifier.fillMaxSize().padding(innerPadding)) {
-        Toolbar()
-        Box {
-            val visibleState = remember(ident.value == false) {
-                MutableTransitionState(!ident.value!!)
-            }
-            val visibleState1 = remember(ident.value == true) {
-                MutableTransitionState(ident.value!!)
-            }
-            LaunchedEffect(visibleState) {
-                snapshotFlow { visibleState.currentState == visibleState.targetState }
-                    .collect { isIdle ->
-                        if (isIdle) {
-                            if (!visibleState.targetState) {
-                                screen[current.value!!]!!.query()
-                            }
-                        }
-                    }
-            }
-            LaunchedEffect(visibleState1) {
-                snapshotFlow { visibleState1.currentState == visibleState1.targetState }
-                    .collect { isIdle ->
-                        if (isIdle) {
-                            if (!visibleState1.targetState) {
-                                qqq("END1")
-                                screen[current.value!!]!!.query()
-                            }
-                        }
-                    }
-            }
-            androidx.compose.animation.AnimatedVisibility(
-                visibleState = visibleState,
-                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-            ) {
-                CompositionLocalProvider(
-                    LocalDensity provides
-                            Density(
-                                density = density.density,
-                                fontScale =
-                                    (
-                                        screen[false]!!.vm.ratioV.observeAsState().value ?: screen[false]!!.vm.ratio.observeAsState().value!!) *
-                                    screen[false]!!.vm.scale.observeAsState().value!!
-                            )
-                ) { Main(screen = screen[false]!!)
-
-                  //  Measures()
-                }
-            }
-            androidx.compose.animation.AnimatedVisibility(
-                visibleState = visibleState1,
-                enter = slideInHorizontally(initialOffsetX = { fullWidth -> fullWidth }),
-                exit = slideOutHorizontally(targetOffsetX = { fullWidth -> -fullWidth })
-            ) {
-                CompositionLocalProvider(
-                    LocalDensity provides
-                            Density(
-                                density = density.density,
-                                fontScale = screen[true]!!.vm.scale.observeAsState().value!!
-                            )
-                ) { Main(screen = screen[true]!!)
-               //     Measures()
-                }
-            }
-        }
     }
 }

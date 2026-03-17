@@ -1,9 +1,7 @@
-package android.myguide.model
+package android.myguide.data
 
-import android.myguide.Details
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 
 class VM {
     enum class Display {
@@ -17,6 +15,7 @@ class VM {
     val display = MutableLiveData(Display.V)
     val cycler = Cycler()
     val filter = MutableLiveData<Boolean?>(null)
+    val loading = MutableLiveData(false)
     val position = MutableLiveData(0.dp)
     val ratio = MutableLiveData(1f)
     val ratioH = MutableLiveData<Float?>(null)

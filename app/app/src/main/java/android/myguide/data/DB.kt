@@ -1,4 +1,4 @@
-package android.myguide
+package android.myguide.data
 
 class DB(private val repository: Repository) {
     fun fetchItemDetails(id: String, callback: (Item) -> Unit) {

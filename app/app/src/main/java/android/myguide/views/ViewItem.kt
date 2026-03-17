@@ -1,16 +1,19 @@
 package android.myguide.views
 
-import android.R.attr.onClick
-import android.myguide.Details
+import android.myguide.data.Details
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.colorScheme
+import android.myguide.current
 import android.myguide.measures
-import android.myguide.model.Cycler
-import android.myguide.model.VM
-import android.myguide.model.VM.Display.*
-import android.myguide.qqq
+import android.myguide.data.Cycler
+import android.myguide.data.Cycler.XY
+import android.myguide.data.VM
+import android.myguide.data.VM.Display.*
+import android.myguide.lock
+import android.myguide.screen
 import android.myguide.screenWidth
+import android.myguide.toolbar
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,13 +29,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -41,13 +40,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 
 
 @Composable
 fun ViewItem(
-    index: Int,
-    screen: Screen,
     details: Details,
     display: VM.Display?,
     expand: AnnotatedString?,
@@ -55,10 +51,9 @@ fun ViewItem(
     ratioV: Float,
     scale: Float,
     toggle: Boolean?,
-    xy: Cycler.XY,
-    callback: (Int) -> Unit
+    xy: XY,
+   // callback: (Int) -> Unit
 ) {
-    if (details.title.isEmpty() || xy == Cycler.XY(0.dp, 0.dp, 0.dp, 0.dp)) return
     @Composable
     fun Content() {
         if (display != H && details.drawable != null)
@@ -107,16 +102,16 @@ fun ViewItem(
                         colorFilter = ColorFilter.tint(colorScheme.secondary),
                         modifier = Modifier
                             .clickable(
-                                onClick = { screen.render.toggle(index) }
-                            )
-                            .padding(
-                                horizontal = 6.dp * ratioH,
-                                vertical = 6.dp * ratioV
+                                onClick = { screen[current.value!!]!!.render.toggle(xy.i) }
                             )
                             .rotate(if (toggle == true) 90f else -90f)
                             .size(
                                 36.dp * ratioH,
                                 36.dp * ratioV
+                            )
+                            .padding(
+                                horizontal = 6.dp * ratioH,
+                                vertical = 6.dp * ratioV
                             )
                     )
                 }
@@ -148,18 +143,33 @@ fun ViewItem(
     }
     //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+measures.itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
     val modifier = Modifier
-        .offset(xy.x, xy.y//measures.itemHeight * xy.i
-                * ratioV * scale)
+        .offset(
+            x = xy.x,
+            y = xy.y * ratioV * scale
+        )
         .size(
             width = screenWidth,
-            height = (measures.itemHeight + measures.padding + xy.h) * ratioV * scale
+            height = (xy.d + xy.h) * ratioV * scale
         )
         .padding(bottom = measures.padding * ratioV)
         .then(
             if (details.origin == null) Modifier
             else
                 Modifier
-                    .clickable(onClick = { callback(index) })
+                    .clickable(
+                        onClick = {
+                            if (!lock) {
+                                lock = true
+                                toolbar.navigate(
+                                    id =
+                                        screen[current.value!!]!!.render.let {
+                                            it.list[it.data.point[xy.i]].id
+                                        },
+                                    title = details.title
+                                )
+                            }
+                        }
+                    )
         )
     if (display != T)
         Row(

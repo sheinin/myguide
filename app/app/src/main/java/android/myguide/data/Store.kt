@@ -1,23 +1,14 @@
-package android.myguide
+package android.myguide.data
 
 import android.content.Context
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlin.jvm.java
 
 @Entity(tableName = "items", primaryKeys = ["id","parent"])
@@ -304,9 +295,8 @@ fun Shop.toInterface(): ListInterface {
 }
 
 data class Details(
-    val id: String,
-    val title: String,
-    val origin: String?,
-    val drawable: Int?,
-    val level: Int
+    val title: String = "",
+    val origin: String? = null,
+    val drawable: Int? = null,
+    val level: Int = 0
 )

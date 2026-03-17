@@ -1,8 +1,8 @@
 package android.myguide
 
 import android.myguide.QueryType.*
-import android.myguide.model.VM
-import android.myguide.model.VM.Display.*
+import android.myguide.data.VM
+import android.myguide.data.VM.Display.*
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
@@ -43,7 +43,7 @@ class Toolbar {
     fun navigate(
         id: String? = null,
         display: VM.Display = V,
-        queryType: QueryType = SHOPS,
+        queryType: QueryType = screen[current.value!!]!!.queryType!!.next,
         title: String
     ) {
         qqq("NAVIGATE items:"+ items.size+" id:"+id+" title:"+title+" query:"+queryType + " "+(items.getOrNull(0)?.title ?: ""))

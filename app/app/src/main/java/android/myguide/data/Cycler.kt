@@ -1,8 +1,6 @@
-package android.myguide.model
+package android.myguide.data
 
-import android.myguide.Details
 import android.myguide.batch
-import android.util.Log.i
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -13,11 +11,11 @@ import kotlin.collections.plus
 
 class Cycler {
     data class XY(
-        var x: Dp,
-        var y: Dp,
-        var w: Dp,
-        var h: Dp,
-        var i: Int = 2
+        var x: Dp = 0.dp,
+        var y: Dp = 0.dp,
+        var d: Dp = 0.dp,
+        var h: Dp = 0.dp,
+        var i: Int = 0
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
     val description = _description.asStateFlow()
@@ -85,7 +83,7 @@ class Cycler {
                     it.copy(
                         x = xy.x,
                         y = xy.y,
-                        w = xy.w,
+                        d = xy.d,
                         h = xy.h,
                         i = xy.i
                     )
