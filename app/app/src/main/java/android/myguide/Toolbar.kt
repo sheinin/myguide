@@ -83,8 +83,7 @@ class Toolbar {
     }
     private var cached = true
     fun goto(ix: Int) {
-        if (lock) return
-        lock = true
+
         current.value?.let { screen[it] }?.reset()
         val item = items[ix]
         val next = screen[!current.value!!]!!

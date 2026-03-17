@@ -39,14 +39,14 @@ fun Content(innerPadding: PaddingValues) {
                 snapshotFlow { visibleState.currentState == visibleState.targetState }
                     .collect { isIdle ->
                         if (isIdle && !visibleState.targetState)
-                        screen[current.value!!]!!.query()
+                        screen[current.value ?: true]!!.query()
                     }
             }
             LaunchedEffect(visibleState1) {
                 snapshotFlow { visibleState1.currentState == visibleState1.targetState }
                     .collect { isIdle ->
                         if (isIdle && !visibleState1.targetState)
-                            screen[current.value!!]!!.query()
+                            screen[current.value ?: true]!!.query()
                     }
             }
             androidx.compose.animation.AnimatedVisibility(

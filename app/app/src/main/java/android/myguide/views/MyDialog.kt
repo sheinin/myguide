@@ -56,8 +56,11 @@ fun MyDialog() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    toolbar.goto(it.inc())
-                                    dialog.value = false
+                                    if (!toolbar.lock) {
+                                        toolbar.lock = true
+                                        toolbar.goto(it.inc())
+                                        dialog.value = false
+                                    }
                                 }
                                 .padding(16.dp)
                         )

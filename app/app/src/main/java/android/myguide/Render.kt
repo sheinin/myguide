@@ -147,25 +147,25 @@ class Render(private val vm: VM) {
         when (vm.display.value!!) {
             V -> {
                 var height = 0.dp
-                //data.ruler.clear()
-                data.point.map { ix ->
-                    data.display[ix] = data.display[ix].first to measure(ix)
-                    data.view.expand[ix] = expandable(
-                        ix = ix,
-                        level = list[ix].level,
-                        margin = margin,
-                        ratioH = vm.ratioH(),
-                        ratioV = vm.ratioV(),
-                        scale = vm.scale.value!!,
-                        txt = list[ix].description
-                    )
+                data.point.mapIndexed { ix, index ->
+                    data.display[index] = data.display[index].first to measure(index)
+                    data.view.expand[index] =
+                        expandable(
+                            ix = index,
+                            level = list[index].level,
+                            margin = margin,
+                            ratioH = vm.ratioH(),
+                            ratioV = vm.ratioV(),
+                            scale = vm.scale.value!!,
+                            txt = list[index].description
+                        )
                     data.ruler[ix] = height
-                    height += data.display[ix].first + data.display[ix].second
-                    xy(ix)
+                    height += data.display[index].first + data.display[index].second
+                    xy(index)
                 }
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
-                data.stack.map { renderYSync(it) }
+               // data.stack.map { renderYSync(it) }
             }
             H ->
                 data.point
@@ -230,7 +230,6 @@ class Render(private val vm: VM) {
                                 ITEM_HEIGHT * it.index / 2 > scroll
                             } - batch / 4 < mn
                     ) go(mn.dec())
-                    else direction = null
                 else
                     if (
                         data.point
@@ -238,7 +237,7 @@ class Render(private val vm: VM) {
                             .indexOfLast { ITEM_HEIGHT * it.index / 2 < scroll }
                             .let { it / 2 > mn && it / 2 > batch / 3 }
                     ) go(data.stack.max().inc())
-                    else direction = null
+                direction = null
             }
             V -> {
                 direction ?: return
@@ -254,21 +253,27 @@ class Render(private val vm: VM) {
                 }
                 val mn =
                     data.point
-                        .indexOfFirst { it in data.stack.map { i -> data.point[i] } }
-                    //data.stack.min()
+                        .indexOfFirst { index ->
+                            index in data.stack.map { ix -> data.point.getOrNull(ix) }
+                        }
                 qqq("MN"+mn)
                 if (direction!!)
                     if (
                         data.ruler
-                            .indexOfFirst { it > scroll } - batch / 2 < mn
+                            .indexOfFirst { ix -> ix > scroll } - batch / 2 < mn
                     ) go(mn.dec())
                     else direction = null
                 else
                     if (
                         data.ruler
-                            .indexOfLast { it < scroll }
-                            .let { it > mn + batch / 2 }
-                    ) go(data.point.indexOfLast { it in data.stack.map { i -> data.point[i] } }.inc())
+                            .indexOfLast { ix -> ix < scroll }
+                            .let { ix -> ix > mn + batch / 2 }
+                    ) go(
+                        data.point
+                            .indexOfLast { index ->
+                                index in data.stack.map { ix -> data.point.getOrNull(ix) }
+                            }.inc()
+                    )
                     else direction = null
             }
             null -> {}
@@ -298,7 +303,7 @@ class Render(private val vm: VM) {
                     val index = data.point[ix]
                     val mod = ix.mod(batch)
                     val m = measure(index)
-                    qqq("MP "+mod + " "+index +" "+data.ruler.size+" "+ix)
+                    //qqq("MP "+mod + " "+index +" "+data.ruler.size+" "+ix)
                     data.view.xy[index] =
                         XY(
                             x = 0.dp,
@@ -353,17 +358,6 @@ class Render(private val vm: VM) {
     private fun measure(ix: Int): Dp {
         if (list[ix].description == null || vm.display.value == H) return 0.dp
         val s = list[ix].title!!.trim()
-
-        val k = (
-                ITEM_HEIGHT +
-                        margin().times(4) +
-                        margin().times(2) * list[ix].level
-                )
-        val l = k * vm.ratioH()
-        val m = screenWidth - l
-        val v = m.toPx().toInt()
-
-        qqq("PARA w:$screenWidth${ITEM_HEIGHT.round()} m:"+margin().round() + " rh:"+vm.ratioH()+" lvl:"+list[ix].level +" k:"+k+" l:"+l+" m:"+m+" v:"+v)
         val p = androidx.compose.ui.text.Paragraph(
             text = s,
             style = typography.bodyLarge,
@@ -453,28 +447,28 @@ class Render(private val vm: VM) {
                 .toList()
         )
     }
-    private fun xy(index: Int) {
-        val ix = data.point[index]
-        data.view.xy[ix] =
+    private fun xy(ix: Int) {
+        val index = data.point[ix]
+        data.view.xy[index] =
             when (vm.display.value!!) {
                 T ->
                     XY(
-                        x = screenWidth / COLUMNS * index.mod(COLUMNS),
-                        y = ((ITEM_HEIGHT.times(2)) * (index / COLUMNS)) * vm.ratioV(),
+                        x = screenWidth / COLUMNS * ix.mod(COLUMNS),
+                        y = ((ITEM_HEIGHT.times(2)) * (ix / COLUMNS)) * vm.ratioV(),
                         d = screenWidth / COLUMNS,
                         h = ITEM_HEIGHT * 2,
                     )
                 V ->
                     XY(
                         x = 0.dp,
-                        y = data.ruler[index],
-                        d = data.display[ix].first,
-                        h = data.display[ix].second,
-                        i = index
+                        y = data.ruler[ix],
+                        d = data.display[index].first,
+                        h = data.display[index].second,
+                        i = ix
                     )
                 H ->
                     XY(
-                        x = mapViewWidth * index * vm.ratioH(),
+                        x = mapViewWidth * ix * vm.ratioH(),
                         y = 0.dp,
                         d = (mapViewWidth - margin()) * vm.ratioH(),
                         h =0.dp,
