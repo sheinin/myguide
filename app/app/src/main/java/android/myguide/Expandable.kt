@@ -1,7 +1,7 @@
 package android.myguide
 
-import android.R.attr.data
-import android.myguide.data.VM.Display.H
+import android.myguide.UI.ITEM_HEIGHT
+import android.myguide.UI.PADDING
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
@@ -99,9 +99,9 @@ object Expandable {
             constraints = Constraints(
                 maxWidth = (
                         (screenWidth - (
-                                measures.itemHeight +
-                                        measures.padding.times(4) +
-                                        measures.padding.times(2) * level
+                                ITEM_HEIGHT +
+                                        PADDING.times(4) +
+                                        PADDING.times(2) * level
                                 ) * ratioH)
                         ).toPx()
                     .toInt()

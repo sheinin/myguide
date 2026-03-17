@@ -1,26 +1,25 @@
 package android.myguide
 
 
+import android.myguide.UI.COLUMNS
+import android.myguide.UI.ITEM_HEIGHT
+import android.myguide.UI.PADDING
+import android.myguide.UI.TITLE_HEIGHT
+import android.myguide.UI.mapViewWidth
 import android.myguide.data.DB
 import android.myguide.data.Repository
 import android.myguide.data.StoreDatabase
 import android.myguide.ui.theme.MyGuideTheme
 import android.myguide.views.Content
-import android.myguide.views.Main
 import android.myguide.views.MyDialog
 import android.myguide.views.Splash
-import android.myguide.views.Toolbar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,12 +29,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -54,18 +50,16 @@ lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
-lateinit var measures: Measures
+//lateinit var measures: UI
+lateinit var state: MutableTransitionState<Boolean>
+lateinit var screen: Map<Boolean, Screen>
 lateinit var typography: Typography
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
-val toolbar = android.myguide.Toolbar()
-//var fontScale = MutableLiveData(1f)//by Delegates.notNull<Float>()
+val toolbar = Toolbar()
 var lock = false
 var screenHeight = 0.dp
 var screenWidth = 0.dp
-lateinit var state: MutableTransitionState<Boolean>
-
-lateinit var screen: Map<Boolean, Screen>
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,12 +100,6 @@ class MainActivity : ComponentActivity() {
             fontFamilyResolver = LocalFontFamilyResolver.current
             state = remember { MutableTransitionState(false) }
             typography = MaterialTheme.typography
-            measures = Measures(
-                itemHeight = 0.dp,
-                mapViewWidth = screenWidth - 8.dp * 2,
-                padding = 8.dp,
-                tableColumns = 3
-            )
             MyGuideTheme {
                 Measures {
                     screen = mapOf(
@@ -144,8 +132,8 @@ fun Measures(callback: () -> Unit = {}) {
                 translationX = screenWidth.toPx()
             }
             .onGloballyPositioned { coordinates ->
-                qqq("MM"+measures.itemHeight+coordinates.size.height.toDp())
-                measures.itemHeight = coordinates.size.height.toDp()
+                qqq("MM"+ITEM_HEIGHT+coordinates.size.height.toDp())
+                ITEM_HEIGHT = coordinates.size.height.toDp()
                 callback()
             }
     ) {
@@ -155,9 +143,9 @@ fun Measures(callback: () -> Unit = {}) {
             fontSize = typography.bodyLarge.fontSize,
             lineHeight = typography.bodyMedium.fontSize,
             modifier = Modifier.onGloballyPositioned { coordinates ->
-                qqq("MT"+measures.itemHeight+coordinates.size.height.toDp())
-                measures.titleHeight = coordinates.size.height.toDp()
-                // measures.itemHeight = coordinates.size.height.toDp()
+                qqq("MT"+ITEM_HEIGHT+coordinates.size.height.toDp())
+                TITLE_HEIGHT = coordinates.size.height.toDp()
+                // itemHeight = coordinates.size.height.toDp()
             }
         )
         Text(

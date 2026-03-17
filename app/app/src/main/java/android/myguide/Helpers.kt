@@ -1,6 +1,5 @@
 package android.myguide
 
-import android.R.attr.padding
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.runtime.Composable
@@ -53,10 +52,10 @@ fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
 }
 
 
-class Measures(
-    var titleHeight: Dp = 0.dp,
-    var itemHeight: Dp = 0.dp,
-    val mapViewWidth: Dp,
-    val padding: Dp,
-    val tableColumns: Int,
-)
+object UI {
+    var TITLE_HEIGHT: Dp = 0.dp
+    var ITEM_HEIGHT: Dp = 0.dp
+    val mapViewWidth: Dp = 100.dp
+    val PADDING: Dp = 8.dp
+    const val COLUMNS: Int = 2
+}

@@ -2,11 +2,10 @@ package android.myguide.views
 
 import android.myguide.data.Details
 import android.myguide.R
-import android.myguide.Screen
+import android.myguide.UI.ITEM_HEIGHT
+import android.myguide.UI.PADDING
 import android.myguide.colorScheme
 import android.myguide.current
-import android.myguide.measures
-import android.myguide.data.Cycler
 import android.myguide.data.Cycler.XY
 import android.myguide.data.VM
 import android.myguide.data.VM.Display.*
@@ -63,8 +62,8 @@ fun ViewItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(
-                        width = measures.itemHeight * ratioH,
-                        height = measures.itemHeight * ratioV
+                        width = ITEM_HEIGHT * ratioH,
+                        height = ITEM_HEIGHT * ratioV
                     )
             )
         Column(
@@ -141,7 +140,7 @@ fun ViewItem(
                 )
         }
     }
-    //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+measures.itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
+    //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
     val modifier = Modifier
         .offset(
             x = xy.x,
@@ -151,7 +150,7 @@ fun ViewItem(
             width = screenWidth,
             height = (xy.d + xy.h) * ratioV * scale
         )
-        .padding(bottom = measures.padding * ratioV)
+        .padding(bottom = PADDING * ratioV)
         .then(
             if (details.origin == null) Modifier
             else
@@ -175,9 +174,9 @@ fun ViewItem(
         Row(
             modifier
                 .padding(
-                    start = measures.padding * ratioH
-                            + measures.padding.times(2) * ratioH * details.level,
-                    end = measures.padding * ratioH
+                    start = PADDING * ratioH
+                            + PADDING.times(2) * ratioH * details.level,
+                    end = PADDING * ratioH
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }
@@ -186,8 +185,8 @@ fun ViewItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .padding(
-                    horizontal = measures.padding * ratioH,
-                    vertical = measures.padding * ratioV
+                    horizontal = PADDING * ratioH,
+                    vertical = PADDING * ratioV
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }

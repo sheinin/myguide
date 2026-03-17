@@ -3,6 +3,11 @@ package android.myguide
 
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
+import android.myguide.UI.COLUMNS
+import android.myguide.UI.ITEM_HEIGHT
+import android.myguide.UI.PADDING
+import android.myguide.UI.TITLE_HEIGHT
+import android.myguide.UI.mapViewWidth
 import android.myguide.data.Cycler.XY
 import android.myguide.data.Details
 import android.myguide.data.ListInterface
@@ -136,7 +141,7 @@ class Render(private val vm: VM) {
                 val mn = data.stack.min()
                 val r =
                     max(
-                        (scroll / ((measures.mapViewWidth + measures.padding) * vm.ratioH())).toInt(),
+                        (scroll / ((mapViewWidth + PADDING) * vm.ratioH())).toInt(),
                         0
                     )
                 val ix =
@@ -177,7 +182,7 @@ class Render(private val vm: VM) {
                         data.point
                             .withIndex()
                             .indexOfFirst {
-                                measures.itemHeight * it.index / 2 > scroll
+                                ITEM_HEIGHT * it.index / 2 > scroll
                             } - batch / 4 < mn
                     ) go(mn.dec())
                     else direction = null
@@ -185,7 +190,7 @@ class Render(private val vm: VM) {
                     if (
                         data.point
                             .withIndex()
-                            .indexOfLast { measures.itemHeight * it.index / 2 < scroll }
+                            .indexOfLast { ITEM_HEIGHT * it.index / 2 < scroll }
                             .let { it / 2 > mn && it / 2 > batch / 3 }
                     ) go(data.stack.max().inc())
                     else direction = null
@@ -231,7 +236,7 @@ class Render(private val vm: VM) {
                     max(
                         data.point
                             .withIndex()
-                            .indexOfLast { measures.itemHeight * vm.ratioV() * it.index < scroll }
+                            .indexOfLast { ITEM_HEIGHT * vm.ratioV() * it.index < scroll }
                                 - batch / 4,
                         0
                     )
@@ -275,7 +280,7 @@ class Render(private val vm: VM) {
             H -> {
                 val from =
                     max(
-                        (scroll / (measures.mapViewWidth + measures.padding) / vm.ratioH()
+                        (scroll / (mapViewWidth + PADDING) / vm.ratioH()
                         ).toInt() - batch / 4,
                         0
                     )
@@ -306,9 +311,9 @@ class Render(private val vm: VM) {
             constraints = Constraints(
                 maxWidth =
                     (screenWidth - (
-                            measures.itemHeight +
-                            measures.padding.times(4) +
-                            measures.padding.times(2) * list[ix].level
+                            ITEM_HEIGHT +
+                            PADDING.times(4) +
+                            PADDING.times(2) * list[ix].level
                     ) * vm.ratioH()).toPx().toInt()),
             density = Density(
                 density = density.density,
@@ -319,15 +324,15 @@ class Render(private val vm: VM) {
         //qqq(ident.toString() + " MEASURE "+p.getLineHeight(0).toDp()
           //      + " "+p.lineCount + s.take(p.getLineEnd(0))+"=="+" "+s)
         if (p.lineCount > 1)
-            return measures.titleHeight * p.lineCount.dec()
+            return TITLE_HEIGHT * p.lineCount.dec()
         return 0.dp
     }
     private fun job() {
         var start = 0
         list.indices.map {
             data.display.add(
-                (if (data.toggle[it] != null) 36.dp else measures.itemHeight) +
-                        measures.padding to measure(it)
+                (if (data.toggle[it] != null) 36.dp else ITEM_HEIGHT) +
+                        PADDING to measure(it)
             )
         }
         filter()
@@ -389,10 +394,10 @@ class Render(private val vm: VM) {
             when (vm.display.value!!) {
                 T ->
                     XY(
-                        x = screenWidth / measures.tableColumns * index.mod(measures.tableColumns),
-                        y = ((measures.itemHeight.times(2)) * (index / measures.tableColumns)) * vm.ratioV(),
-                        d = screenWidth / measures.tableColumns,
-                        h = measures.itemHeight * 2,
+                        x = screenWidth / COLUMNS * index.mod(COLUMNS),
+                        y = ((ITEM_HEIGHT.times(2)) * (index / COLUMNS)) * vm.ratioV(),
+                        d = screenWidth / COLUMNS,
+                        h = ITEM_HEIGHT * 2,
                     )
                 V ->
                     XY(
@@ -404,9 +409,9 @@ class Render(private val vm: VM) {
                     )
                 H ->
                     XY(
-                        x = measures.mapViewWidth * index * vm.ratioH(),
+                        x = mapViewWidth * index * vm.ratioH(),
                         y = 0.dp,
-                        d = (measures.mapViewWidth - measures.padding) * vm.ratioH(),
+                        d = (mapViewWidth - PADDING) * vm.ratioH(),
                         h =0.dp,
                     )
             }
@@ -416,8 +421,8 @@ class Render(private val vm: VM) {
         toolbar.items.last().display = vm.display.value!!
         when (vm.display.value!!) {
             H -> {
-                vm.w.value = measures.mapViewWidth * data.ruler.size * vm.ratioH()
-                vm.h.value = measures.itemHeight * vm.ratioV()
+                vm.w.value = mapViewWidth * data.ruler.size * vm.ratioH()
+                vm.h.value = ITEM_HEIGHT * vm.ratioV()
                 list.indices.map {
              //       expandable(it)
                     xy(it)
@@ -428,7 +433,7 @@ class Render(private val vm: VM) {
                     xy(it)
                 }
                 vm.w.value = screenWidth
-                vm.h.value = (measures.itemHeight.times(2)) * (data.point.size / measures.tableColumns) * vm.ratioV()
+                vm.h.value = (ITEM_HEIGHT.times(2)) * (data.point.size / COLUMNS) * vm.ratioV()
             }
             V -> {
               //  ruler()
@@ -487,7 +492,7 @@ class Render(private val vm: VM) {
         if (position > 0.dp) {
             if (vm.display.value == H) {
                 vm.w.postValue(position + screenWidth)
-                vm.h.postValue(measures.itemHeight)
+                vm.h.postValue(ITEM_HEIGHT)
             } else {
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(position + screenHeight)
@@ -511,8 +516,8 @@ class Render(private val vm: VM) {
                 vm.h.postValue(height)
             }
             H -> {
-                vm.w.postValue(measures.mapViewWidth * data.point.size * vm.ratioH())
-                vm.h.postValue(measures.itemHeight * vm.ratioH())
+                vm.w.postValue(mapViewWidth * data.point.size * vm.ratioH())
+                vm.h.postValue(ITEM_HEIGHT * vm.ratioH())
             }
         }
     }
@@ -569,9 +574,9 @@ class Render(private val vm: VM) {
                     constraints = Constraints(
                         maxWidth = (
                                 (screenWidth - (
-                                        measures.itemHeight +
-                                                measures.padding.times(4) +
-                                                measures.padding.times(2) * list[ix].level
+                                        ITEM_HEIGHT +
+                                                PADDING.times(4) +
+                                                PADDING.times(2) * list[ix].level
                                         ) * vm.ratioH())
                                 ).toPx().toInt()
                     ),

@@ -1,12 +1,10 @@
 package android.myguide.views
 
-import android.myguide.QueryType
 import android.myguide.R
-import android.myguide.Screen
+import android.myguide.UI.PADDING
 import android.myguide.colorScheme
 import android.myguide.current
 import android.myguide.data.VM
-import android.myguide.measures
 import android.myguide.data.VM.Display.*
 import android.myguide.screen
 import android.myguide.typography
@@ -20,8 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -29,7 +25,6 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.Dimension.Companion.ratio
 
 
 @Composable
@@ -47,8 +42,8 @@ fun Control(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                horizontal = measures.padding * ratioH,
-                vertical = measures.padding * ratioV
+                horizontal = PADDING * ratioH,
+                vertical = PADDING * ratioV
             )
     ) {
         Text(

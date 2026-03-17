@@ -1,17 +1,13 @@
 package android.myguide.views
 
-import android.R.id.toggle
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
+import android.myguide.UI.PADDING
 import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.density
-import android.myguide.dialog
-import android.myguide.lock
-import android.myguide.measures
 import android.myguide.data.VM.Display.*
-import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
 import android.view.ViewTreeObserver
@@ -23,7 +19,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,13 +28,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -61,9 +53,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 
@@ -189,8 +178,8 @@ fun Main(screen: Screen) {
                             Modifier
                                 .fillMaxWidth()
                                 .padding(
-                                    horizontal = measures.padding * (ratioH ?: ratio!!),
-                                    vertical = measures.padding * (ratioV ?: ratio!!)
+                                    horizontal = PADDING * (ratioH ?: ratio!!),
+                                    vertical = PADDING * (ratioV ?: ratio!!)
                                 )
                         ) {
                             Column {
@@ -261,7 +250,7 @@ fun Main(screen: Screen) {
                         .fillMaxWidth()
                         .horizontalScroll(scrollStateX)
                         .padding(
-                            bottom = if (display == H) measures.padding * 4 else 0.dp
+                            bottom = if (display == H) PADDING * 4 else 0.dp
                         )
                 ) {
                     Box(

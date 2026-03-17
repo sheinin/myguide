@@ -2,18 +2,15 @@ package android.myguide.views
 
 
 import android.myguide.R
+import android.myguide.UI.ITEM_HEIGHT
 import android.myguide.colorScheme
 import android.myguide.current
-import android.myguide.getLineHeightDp
-import android.myguide.measures
 import android.myguide.qqq
 import android.myguide.screen
 import android.myguide.typography
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -137,7 +134,7 @@ fun Toolbar() {
                                     vm.scale.value = vm.scale.value!! - .01f
                                     vm.adjust.value = true
 
-                                    qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
+                                    qqq("SCALE "+ITEM_HEIGHT*vm.scale.value!!)
                                 }
                             )
                     )
@@ -148,7 +145,7 @@ fun Toolbar() {
                             vm.adjust.value = false
                             vm.scale.value = it
 
-                            qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
+                            qqq("SCALE "+ITEM_HEIGHT*vm.scale.value!!)
                         },
                         onValueChangeFinished = { vm.adjust.value = true },
                         valueRange = 0.75f..2f,
@@ -180,7 +177,7 @@ fun Toolbar() {
                                     vm.scale.value = vm.scale.value!! + .01f
                                     vm.adjust.postValue(true)
 
-                                    qqq("SCALE "+measures.itemHeight*vm.scale.value!!)
+                                    qqq("SCALE "+ITEM_HEIGHT*vm.scale.value!!)
                                 }
                             )
                     )
