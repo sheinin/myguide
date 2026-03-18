@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
+import kotlin.math.absoluteValue
 import kotlin.ranges.until
 
 class Render(private val vm: VM) {
@@ -143,7 +144,7 @@ class Render(private val vm: VM) {
         vm.scale.observeForever { zoom() }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(100)
+                delay(1)
                 scroll()
             }
         }
@@ -249,170 +250,45 @@ class Render(private val vm: VM) {
             }
             V -> {
                 fun go(ix: Int) {
-                   // qqq("GO $ix ${data.point.getOrNull(ix)}")
                     val index = data.point.getOrNull(ix) ?: return
+                    if (data.view.xy[index].i == -1) return
                     val mod = ix.mod(batch)
                     data.stack[mod] = ix
                     vm.cycler.update(mod, data.view.expand[index])
                     vm.cycler.update(mod, data.view.details[index])
                     vm.cycler.update(mod, data.view.toggle[index])
                     vm.cycler.update(mod, data.view.xy[index])
-                    //qqq("JOB dir:$direction index:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
+                  //  qqq("GO $ix ${data.ruler} ${data.view.xy[index]}")
+                  //  qqq("JOB dir:$direction index:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
                 }
-
-
-
-
-                var mn = 0
-                var mx = 0
-                when (direction) {
-                    null -> {
-
-                    }
-                    true -> {
-                        mn = data.point
-                            .withIndex()
-                            .indexOfLast {
-                                it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
-                                        &&
-                                        data.ruler[it.index] > scroll
-                                        &&
-                                        it.index < data.stack.min()
-                            }
-                    }
-                    false -> {
-                        mn =
-                            data.point
-                                .withIndex()
-                                .indexOfFirst {
-                                    it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
-                                            &&
-                                            data.ruler[it.index] > scroll
-                                }
-
-                    }
-                }
-
-                val a =
-                    data.point
-                        .withIndex()
-                        .indexOfFirst {
-                            it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
-                            //     &&
-                            ///    data.ruler[it.index] > scroll + ITEM_HEIGHT
-                        }
-
-                val b = data.point
-                    .withIndex()
-                    .indexOfLast {
-                        it.value !in data.stack.map { ix -> data.point.getOrNull(ix) }
-                              //  &&
-                                //data.ruler[it.index] < scroll
-                               // &&
-                               // it.index < data.stack.min()
-                    }
-
-
-                val r1 = data.ruler
+                var c = data.ruler
                     .withIndex()
                     .indexOfFirst {
-                        it.index in data.stack
-                                &&
-                        it.value >= scroll
+                        it.value >= scroll - ITEM_HEIGHT// data.disdata.point[it.index]]
                     }
-                val r2 = data.ruler
-                    .withIndex()
-                    .indexOfLast {
-                        it.index in data.stack
-                                &&
-                                it.value < scroll + ITEM_HEIGHT
+                qqq("MN $direction c:$c S:${data.stack.map { it }.toList()}")
+              //  var c = 0
+                if (c != data.stack.min() || (data.stack.max() - data.stack.min() + 1) != batch)
+                while (c < data.point.size ) {
+                    //val k = max(0, r1 + c - batch / 4)
+                    //if (r1 !in data.stack) {
+                      //  qqq("C0 $r1 $c")
+              //          go(r1)
+                //        break
+                    //}
+                    if (c !in data.stack// && c <= data.stack.min() + batch
+                        ) {
+                        qqq("C1 c:$c")
+                        go(c)
+                        break
                     }
-                val r3 = data.ruler
-                    .withIndex()
-                    .indexOfFirst {
-                        it.index in data.stack
-                                &&
-                                it.value < scroll
-                    }
-                val r4 = data.ruler
-                    .withIndex()
-                    .indexOfLast {
-                        it.index in data.stack
-                                &&
-                                it.value > scroll+ ITEM_HEIGHT
-                    }
-                qqq("MN mx:$mx mn:$mn $direction a:$a b:$b r:$r1/$r2/$r3/$r4 S:${data.stack.map { it }.toList()}")
-
-/*
-                if (r1 < a) {
-                    if (r2 == -1) go(a)
-                    //else if (r2 != -1) go(data.stack.max().inc())
-                } else if (r2 != -1){
-                    go(data.stack.max().inc())
+                 //   if (l !in data.stack) {
+                   //     qqq("C2 r:$r1 c:$c k:$k l:$l")
+                     //   go(r1 - c)
+                       // break
+                    //}
+                    c += 1
                 }
-*/
-
-                if (r1 < a && r2 == -1) {
-                    qqq("A $a")
-                    go(a)
-                } else if (r2 != -1) {
-                    qqq("B "+data.stack.max().inc())
-                    go(data.stack.max().inc())
-                } else if (r3 == -1) {
-                    qqq("C "+data.stack.min().dec())
-                    go(data.stack.min().dec())
-
-                }
-
-
-
-
-
-                if (mn == -1) {return
-                    mn =
-                        max(
-                            0,
-                        data.point
-                            .withIndex()
-                            .indexOfFirst {
-                             //   it.value in data.stack.map { ix -> data.point.getOrNull(ix) }
-                              //  &&
-                                data.ruler[it.index] > scroll
-                            } //- batch - batch / 2
-                        )
-
-                            (mn until mn + batch).map { ix -> go(ix) }
-
-                    return
-                   // direction = null
-                }
-                if (direction == null) {
-                  //  direction = false
-                  //  go(mn)
-                }
-                else if (direction!!) {
-                 //   go(mn)
-                }
-                else {
-                 //   mn = min(data.point.size, mn + batch)
-                    /*if (
-                        data.ruler
-                            .indexOfLast { ix -> ix < scroll }
-                            .let { ix -> ix > mn + batch / 2 }
-                    )
-                        go(
-                            data.point
-                                .indexOfLast { index ->
-                                    index in data.stack.map { ix -> data.point.getOrNull(ix) }
-                                }.inc()
-                        )
-                    else direction = null
-
-
-                     */
-                  //  go(mn)
-                }
-
             }
             null -> {}
         }

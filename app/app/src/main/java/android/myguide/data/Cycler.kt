@@ -15,7 +15,7 @@ class Cycler {
         var y: Dp = 0.dp,
         var d: Dp = 0.dp,
         var h: Dp = 0.dp,
-        var i: Int = 0
+        var i: Int = -1
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
     val description = _description.asStateFlow()
