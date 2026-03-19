@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
 
-const val batch = 10
+const val batch = 21
 lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density

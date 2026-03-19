@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
+import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.ranges.until
 
@@ -266,21 +267,31 @@ class Render(private val vm: VM) {
             V -> {
                 var c = data.ruler
                     .indexOfFirst {
-                        it >= scroll
+                        it * vm.ratioV() * vm.scale.value!! >= scroll
                     }
                 c = max(0, c - batch / 4)
-                //qqq("MN ${scroll.round()} c:$c S:${data.stack.map { it }.toList()}")
+                val mn = data.stack.min()
+                val mx = data.stack.max()
+
+                qqq("MN m:${abs(mn - c)} x:${abs(mx - c)} ${scroll.round()} c:$c S:${data.stack.map { it }.toList()}")
+
+
                 if (
                     c != data.stack.min() ||
-                    (data.stack.max() - data.stack.min() + 1) != batch
+                    (mx - mn + 1) != batch
                 )
-                    while (c < data.point.size ) {
+
+                    if (!data.stack.contains(-1) && abs(mn - c) < abs(mx - c)) renderYSync(mn.dec())
+                    else renderYSync(mx.inc())
+                   /* while (c < data.point.size ) {
                         if (c !in data.stack) {
                             renderYSync(c)
                             break
                         }
                         c += 1
                     }
+
+                    */
             }
             null -> {}
         }
@@ -614,10 +625,11 @@ class Render(private val vm: VM) {
     }
     private fun renderYSync(ix: Int) {
         val index = data.point.getOrNull(ix) ?: return
-        val mod = ix.mod(batch)
+        val mod =
+            //ix.mod(batch)
+            data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = data.view.xy.getOrNull(index) ?: return
-        ///val disp = data.display.find { it.ordinal == ix }!!
-        qqq("RS "+index+" "+ix+" "+data.view.xy[index]?.y+data.view.details.getOrNull(index)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
+        qqq("RS "+mod+" "+index+" "+ix+" "+data.view.xy[index]?.y+data.view.details.getOrNull(index)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
         data.stack[mod] = ix
         vm.cycler.update(mod, data.view.expand[index])
         vm.cycler.update(mod, data.view.details[index])
