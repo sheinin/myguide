@@ -18,12 +18,12 @@ class Cycler {
         var i: Int = -1
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
-    val description = _description.asStateFlow()
-    private val _toggle = MutableStateFlow<List<Boolean?>>(emptyList())
-    val toggle = _toggle.asStateFlow()
     private val _details = MutableStateFlow<List<Details>>(emptyList())
+    private val _toggle = MutableStateFlow<List<Boolean?>>(emptyList())
+    private val _xy = MutableStateFlow<List<XY?>>(emptyList())
+    val description = _description.asStateFlow()
+    val toggle = _toggle.asStateFlow()
     val details = _details.asStateFlow()
-    private val _xy = MutableStateFlow<List<XY>>(emptyList())
     val xy = _xy.asStateFlow()
     init { reset() }
     fun reset() {
@@ -74,12 +74,12 @@ class Cycler {
             }
         }
     }
-    fun update(index: Int, xy: XY) {
+    fun update(index: Int, xy: XY?) {
         _xy.update {
             it.mapIndexed { ix, it ->
                 if (ix == index)
-                    it.copy(
-                        x = xy.x,
+                    it?.copy(
+                        x = xy!!.x,
                         y = xy.y,
                         d = xy.d,
                         h = xy.h,

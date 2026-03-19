@@ -9,6 +9,7 @@ import android.myguide.colorScheme
 import android.myguide.density
 import android.myguide.data.VM.Display.*
 import android.myguide.qqq
+import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
 import android.view.ViewTreeObserver
@@ -65,15 +66,15 @@ fun Main(screen: Screen) {
     val details by bind.cycler.details.collectAsStateWithLifecycle()
     val display by bind.display.observeAsState()
     val expand by bind.cycler.description.collectAsStateWithLifecycle()
-    val filter by screen.vm.filter.observeAsState()
+    val filter by bind.filter.observeAsState()
     val h = bind.h.observeAsState()
     val margin by bind.margin.collectAsStateWithLifecycle()
-    val ratio by screen.vm.ratio.observeAsState()
-    val ratioH by screen.vm.ratioH.observeAsState()
-    val ratioV by screen.vm.ratioV.observeAsState()
-    val scale by screen.vm.scale.observeAsState()
+    val ratio by bind.ratio.observeAsState()
+    val ratioH by bind.ratioH.observeAsState()
+    val ratioV by bind.ratioV.observeAsState()
+    val scale by bind.scale.observeAsState()
     val scrollStateY = rememberScrollState()
-    val sort by screen.vm.sort.observeAsState()
+    val sort by bind.sort.observeAsState()
     val stateX by bind.stateX.observeAsState()
     val stateY by bind.stateY.observeAsState()
     val toggle by bind.cycler.toggle.collectAsStateWithLifecycle()
@@ -137,14 +138,12 @@ fun Main(screen: Screen) {
                 //if (display != H)
                 if (stateY != -1f)
                     scrollStateY.scrollTo(stateY!!.toInt())
-                bind.stateY.value = -1f
+                //bind.stateY.value = -1f
             }
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
-                    with(density) {
-                        screen.render.observe((scrollStateY.value - viewItemHeight).toDp())
-                    }
+                    screen.render.scroll = (scrollStateY.value - viewItemHeight).toDp()
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -240,9 +239,9 @@ fun Main(screen: Screen) {
                 DisposableEffect(view, display) {
                     if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
-                        with(density) {
-                            screen.render.observe(scrollStateX.value.toDp())
-                        }
+                      //  with(density) {
+                        screen.render.scroll = scrollStateX.value.toDp()
+                        //}
                     }
                     val vto = view.viewTreeObserver
                     vto.addOnScrollChangedListener(listener)
@@ -254,9 +253,6 @@ fun Main(screen: Screen) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(scrollStateX)
-                   //     .padding(
-                     //       bottom = if (display == H) margin * 4 else 0.dp
-                       // )
                 ) {
                     Box(
                         modifier = Modifier
@@ -279,7 +275,7 @@ fun Main(screen: Screen) {
                                 ratioV = ratioV ?: ratio!!,
                                 scale = scale!!,
                                 toggle = toggle[it],
-                                xy = xy[it]
+                                xy = xy[it]!!
                             )
                         }
                     }

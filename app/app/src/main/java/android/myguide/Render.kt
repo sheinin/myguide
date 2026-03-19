@@ -48,7 +48,7 @@ class Render(private val vm: VM) {
             var details: MutableList<Details>,
             var expand: MutableList<AnnotatedString?>,
             var toggle: MutableList<Boolean?>,
-            var xy: MutableList<XY>
+            var xy: MutableList<XY?>
         )
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -150,8 +150,6 @@ class Render(private val vm: VM) {
         }
     }
     private fun adjust() {
-        //data.stack = IntArray(batch) { -1 }
-        direction = null
         when (vm.display.value!!) {
             V -> {
                 var height = 0.dp
@@ -187,6 +185,21 @@ class Render(private val vm: VM) {
                     .map { xy(it) }
         }
     }
+/*
+    fun go(ix: Int) {
+        val index = data.point.getOrNull(ix) ?: return
+        if (data.view.xy[index].i == -1) return
+        val mod = ix.mod(batch)
+        data.stack[mod] = ix
+        vm.cycler.update(mod, data.view.expand[index])
+        vm.cycler.update(mod, data.view.details[index])
+        vm.cycler.update(mod, data.view.toggle[index])
+        vm.cycler.update(mod, data.view.xy[index])
+        //  qqq("GO $ix ${data.ruler} ${data.view.xy[index]}")
+        //  qqq("JOB dir:$direction index:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
+    }
+
+ */
     private fun scroll() {
         when (handler) {
             H -> {/*
@@ -228,11 +241,11 @@ class Render(private val vm: VM) {
                 fun go(ix: Int) {
                     val point = data.point.getOrNull(ix) ?: return
                     val index = ix.mod(batch)
-                    vm.cycler.update(index, data.view.xy[point])
+                 //   vm.cycler.update(index, data.view.xy[point])
                     data.stack[index] = ix
                 }
                 val mn = data.stack.min()
-                if (direction!!)
+               /* if (direction!!)
                     if (
                         data.point
                             .withIndex()
@@ -247,48 +260,27 @@ class Render(private val vm: VM) {
                             .indexOfLast { ITEM_HEIGHT * it.index / 2 < scroll }
                             .let { it / 2 > mn && it / 2 > batch / 3 }
                     ) go(data.stack.max().inc())
+
+                */
             }
             V -> {
-                fun go(ix: Int) {
-                    val index = data.point.getOrNull(ix) ?: return
-                    if (data.view.xy[index].i == -1) return
-                    val mod = ix.mod(batch)
-                    data.stack[mod] = ix
-                    vm.cycler.update(mod, data.view.expand[index])
-                    vm.cycler.update(mod, data.view.details[index])
-                    vm.cycler.update(mod, data.view.toggle[index])
-                    vm.cycler.update(mod, data.view.xy[index])
-                  //  qqq("GO $ix ${data.ruler} ${data.view.xy[index]}")
-                  //  qqq("JOB dir:$direction index:" + index + " ix:" + ix + " " + scroll + " " + data.view.xy[index].y + " " + data.view.details.getOrNull(index)?.title)
-                }
                 var c = data.ruler
-                    .withIndex()
                     .indexOfFirst {
-                        it.value >= scroll - ITEM_HEIGHT// data.disdata.point[it.index]]
+                        it >= scroll
                     }
-                qqq("MN $direction c:$c S:${data.stack.map { it }.toList()}")
-              //  var c = 0
-                if (c != data.stack.min() || (data.stack.max() - data.stack.min() + 1) != batch)
-                while (c < data.point.size ) {
-                    //val k = max(0, r1 + c - batch / 4)
-                    //if (r1 !in data.stack) {
-                      //  qqq("C0 $r1 $c")
-              //          go(r1)
-                //        break
-                    //}
-                    if (c !in data.stack// && c <= data.stack.min() + batch
-                        ) {
-                        qqq("C1 c:$c")
-                        go(c)
-                        break
+                c = max(0, c - batch / 4)
+                //qqq("MN ${scroll.round()} c:$c S:${data.stack.map { it }.toList()}")
+                if (
+                    c != data.stack.min() ||
+                    (data.stack.max() - data.stack.min() + 1) != batch
+                )
+                    while (c < data.point.size ) {
+                        if (c !in data.stack) {
+                            renderYSync(c)
+                            break
+                        }
+                        c += 1
                     }
-                 //   if (l !in data.stack) {
-                   //     qqq("C2 r:$r1 c:$c k:$k l:$l")
-                     //   go(r1 - c)
-                       // break
-                    //}
-                    c += 1
-                }
             }
             null -> {}
         }
@@ -307,7 +299,7 @@ class Render(private val vm: VM) {
                     )
                 (from until min(from + batch, data.point.size)).map {
                     xy(it)
-                    vm.cycler.update(it.mod(batch), data.view.xy[data.point[it]])
+                 //   vm.cycler.update(it.mod(batch), data.view.xy[data.point[it]])
                 }
             }
             V -> {
@@ -341,7 +333,7 @@ class Render(private val vm: VM) {
                         txt = list[index].description
                     )
                     vm.cycler.update(mod, data.view.expand[index])
-                    vm.cycler.update(mod, data.view.xy[index])
+                    vm.cycler.update(mod, data.view.xy[index]!!)
                 }
             }
             H -> {
@@ -360,7 +352,7 @@ class Render(private val vm: VM) {
 
                    // expandable(point)
                     vm.cycler.update(index, data.view.expand[point])
-                    vm.cycler.update(index, data.view.xy[point])
+                  //  vm.cycler.update(index, data.view.xy[point])
                    // listen()
                 }
                 qqq("MAP $from $scroll ")
@@ -412,6 +404,8 @@ class Render(private val vm: VM) {
         }
         filter()
         ruler()
+
+        vm.stateY.postValue(0f)
         //qqq("SL "+data.point.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
         data.point.indices.map {
             data.view.expand[it] = expandable(
@@ -537,12 +531,13 @@ class Render(private val vm: VM) {
             val index = it.mod(batch)
             data.stack[index] = it
             vm.cycler.update(index, data.view.expand[point])
-            vm.cycler.update(index, data.view.xy[point])
+            vm.cycler.update(index, data.view.xy[point]!!)
         }
     }
     fun load(list: List<ListInterface>) {
         //qqq("LOAD $ident "+list.size)
         this.list = list
+        scroll = 0.dp
         handler = vm.display.value
         data.display.clear()
         data.stack = IntArray(batch) { -1 }
@@ -550,7 +545,7 @@ class Render(private val vm: VM) {
         data.view.details = MutableList(this@Render.list.size) { Details() }
         data.view.expand = MutableList(this@Render.list.size) { null }
         data.view.toggle = MutableList(this@Render.list.size) { null }
-        data.view.xy = MutableList(this@Render.list.size) { XY() }
+        data.view.xy = MutableList(this@Render.list.size) { null }
         var count = 0
         while (count <= list.lastIndex) {
             if (
@@ -606,13 +601,8 @@ class Render(private val vm: VM) {
             if (listen) vm.display.value!!
             else null
     }
-    var direction: Boolean? = null
+    //var direction: Boolean? = null
     var scroll = 0.dp
-    fun observe(scroll: Dp) {
-        val s = scroll / vm.ratioV() / vm.scale.value!!
-        direction = this.scroll > s
-        this.scroll = s
-    }
     private fun renderX(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
         val index = ix.mod(batch)
@@ -625,13 +615,14 @@ class Render(private val vm: VM) {
     private fun renderYSync(ix: Int) {
         val index = data.point.getOrNull(ix) ?: return
         val mod = ix.mod(batch)
+        val xy = data.view.xy.getOrNull(index) ?: return
         ///val disp = data.display.find { it.ordinal == ix }!!
-        qqq("RS "+index+" "+ix+" "+data.view.xy[index].y+data.view.details.getOrNull(index)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
+        qqq("RS "+index+" "+ix+" "+data.view.xy[index]?.y+data.view.details.getOrNull(index)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
         data.stack[mod] = ix
         vm.cycler.update(mod, data.view.expand[index])
         vm.cycler.update(mod, data.view.details[index])
         vm.cycler.update(mod, data.view.toggle[index])
-        vm.cycler.update(mod, data.view.xy[index])
+        vm.cycler.update(mod, xy = xy)
     }
     fun expand(ix: Int, expand: Boolean) {
         qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))

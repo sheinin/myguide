@@ -32,7 +32,7 @@ class VM {
     val scale = MutableLiveData(1f)
     val sort = MutableLiveData(false)
     val stateX = MutableLiveData(0f)
-    val stateY = MutableLiveData(-1f)
+    val stateY = MutableLiveData(0f)
     val w = MutableLiveData(0.dp)
     val h = MutableLiveData(0.dp)
     val description = MutableLiveData<String>()
