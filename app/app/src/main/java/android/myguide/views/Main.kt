@@ -135,17 +135,12 @@ fun Main(screen: Screen) {
                     )
             }
             LaunchedEffect(stateY!!) {
-                qqq("STATEY "+stateY!!)
-                //if (display != H)
-                if (stateY != -1)
-                    scrollStateY.scrollTo(stateY!!)
-                //bind.stateY.value = -1f
+                scrollStateY.scrollTo(stateY!!)
             }
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
-                    screen.render.scroll =
-                        (scrollStateY.value - heightInfo + heightView / 3)
+                    screen.render.scroll = scrollStateY.value - heightInfo + heightView / 3
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -242,9 +237,7 @@ fun Main(screen: Screen) {
                 DisposableEffect(view, display) {
                     if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
-                      //  with(density) {
                         screen.render.scroll = scrollStateX.value
-                        //}
                     }
                     val vto = view.viewTreeObserver
                     vto.addOnScrollChangedListener(listener)

@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
@@ -46,16 +45,10 @@ fun Dp.round(): String {
 }
 
 
-@Composable
-fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
-    sp.toDp()
-}
-
-
 object UI {
     var TITLE_HEIGHT = 0
     var ITEM_HEIGHT = 0
-    val mapViewWidth = 100.dp.toPx().toInt()
+    val mapViewWidth = (screenWidth - 16.dp).toPx().toInt()
     val MARGIN = 8.dp.toPx().toInt()
     val BUTTON = 36.dp.toPx().toInt()
     const val COLUMNS: Int = 2

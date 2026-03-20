@@ -13,8 +13,8 @@ class Cycler {
     data class XY(
         var x: Int = 0,
         var y: Int = 0,
-        var d: Int = 0,
         var h: Int = 0,
+        var w: Int = 0,
         var i: Int = -1
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
@@ -81,8 +81,8 @@ class Cycler {
                     it?.copy(
                         x = xy!!.x,
                         y = xy.y,
-                        d = xy.d,
                         h = xy.h,
+                        w = xy.w,
                         i = xy.i
                     )
                 else it

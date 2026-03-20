@@ -68,7 +68,7 @@ object Expandable {
                         color = colorScheme.secondary,
                         textDecoration = TextDecoration.None,
                         fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize * ratioV,
+                        fontSize = typography.bodySmall.fontSize,
                         fontWeight = typography.bodySmall.fontWeight
                     )
                 ) { append(txt) }

@@ -11,7 +11,6 @@ import android.myguide.data.Cycler.XY
 import android.myguide.data.VM
 import android.myguide.data.VM.Type.*
 import android.myguide.screen
-import android.myguide.screenWidth
 import android.myguide.toDp
 import android.myguide.typography
 import androidx.compose.foundation.Image
@@ -110,8 +109,8 @@ fun ViewItem(
                                 BUTTON.toDp() * ratioV
                             )
                             .padding(
-                                horizontal = 6.dp * ratioH,
-                                vertical = 6.dp * ratioV
+                                horizontal = MARGIN.toDp() * ratioH,
+                                vertical = MARGIN.toDp() * ratioV
                             )
                     )
                 }
@@ -141,15 +140,14 @@ fun ViewItem(
                 )
         }
     }
-    //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
     val modifier = Modifier
         .offset(
             x = xy.x.toDp(),
             y = xy.y.toDp() * ratioV * scale
         )
         .size(
-            width = screenWidth,
-            height = (xy.d.toDp() + xy.h.toDp()) * ratioV * scale
+            width = xy.w.toDp(),
+            height = xy.h.toDp() * ratioV * scale
         )
         .padding(bottom = MARGIN.toDp() * margin * ratioV)
         .then(
