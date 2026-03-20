@@ -8,7 +8,6 @@ import android.myguide.batch
 import android.myguide.colorScheme
 import android.myguide.data.VM.Display.*
 import android.myguide.qqq
-import android.myguide.screenHeight
 import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
@@ -62,27 +61,27 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Main(screen: Screen) {
-    val bind = screen.vm
-    val description by bind.description.observeAsState()
-    val details by bind.cycler.details.collectAsStateWithLifecycle()
-    val display by bind.display.observeAsState()
-    val expand by bind.cycler.description.collectAsStateWithLifecycle()
-    val filter by bind.filter.observeAsState()
-    val h = bind.h.observeAsState()
-    val margin by bind.margin.collectAsStateWithLifecycle()
-    val ratio by bind.ratio.observeAsState()
-    val ratioH by bind.ratioH.observeAsState()
-    val ratioV by bind.ratioV.observeAsState()
-    val scale by bind.scale.observeAsState()
+    val vm = screen.vm
+    val description by vm.description.observeAsState()
+    val details by vm.cycler.details.collectAsStateWithLifecycle()
+    val display by vm.display.observeAsState()
+    val expand by vm.cycler.description.collectAsStateWithLifecycle()
+    val filter by vm.filter.observeAsState()
+    val h = vm.h.observeAsState()
+    val margin by vm.margin.collectAsStateWithLifecycle()
+    val ratio by vm.ratio.observeAsState()
+    val ratioH by vm.ratioH.observeAsState()
+    val ratioV by vm.ratioV.observeAsState()
+    val scale by vm.scale.observeAsState()
     val scrollStateY = rememberScrollState()
-    val sort by bind.sort.observeAsState()
-    val stateX by bind.stateX.observeAsState()
-    val stateY by bind.stateY.observeAsState()
-    val toggle by bind.cycler.toggle.collectAsStateWithLifecycle()
+    val sort by vm.sort.observeAsState()
+    val stateX by vm.stateX.observeAsState()
+    val stateY by vm.stateY.observeAsState()
+    val toggle by vm.cycler.toggle.collectAsStateWithLifecycle()
     val view = LocalView.current
-    val viewItem by bind.details.observeAsState()
-    val w = bind.w.observeAsState()
-    val xy by bind.cycler.xy.collectAsStateWithLifecycle()
+    val viewItem by vm.details.observeAsState()
+    val w = vm.w.observeAsState()
+    val xy by vm.cycler.xy.collectAsStateWithLifecycle()
     var heightView by remember { mutableIntStateOf(0) }
     var heightInfo by remember { mutableIntStateOf(0) }
     Box(
@@ -136,7 +135,7 @@ fun Main(screen: Screen) {
                     )
             }
             LaunchedEffect(stateY!!) {
-                qqq("SCRO1 "+stateY!!)
+                qqq("STATEY "+stateY!!)
                 //if (display != H)
                 if (stateY != -1f)
                     scrollStateY.scrollTo(stateY!!.toInt())
@@ -145,8 +144,8 @@ fun Main(screen: Screen) {
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
-
-                    screen.render.scroll = (scrollStateY.value - heightInfo + heightView / 2).toDp()
+                    screen.render.scroll =
+                        (scrollStateY.value - heightInfo + heightView / 3).toDp()
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -157,10 +156,7 @@ fun Main(screen: Screen) {
             Column(
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
-                    .onSizeChanged { size ->
-                        qqq("SSS "+size.height.toDp() + " "+ screenHeight)
-                        heightView = size.height
-                    }
+                    .onSizeChanged { heightView = it.height }
                     .fillMaxWidth()
                     .verticalScroll(scrollStateY)
                     .weight(1f)
@@ -268,7 +264,7 @@ fun Main(screen: Screen) {
                                 height = h.value!! * (ratioV ?: ratio!!) * scale!!
                             )
                             .alpha(
-                                if (bind.loading.value == true) 0f
+                                if (vm.loading.value == true) 0f
                                 else 1f
                             )
                     ) {

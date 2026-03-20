@@ -2,7 +2,6 @@ package android.myguide
 
 
 import android.R.attr.direction
-import android.R.attr.x
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.UI.BUTTON
@@ -34,7 +33,6 @@ import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
 import kotlin.math.abs
-import kotlin.math.absoluteValue
 import kotlin.ranges.until
 
 class Render(private val vm: VM) {
@@ -87,16 +85,15 @@ class Render(private val vm: VM) {
     private var handler: VM.Display? = null
     init {
         vm.adjust.observeForever { adjust ->
-            qqq("AD "+adjust)
-            if (!adjust) {
+           // vm.stateY.value  = 0f
 
+            if (!adjust) {
                 data.stack = IntArray(batch) { -1 }
                 handler = null
-                vm.stateY.value  = 0f
                 return@observeForever
             }
             handler = vm.display.value
-        //    qqq("ADJ")
+          //  qqq("ADJ $adjust")
             adjust()
         }
 
@@ -143,10 +140,13 @@ class Render(private val vm: VM) {
         vm.ratio.observeForever { zoom() }
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
-        vm.scale.observeForever { zoom() }
+        vm.scale.observeForever {
+            ruler()
+            zoom()
+        }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(1)
+                delay(100)
                 scroll()
             }
         }
@@ -174,7 +174,7 @@ class Render(private val vm: VM) {
                 vm.w.postValue(screenWidth)
                 vm.h.postValue(height)
                 data.stack = IntArray(batch) { -1 }
-                data.stack.map { renderYSync(it) }
+             //   data.stack.map { renderYSync(it) }
             }
             H ->
                 data.point
@@ -266,41 +266,59 @@ class Render(private val vm: VM) {
                 */
             }
             V -> {
+
+
+
                 val mn = data.stack.min()
                 val mx = data.stack.max()
                 val r = data.ruler
                     .indexOfFirst {
-                        it * vm.ratioV() * vm.scale.value!! >= scroll
+                        it * vm.ratioV() * vm.scale.value!! > scroll
                     }
+
+                val m = abs(r - mn)
+                val x = abs(r - mx)
+
+                fun down() {
+                    //qqq("DOWN ")
+                    var i = 0
+                    while (i < batch / 2) {
+                        val down = r - i
+                        if (down >= 0 && !data.stack.contains(down)) {
+                            renderYSync(down)
+                            break
+                        }
+                        i += 1
+                    }
+                }
+                fun up() {
+                 //   qqq("UP ")
+                    var i = 0
+                    while (i < batch / 2) {
+                        val up = r + i
+                        if (up in 0 .. data.point.lastIndex &&
+                            !data.stack.contains(up)
+                        ) {
+                            renderYSync(up)
+                            break
+                        }
+                        i += 1
+                    }
+                }
+
                 val run1 = true//r != data.stack.min()
                 val run2 = (mx - mn + 1) != batch
-                qqq("SCROLL $run1 $run2 ${!(run1 || run2)} m:${mn} x:${mx} ${scroll.round()} c:$r S:${data.stack.map { it }.toList()}")
-
+                //qqq("SCROLL $run2 ${!(run1 || run2)} m:${mn} x:${mx} r:${r} m:${m} x:${x} ${scroll.round()} S:${data.stack.map { it }.toList()}")
                 if (
                     !(run1 || run2)
                 ) return
-                var c = 0
-                while (c < batch / 2) {
-                    val up = r + c
-                    qqq("UP $up ")
-                    if (up in 0 .. data.point.lastIndex &&
-                        !data.stack.contains(up)
-                    ) {
-                        renderYSync(up)
-                        break
-                    }
-                    c += 1
-                }
-                var d = 0
-                while (d < batch / 2) {
-                    val down = r - d
-                    qqq("DOWN $down")
-                    if (down >= 0 && !data.stack.contains(down)) {
-                        renderYSync(down)
-                        break
-                    }
-                    d += 1
-                }
+
+            //    if (m > x) up()
+              //  else if (m < x) down()
+                //else {
+                    down()
+                    up()
+                //}
             }
             null -> {}
         }
