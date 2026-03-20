@@ -2,6 +2,7 @@ package android.myguide
 
 
 import android.R.attr.direction
+import android.R.attr.x
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.UI.BUTTON
@@ -123,7 +124,7 @@ class Render(private val vm: VM) {
                             )
                         }
                 )
-            //ruler()
+            ruler()
             data.point.indices.map { xy(it) }
             /*data.stack
                 .withIndex()
@@ -265,33 +266,41 @@ class Render(private val vm: VM) {
                 */
             }
             V -> {
-                var c = data.ruler
+                val mn = data.stack.min()
+                val mx = data.stack.max()
+                val r = data.ruler
                     .indexOfFirst {
                         it * vm.ratioV() * vm.scale.value!! >= scroll
                     }
-                c = max(0, c - batch / 4)
-                val mn = data.stack.min()
-                val mx = data.stack.max()
-
-                qqq("MN m:${abs(mn - c)} x:${abs(mx - c)} ${scroll.round()} c:$c S:${data.stack.map { it }.toList()}")
-
+                val run1 = true//r != data.stack.min()
+                val run2 = (mx - mn + 1) != batch
+                qqq("SCROLL $run1 $run2 ${!(run1 || run2)} m:${mn} x:${mx} ${scroll.round()} c:$r S:${data.stack.map { it }.toList()}")
 
                 if (
-                    c != data.stack.min() ||
-                    (mx - mn + 1) != batch
-                )
-
-                    if (!data.stack.contains(-1) && abs(mn - c) < abs(mx - c)) renderYSync(mn.dec())
-                    else renderYSync(mx.inc())
-                   /* while (c < data.point.size ) {
-                        if (c !in data.stack) {
-                            renderYSync(c)
-                            break
-                        }
-                        c += 1
+                    !(run1 || run2)
+                ) return
+                var c = 0
+                while (c < batch / 2) {
+                    val up = r + c
+                    qqq("UP $up ")
+                    if (up in 0 .. data.point.lastIndex &&
+                        !data.stack.contains(up)
+                    ) {
+                        renderYSync(up)
+                        break
                     }
-
-                    */
+                    c += 1
+                }
+                var d = 0
+                while (d < batch / 2) {
+                    val down = r - d
+                    qqq("DOWN $down")
+                    if (down >= 0 && !data.stack.contains(down)) {
+                        renderYSync(down)
+                        break
+                    }
+                    d += 1
+                }
             }
             null -> {}
         }
@@ -608,6 +617,7 @@ class Render(private val vm: VM) {
         }
     }
     fun listen(listen: Boolean) {
+        qqq("L"+listen)
         handler =
             if (listen) vm.display.value!!
             else null
@@ -626,10 +636,10 @@ class Render(private val vm: VM) {
     private fun renderYSync(ix: Int) {
         val index = data.point.getOrNull(ix) ?: return
         val mod =
-            //ix.mod(batch)
-            data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
+            ix.mod(batch)
+            //data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = data.view.xy.getOrNull(index) ?: return
-        qqq("RS "+mod+" "+index+" "+ix+" "+data.view.xy[index]?.y+data.view.details.getOrNull(index)?.title )//+ " "+disp.height + " "+disp.type.height+ " "+data.vm.xy[point].y  + data.vm.expand[point])
+        qqq("RS ix:$ix index:$index mod:$mod ${data.view.details.getOrNull(index)?.title}")
         data.stack[mod] = ix
         vm.cycler.update(mod, data.view.expand[index])
         vm.cycler.update(mod, data.view.details[index])

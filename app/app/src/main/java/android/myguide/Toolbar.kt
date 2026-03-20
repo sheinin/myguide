@@ -23,10 +23,12 @@ class Toolbar {
     var items = mutableListOf<Item>()
     var lock = false
     private fun splash() {
-       crumbs[false]!!.value = List(3) { "" }
-       crumbs[true]!!.value = List(3) { "" }
-       items.clear()
-       current.value = null
+        crumbs[false]!!.value = List(3) { "" }
+        crumbs[true]!!.value = List(3) { "" }
+        current.value = null
+        items.clear()
+        screen[false]!!.reset()
+        screen[true]!!.reset()
     }
     fun back() {
         val i = items.lastIndex.dec()

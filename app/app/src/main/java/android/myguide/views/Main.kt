@@ -6,9 +6,9 @@ import android.myguide.Screen
 import android.myguide.UI.MARGIN
 import android.myguide.batch
 import android.myguide.colorScheme
-import android.myguide.density
 import android.myguide.data.VM.Display.*
 import android.myguide.qqq
+import android.myguide.screenHeight
 import android.myguide.toDp
 import android.myguide.toolbar
 import android.myguide.typography
@@ -49,6 +49,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -82,7 +83,8 @@ fun Main(screen: Screen) {
     val viewItem by bind.details.observeAsState()
     val w = bind.w.observeAsState()
     val xy by bind.cycler.xy.collectAsStateWithLifecycle()
-    var viewItemHeight by remember { mutableIntStateOf(0) }
+    var heightView by remember { mutableIntStateOf(0) }
+    var heightInfo by remember { mutableIntStateOf(0) }
     Box(
         Modifier
             .fillMaxSize()
@@ -143,7 +145,8 @@ fun Main(screen: Screen) {
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
-                    screen.render.scroll = (scrollStateY.value - viewItemHeight).toDp()
+
+                    screen.render.scroll = (scrollStateY.value - heightInfo + heightView / 2).toDp()
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -154,6 +157,10 @@ fun Main(screen: Screen) {
             Column(
                 verticalArrangement = Arrangement.Bottom,
                 modifier = Modifier
+                    .onSizeChanged { size ->
+                        qqq("SSS "+size.height.toDp() + " "+ screenHeight)
+                        heightView = size.height
+                    }
                     .fillMaxWidth()
                     .verticalScroll(scrollStateY)
                     .weight(1f)
@@ -174,7 +181,7 @@ fun Main(screen: Screen) {
                             .padding(8.dp)
                             .onGloballyPositioned(
                                 onGloballyPositioned = {
-                                    viewItemHeight = it.size.height
+                                    heightInfo = it.size.height
                                 }
                             )
                     ) {
