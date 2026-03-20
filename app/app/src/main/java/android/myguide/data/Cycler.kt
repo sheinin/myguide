@@ -44,10 +44,10 @@ class Cycler {
             _xy.value += XY(0.dp, 0.dp, 0.dp, 0.dp)
         }
     }
-    fun update(index: Int, e: AnnotatedString?) {
+    fun update(index: Int, description: AnnotatedString?) {
         _description.update {
             it.mapIndexed { ix, it ->
-                if (ix == index) e
+                if (ix == index) description
                 else it
             }
         }

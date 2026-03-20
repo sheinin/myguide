@@ -1,4 +1,6 @@
 package android.myguide
 
+object Observe {
 
-fun run() {}
+
+}
