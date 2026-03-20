@@ -15,14 +15,14 @@ class Screen(val ident: Boolean) {
     var queryType: QueryType? = null
     fun build(
         id: String?,
-        display: VM.Display,
+        type: VM.Type,
         queryType: QueryType,
-        scrollY: Float = 0f
+        scrollY: Int = 0
     ) {
         this.id = id
         this.queryType = queryType
         qqq(
-            "BUILD qry:$queryType disp:$display ident:$ident id:$id xy:${scrollY.toDp().round()}"
+            "BUILD qry:$queryType disp:$type ident:$ident id:$id xy:${scrollY.toDp().round()}"
         )
         when (queryType) {
             ITEM ->
@@ -58,11 +58,11 @@ class Screen(val ident: Boolean) {
                 current.value = !(current.value ?: true)
             }
         }
-        vm.display.value = display
+        vm.type.value = type
         vm.loading.value = true
-        vm.h.value = screenHeight
+        vm.h.value = screenHeight.toPx().toInt()
         vm.scrollY.value = scrollY
-        vm.h.value = scrollY.toDp() + screenHeight
+        vm.h.value = scrollY + screenHeight.toPx().toInt()
         vm.cycler.reset()
     }
     fun query() {

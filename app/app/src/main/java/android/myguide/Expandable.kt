@@ -15,7 +15,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.em
-import java.lang.Integer.max
 import kotlin.math.max
 
 object Expandable {
@@ -102,14 +101,14 @@ object Expandable {
             constraints = Constraints(
                 maxWidth =
                     max(
-                        MARGIN.toPx(),
+                        MARGIN,
                         (
-                            (screenWidth - (
+                            (screenWidth.toPx().toInt() - (
                                 ITEM_HEIGHT +
                                         MARGIN.times(4) * margin +
                                         MARGIN * margin * level / 2
                                 ) * ratioH)
-                        ).toPx()
+                        ).toInt()
                     )
                     .toInt()
             ),

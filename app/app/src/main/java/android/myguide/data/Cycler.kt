@@ -11,10 +11,10 @@ import kotlin.collections.plus
 
 class Cycler {
     data class XY(
-        var x: Dp = 0.dp,
-        var y: Dp = 0.dp,
-        var d: Dp = 0.dp,
-        var h: Dp = 0.dp,
+        var x: Int = 0,
+        var y: Int = 0,
+        var d: Int = 0,
+        var h: Int = 0,
         var i: Int = -1
     )
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
@@ -41,7 +41,7 @@ class Cycler {
                     level = 0
                 )
             _toggle.value += null
-            _xy.value += XY(0.dp, 0.dp, 0.dp, 0.dp)
+            _xy.value += XY(0, 0, 0, 0)
         }
     }
     fun update(index: Int, description: AnnotatedString?) {

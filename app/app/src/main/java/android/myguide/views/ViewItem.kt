@@ -9,10 +9,10 @@ import android.myguide.colorScheme
 import android.myguide.current
 import android.myguide.data.Cycler.XY
 import android.myguide.data.VM
-import android.myguide.data.VM.Display.*
+import android.myguide.data.VM.Type.*
 import android.myguide.screen
 import android.myguide.screenWidth
-import android.myguide.toolbar
+import android.myguide.toDp
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ViewItem(
     details: Details,
-    display: VM.Display?,
+    type: VM.Type?,
     expand: AnnotatedString?,
     margin: Float,
     ratioH: Float,
@@ -56,24 +56,24 @@ fun ViewItem(
 ) {
     @Composable
     fun Content() {
-        if (display != H && details.drawable != null)
+        if (type != H && details.drawable != null)
             Image(
                 painterResource(details.drawable),
                 "item icon",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(
-                        width = ITEM_HEIGHT * ratioH,
-                        height = ITEM_HEIGHT * ratioV
+                        width = ITEM_HEIGHT.toDp() * ratioH,
+                        height = ITEM_HEIGHT.toDp() * ratioV
                     )
             )
         Column(
             horizontalAlignment =
-                if (display == T) Alignment.CenterHorizontally
+                if (type == T) Alignment.CenterHorizontally
                 else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = MARGIN * margin * ratioH),
+                .padding(horizontal = MARGIN.toDp() * margin * ratioH),
             verticalArrangement = Arrangement.Center
         ) {
             Row(
@@ -81,12 +81,12 @@ fun ViewItem(
             ) {
                 Text(
                     details.title,
-                    textAlign = if (display == T) TextAlign.Center else TextAlign.Start,
+                    textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
                     color = colorScheme.secondary,
                     fontSize = typography.bodyLarge.fontSize,
                     lineHeight = typography.bodyLarge.fontSize,
                     maxLines =
-                        when (display!!) {
+                        when (type!!) {
                             T -> 2
                             V -> Int.MAX_VALUE
                             H -> 1
@@ -106,8 +106,8 @@ fun ViewItem(
                             )
                             .rotate(if (toggle == true) 90f else -90f)
                             .size(
-                                BUTTON * ratioH,
-                                BUTTON * ratioV
+                                BUTTON.toDp() * ratioH,
+                                BUTTON.toDp() * ratioV
                             )
                             .padding(
                                 horizontal = 6.dp * ratioH,
@@ -127,11 +127,11 @@ fun ViewItem(
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
                 )
-            if (expand != null && display != T)
+            if (expand != null && type != T)
                 Text(
                     expand,
                     maxLines =
-                        if (display == H) 2
+                        if (type == H) 2
                         else Int.MAX_VALUE,
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -144,26 +144,26 @@ fun ViewItem(
     //qqq("I "+xy.i+" "+xy.h+index+" "+details.title + " "+(68.dp * xy.i * ratioV * scale)+" "+itemHeight +" "+ xy.i +" "+ ratioV +" "+ scale)
     val modifier = Modifier
         .offset(
-            x = xy.x,
-            y = xy.y * ratioV * scale
+            x = xy.x.toDp(),
+            y = xy.y.toDp() * ratioV * scale
         )
         .size(
             width = screenWidth,
-            height = (xy.d + xy.h) * ratioV * scale
+            height = (xy.d.toDp() + xy.h.toDp()) * ratioV * scale
         )
-        .padding(bottom = MARGIN * margin * ratioV)
+        .padding(bottom = MARGIN.toDp() * margin * ratioV)
         .then(
             if (details.origin == null) Modifier
             else modifier
         )
-    if (display != T)
+    if (type != T)
         Row(
             modifier
                 .padding(
                     start =
-                        MARGIN * margin * ratioH
-                        + MARGIN * margin * ratioH * details.level / 2,
-                    end = MARGIN * margin * ratioH
+                        MARGIN.toDp() * margin * ratioH
+                        + MARGIN.toDp() * margin * ratioH * details.level / 2,
+                    end = MARGIN.toDp() * margin * ratioH
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }
@@ -172,8 +172,8 @@ fun ViewItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .padding(
-                    horizontal = MARGIN * margin * ratioH,
-                    vertical = MARGIN * margin * ratioV
+                    horizontal = MARGIN.toDp() * margin * ratioH,
+                    vertical = MARGIN.toDp() * margin * ratioV
                 )
                 .background(color = colorScheme.surfaceContainer)
         ) { Content() }

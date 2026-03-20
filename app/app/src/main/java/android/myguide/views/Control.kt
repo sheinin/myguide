@@ -6,8 +6,9 @@ import android.myguide.UI.MARGIN
 import android.myguide.colorScheme
 import android.myguide.current
 import android.myguide.data.VM
-import android.myguide.data.VM.Display.*
+import android.myguide.data.VM.Type.*
 import android.myguide.screen
+import android.myguide.toDp
 import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -34,7 +35,7 @@ fun Control(
     control: Boolean,
     filter: Boolean?,
     sort: Boolean?,
-    display: VM.Display?,
+    type: VM.Type?,
     ratioH: Float,
     ratioV: Float,
     title: String
@@ -44,8 +45,8 @@ fun Control(
         modifier = Modifier
             .fillMaxWidth()
             .padding(
-                horizontal = MARGIN * ratioH,
-                vertical = MARGIN * ratioV
+                horizontal = MARGIN.toDp() * ratioH,
+                vertical = MARGIN.toDp() * ratioV
             )
     ) {
         Text(
@@ -80,8 +81,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = BUTTON * ratioH,
-                        height = BUTTON * ratioH
+                        width = BUTTON.toDp() * ratioH,
+                        height = BUTTON.toDp() * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,
@@ -102,8 +103,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = BUTTON * ratioH,
-                        height = BUTTON * ratioH
+                        width = BUTTON.toDp() * ratioH,
+                        height = BUTTON.toDp() * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,
@@ -113,7 +114,7 @@ fun Control(
             Spacer(Modifier.width(8.dp))
             Image(
                 painter = painterResource(
-                    when (display!!) {
+                    when (type!!) {
                         V -> R.drawable.view_list
                         H -> R.drawable.map
                         T -> R.drawable.grid
@@ -124,8 +125,8 @@ fun Control(
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            screen[current.value!!]!!.vm.display.value =
-                                when (screen[current.value!!]!!.vm.display.value!!) {
+                            screen[current.value!!]!!.vm.type.value =
+                                when (screen[current.value!!]!!.vm.type.value!!) {
                                     V -> H
                                     H -> T
                                     T -> V
@@ -133,8 +134,8 @@ fun Control(
                         }
                     )
                     .size(
-                        width = BUTTON * ratioH,
-                        height = BUTTON * ratioH
+                        width = BUTTON.toDp() * ratioH,
+                        height = BUTTON.toDp() * ratioH
                     )
                     .padding(
                         horizontal = 6.dp * ratioH,

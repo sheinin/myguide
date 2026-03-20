@@ -9,6 +9,7 @@ import android.myguide.current
 import android.myguide.data.VM
 import android.myguide.qqq
 import android.myguide.screen
+import android.myguide.toDp
 import android.myguide.typography
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -77,7 +78,7 @@ fun Toolbar() {
                 contentDescription = "screen switch",
                 colorFilter = ColorFilter.tint(colorScheme.secondary),
                 modifier = Modifier
-                    .size(BUTTON)
+                    .size(BUTTON.toDp())
                     .padding(10.dp)
             )
             Box(
@@ -115,8 +116,8 @@ fun Toolbar() {
                     )
                     .rotate(if (visible) -90f else 90f)
                     .size(
-                        BUTTON,
-                        BUTTON
+                        BUTTON.toDp(),
+                        BUTTON.toDp()
                     )
                     .padding(6.dp)
             )
@@ -260,7 +261,7 @@ fun SliderRow(
             null,
             colorFilter = ColorFilter.tint(colorScheme.primary),
             modifier = Modifier
-                .size(BUTTON)
+                .size(BUTTON.toDp())
                 .padding(8.dp)
                 .clickable(onClick = action ?: {})
         )
@@ -276,7 +277,7 @@ fun SliderRow(
             null,
             colorFilter = ColorFilter.tint(colorScheme.primary),
             modifier = Modifier
-                .size(BUTTON)
+                .size(BUTTON.toDp())
                 .padding(6.dp)
                 .clickable(
                     onClick = minus
@@ -307,7 +308,7 @@ fun SliderRow(
             "increase font scale",
             colorFilter = ColorFilter.tint(colorScheme.primary),
             modifier = Modifier
-                .size(BUTTON)
+                .size(BUTTON.toDp())
                 .padding(6.dp)
                 .clickable(onClick = plus)
         )

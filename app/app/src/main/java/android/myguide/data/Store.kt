@@ -62,6 +62,8 @@ interface ListInterface {
     val description: String?
     val drawable: Int?
     val id: String?
+    val lat: Double?
+    val lng: Double?
     val origin: String?
     val title: String?
     val level: Int
@@ -265,6 +267,8 @@ fun Item.toInterface(): ListInterface {
         override val id = this@toInterface.id
         override val description = this@toInterface.description
         override val drawable = this@toInterface.drawable
+        override val lat = null
+        override val lng = null
         override val origin= this@toInterface.origin
         override val title = this@toInterface.title
         override val level = this@toInterface.level
@@ -280,6 +284,8 @@ fun ItemWithLevel.toInterface(): ListInterface {
         override val origin= this@toInterface.origin
         override val title = this@toInterface.title
         override val level = this@toInterface.level
+        override val lat = null
+        override val lng = null
     }
 }
 
@@ -291,6 +297,8 @@ fun Shop.toInterface(): ListInterface {
         override val origin= this@toInterface.origin
         override val title = this@toInterface.title
         override val level = 0
+        override val lat = this@toInterface.lat
+        override val lng = this@toInterface.lat
     }
 }
 

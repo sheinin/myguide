@@ -1,11 +1,8 @@
 package android.myguide
 
 import android.R.attr.scrollY
-import android.myguide.QueryType.*
 import android.myguide.data.VM
-import android.myguide.data.VM.Display.*
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import android.myguide.data.VM.Type.*
 import androidx.lifecycle.MutableLiveData
 
 class Toolbar {
@@ -14,8 +11,8 @@ class Toolbar {
         val queryType: QueryType,
         val title: String,
         var ident: Boolean,
-        var display: VM.Display,
-        var scrollY: Float = 0f
+        var type: VM.Type,
+        var scrollY: Int = 0
     )
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
@@ -46,7 +43,7 @@ class Toolbar {
     }
     fun navigate(
         id: String? = null,
-        display: VM.Display = V,
+        type: VM.Type = V,
         queryType: QueryType = screen[current.value!!]!!.queryType!!.next,
       //  scrollY: Float = 0f,
         title: String
@@ -65,7 +62,7 @@ class Toolbar {
             Item(
                 id = id,
                 ident = current,
-                display = display,
+                type = type,
                 title = title,
               //  scrollY = scrollY,
                 queryType = queryType
@@ -80,7 +77,7 @@ class Toolbar {
         items.add(item)
         screen[current]!!.build(
             id = id,
-            display = display,
+            type = type,
             queryType = queryType,
         )
         screen[!current]!!.reset()
@@ -113,7 +110,7 @@ class Toolbar {
                 )
             next.build(
                 id = item.id,
-                display = item.display,
+                type = item.type,
                 queryType = item.queryType,
                 scrollY = item.scrollY
             )

@@ -128,7 +128,7 @@ fun Measures(callback: () -> Unit = {}) {
             }
             .onGloballyPositioned { coordinates ->
                 qqq("MM"+ITEM_HEIGHT+coordinates.size.height.toDp())
-                ITEM_HEIGHT = coordinates.size.height.toDp()
+                ITEM_HEIGHT = coordinates.size.height
                 callback()
             }
     ) {
@@ -139,7 +139,7 @@ fun Measures(callback: () -> Unit = {}) {
             lineHeight = typography.bodyMedium.fontSize,
             modifier = Modifier.onGloballyPositioned { coordinates ->
                 qqq("MT"+ITEM_HEIGHT+coordinates.size.height.toDp())
-                TITLE_HEIGHT = coordinates.size.height.toDp()
+                TITLE_HEIGHT = coordinates.size.height
                 // itemHeight = coordinates.size.height.toDp()
             }
         )

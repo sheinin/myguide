@@ -53,10 +53,10 @@ fun getLineHeightDp(sp: TextUnit): Dp = with(density) {
 
 
 object UI {
-    var TITLE_HEIGHT: Dp = 0.dp
-    var ITEM_HEIGHT: Dp = 0.dp
-    val mapViewWidth: Dp = 100.dp
-    val MARGIN: Dp = 8.dp
-    val BUTTON = 36.dp
+    var TITLE_HEIGHT = 0
+    var ITEM_HEIGHT = 0
+    val mapViewWidth = 100.dp.toPx().toInt()
+    val MARGIN = 8.dp.toPx().toInt()
+    val BUTTON = 36.dp.toPx().toInt()
     const val COLUMNS: Int = 2
 }
