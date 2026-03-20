@@ -14,7 +14,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -39,7 +42,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,12 +80,30 @@ fun Toolbar() {
                     .size(BUTTON)
                     .padding(10.dp)
             )
-            Text(
-                if (current.value!!) "B" else "A",
-                color = colorScheme.secondary,
-                style = typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .background(colorScheme.secondary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    if (current.value!!) "B" else "A",
+                    color = colorScheme.background,
+                    style =
+                        typography.labelLarge.copy(
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both
+                            ),
+                            platformStyle = PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        ),
+                    fontWeight = FontWeight.W900,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
             Image(
                 painter = painterResource(R.drawable.back),

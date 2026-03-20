@@ -1,5 +1,6 @@
 package android.myguide
 
+import android.R.attr.scrollY
 import android.myguide.QueryType.*
 import android.myguide.data.VM
 import android.myguide.data.VM.Display.*
@@ -14,7 +15,7 @@ class Toolbar {
         val title: String,
         var ident: Boolean,
         var display: VM.Display,
-        var position: Dp
+        var scrollY: Float = 0f
     )
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
@@ -47,11 +48,12 @@ class Toolbar {
         id: String? = null,
         display: VM.Display = V,
         queryType: QueryType = screen[current.value!!]!!.queryType!!.next,
+      //  scrollY: Float = 0f,
         title: String
     ) {
         if (lock) return
         lock = true
-        qqq("NAVIGATE items:"+ items.size+" id:"+id+" title:"+title+" query:"+queryType + " "+(items.getOrNull(0)?.title ?: ""))
+        qqq("NAVIGATE items:${items.size} id:${id} title:${title} query:${queryType} scrollY:${scrollY} ${(items.getOrNull(0)?.title ?: "")}")
         items.mapIndexed { ix, it ->
             if (it.queryType == queryType && it.id == id) {
                 goto(ix)
@@ -65,7 +67,7 @@ class Toolbar {
                 ident = current,
                 display = display,
                 title = title,
-                position = 0.dp,
+              //  scrollY = scrollY,
                 queryType = queryType
             )
         cached = true
@@ -89,7 +91,7 @@ class Toolbar {
         current.value?.let { screen[it] }?.reset()
         val item = items[ix]
         val next = screen[!current.value!!]!!
-        qqq("GOTO ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
+        qqq("GOTO ${item.title} ${item.scrollY} ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
        // current.value = !current.value!!
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
@@ -112,9 +114,9 @@ class Toolbar {
             next.build(
                 id = item.id,
                 display = item.display,
-                queryType = item.queryType
+                queryType = item.queryType,
+                scrollY = item.scrollY
             )
-           // next.query()
         }
     }
 }

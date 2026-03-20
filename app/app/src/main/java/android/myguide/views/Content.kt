@@ -39,7 +39,7 @@ fun Content(innerPadding: PaddingValues) {
                 snapshotFlow { visibleState.currentState == visibleState.targetState }
                     .collect { isIdle ->
                         if (isIdle && !visibleState.targetState)
-                        screen[current.value ?: true]!!.query()
+                            screen[current.value ?: true]!!.query()
                     }
             }
             LaunchedEffect(visibleState1) {

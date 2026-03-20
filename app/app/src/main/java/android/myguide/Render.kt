@@ -2,6 +2,7 @@ package android.myguide
 
 
 import android.R.attr.direction
+import android.R.attr.x
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.UI.BUTTON
@@ -80,6 +81,7 @@ class Render(private val vm: VM) {
         display = CopyOnWriteArrayList()
     )
     var list: List<ListInterface> = listOf()
+    var scroll = 0.dp
     private var margin = 1f
     private var handler: VM.Display? = null
     init {
@@ -88,8 +90,16 @@ class Render(private val vm: VM) {
                 data.stack = IntArray(batch) { -1 }
                 return@observeForever
             }
-          //  qqq("ADJ $adjust")
             adjust()
+        }
+        vm.display.observeForever { display() }
+        vm.sort.observeForever { sort() }
+        vm.ratio.observeForever { zoom() }
+        vm.ratioH.observeForever { zoom() }
+        vm.ratioV.observeForever { zoom() }
+        vm.scale.observeForever {
+            ruler()
+            zoom()
         }
         CoroutineScope(Dispatchers.IO).launch {
             vm.margin.collect { m ->
@@ -103,17 +113,9 @@ class Render(private val vm: VM) {
                 zoom()
             }
         }
-        vm.sort.observeForever { sort() }
-        vm.ratio.observeForever { zoom() }
-        vm.ratioH.observeForever { zoom() }
-        vm.ratioV.observeForever { zoom() }
-        vm.scale.observeForever {
-            ruler()
-            zoom()
-        }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(100)
+                delay(1000)
                 scroll()
             }
         }
@@ -154,7 +156,51 @@ class Render(private val vm: VM) {
                     .map { xy(it) }
         }
     }
-
+    private fun display() {
+        handler = vm.display.value
+        toolbar.items.lastOrNull()?.display = vm.display.value!!
+        when (vm.display.value!!) {
+            H -> {
+                vm.w.value = mapViewWidth * data.ruler.size * vm.ratioH()
+                vm.h.value = ITEM_HEIGHT * vm.ratioV()
+                list.indices.map {
+                    //       expandable(it)
+                    xy(it)
+                }
+            }
+            T -> {
+                list.indices.map {
+                    xy(it)
+                }
+                vm.w.value = screenWidth
+                vm.h.value = (ITEM_HEIGHT.times(2)) * (data.point.size / COLUMNS) * vm.ratioV()
+            }
+            V -> {
+                //  ruler()
+                list.indices.map {
+                    expandable(
+                        ix = it,
+                        level = list[it].level,
+                        margin = margin,
+                        ratioH = vm.ratioH(),
+                        ratioV = vm.ratioV(),
+                        scale = vm.scale.value!!,
+                        txt = list[it].description
+                    )
+                    xy(it)
+                }
+                vm.w.value = screenWidth
+                // vm.h.value = height
+            }
+        }
+        (0 until min(batch, data.point.size)).map {
+            val point = data.point[it]
+            val index = it.mod(batch)
+            data.stack[index] = it
+            vm.cycler.update(index, data.view.expand[point])
+            vm.cycler.update(index, data.view.xy[point]!!)
+        }
+    }
     private fun filter() {
         val toggle = data.toggle
         data.point.clear()
@@ -170,57 +216,6 @@ class Render(private val vm: VM) {
                 .map { it.index }
                 .toList()
         )
-    }
-    private fun job() {
-        var start = 0
-        list.indices.map {
-            data.display.add(
-                (if (data.toggle[it] != null) BUTTON else ITEM_HEIGHT) +
-                        margin() to measure(it)
-            )
-        }
-        filter()
-        ruler()
-
-        vm.stateY.postValue(0f)
-        //qqq("SL "+data.point.size+ident+start + " "+limit + " "+list.size +" "+data.point.size)
-        data.point.indices.map {
-            data.view.expand[it] = expandable(
-                ix = it,
-                level = list[it].level,
-                margin = margin,
-                ratioH = vm.ratioH(),
-                ratioV = vm.ratioV(),
-                scale = vm.scale.value!!,
-                txt = list[it].description
-            )
-            val ix = data.point[it]
-            val item = list[ix]
-            //qqq("VM ident:$ident ix:"+ix+ " id:"+disp.type+" "+item.title + " "+disp.height+item.level+ruler +item.description)
-            xy(ix)
-            data.view.toggle[ix] = data.view.toggle.getOrNull(ix) ?: false
-            data.view.details[ix] =
-                Details(
-                    title = item.title!!.trim(),
-                    origin = item.origin,
-                    drawable = item.drawable,
-                    level = item.level
-                )
-        }
-        start = 0
-        /*
-        when (vm.display.value!!) {
-            T ->
-                (start until start + batch).map {
-                    //vm(data.point[it])
-                    //    activity.runOnUiThread { renderYD3(it) }
-                }
-            H -> (start until start + batch).map { renderX(it) }
-            V -> (start until start + batch).map { renderYSync(it) }
-        }
-
-         */
-        toolbar.lock = false
     }
     private fun margin(): Dp = MARGIN * margin
     private fun measure(ix: Int): Dp {
@@ -369,7 +364,7 @@ class Render(private val vm: VM) {
 
                 val run1 = true//r != data.stack.min()
                 val run2 = (mx - mn + 1) != batch
-                //qqq("SCROLL $run2 ${!(run1 || run2)} m:${mn} x:${mx} r:${r} m:${m} x:${x} ${scroll.round()} S:${data.stack.map { it }.toList()}")
+                qqq("SCROLL $run2 ${!(run1 || run2)} m:${mn} x:${mx} r:${r} ${scroll.round()} S:${data.stack.map { it }.toList()}")
                 if (
                     !(run1 || run2)
                 ) return
@@ -503,55 +498,11 @@ class Render(private val vm: VM) {
                     )
             }
     }
-    fun display() {
-        handler = vm.display.value
-        toolbar.items.last().display = vm.display.value!!
-        when (vm.display.value!!) {
-            H -> {
-                vm.w.value = mapViewWidth * data.ruler.size * vm.ratioH()
-                vm.h.value = ITEM_HEIGHT * vm.ratioV()
-                list.indices.map {
-             //       expandable(it)
-                    xy(it)
-                }
-            }
-            T -> {
-                list.indices.map {
-                    xy(it)
-                }
-                vm.w.value = screenWidth
-                vm.h.value = (ITEM_HEIGHT.times(2)) * (data.point.size / COLUMNS) * vm.ratioV()
-            }
-            V -> {
-              //  ruler()
-                list.indices.map {
-                    expandable(
-                        ix = it,
-                        level = list[it].level,
-                        margin = margin,
-                        ratioH = vm.ratioH(),
-                        ratioV = vm.ratioV(),
-                        scale = vm.scale.value!!,
-                        txt = list[it].description
-                    )
-                    xy(it)
-                }
-                vm.w.value = screenWidth
-               // vm.h.value = height
-            }
-        }
-        (0 until min(batch, data.point.size)).map {
-            val point = data.point[it]
-            val index = it.mod(batch)
-            data.stack[index] = it
-            vm.cycler.update(index, data.view.expand[point])
-            vm.cycler.update(index, data.view.xy[point]!!)
-        }
-    }
+
     fun load(list: List<ListInterface>) {
         //qqq("LOAD $ident "+list.size)
         this.list = list
-        scroll = 0.dp
+        //scroll = 0.dp
         handler = vm.display.value
         data.display.clear()
         data.stack = IntArray(batch) { -1 }
@@ -577,27 +528,46 @@ class Render(private val vm: VM) {
             }
             count++
         }
-        val position = toolbar.items.lastOrNull()?.position ?: return
-        if (position > 0.dp) {
-            if (vm.display.value == H) {
-                vm.w.postValue(position + screenWidth)
-                vm.h.postValue(ITEM_HEIGHT)
-            } else {
-                vm.w.postValue(screenWidth)
-                vm.h.postValue(position + screenHeight)
-            }
-            vm.position.postValue(toolbar.items.last().position)
-            job()
-        } else job()
+        list.indices.map {
+            data.display.add(
+                (if (data.toggle[it] != null) BUTTON else ITEM_HEIGHT) +
+                        margin() to measure(it)
+            )
+        }
+        filter()
+        ruler()
+        data.point.indices.map {
+            data.view.expand[it] = expandable(
+                ix = it,
+                level = list[it].level,
+                margin = margin,
+                ratioH = vm.ratioH(),
+                ratioV = vm.ratioV(),
+                scale = vm.scale.value!!,
+                txt = list[it].description
+            )
+            val ix = data.point[it]
+            val item = list[ix]
+            //qqq("VM ix:"+ix+ " "+item.title + " "+item.level+item.description)
+            xy(ix)
+            data.view.toggle[ix] = data.view.toggle.getOrNull(ix) ?: false
+            data.view.details[ix] =
+                Details(
+                    title = item.title!!.trim(),
+                    origin = item.origin,
+                    drawable = item.drawable,
+                    level = item.level
+                )
+        }
+        scroll = vm.scrollY.value!!.toDp()
+        toolbar.lock = false
     }
     fun listen(listen: Boolean) {
-        qqq("L"+listen)
+        qqq("LISTEN "+listen)
         handler =
             if (listen) vm.display.value!!
             else null
     }
-    //var direction: Boolean? = null
-    var scroll = 0.dp
     private fun renderX(ix: Int) {
         val point = data.point.getOrNull(ix) ?: return
         val index = ix.mod(batch)

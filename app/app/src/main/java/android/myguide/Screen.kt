@@ -17,14 +17,12 @@ class Screen(val ident: Boolean) {
         id: String?,
         display: VM.Display,
         queryType: QueryType,
+        scrollY: Float = 0f
     ) {
         this.id = id
         this.queryType = queryType
         qqq(
-            "BUILD " + queryType +"/" + display
-                    + " ident:" +ident
-                    + " id:" + id
-            + " xy:" + toolbar.items.last().position
+            "BUILD qry:$queryType disp:$display ident:$ident id:$id xy:${scrollY.toDp().round()}"
         )
         when (queryType) {
             ITEM ->
@@ -63,7 +61,9 @@ class Screen(val ident: Boolean) {
         vm.display.value = display
         vm.loading.value = true
         vm.h.value = screenHeight
-        vm.stateY.value = 0f
+        vm.scrollY.value = scrollY
+        vm.h.value = scrollY.toDp() + screenHeight
+        vm.cycler.reset()
     }
     fun query() {
         vm.loading.postValue(false)
@@ -71,7 +71,6 @@ class Screen(val ident: Boolean) {
         fun callback(list: List<ListInterface>) {
             render.load(list)
         }
-        vm.cycler.reset()
         when (queryType) {
             ITEM -> db.fetchShops(id!!, ::callback)
             ITEMS -> db.fetchTree(::callback)
@@ -84,8 +83,7 @@ class Screen(val ident: Boolean) {
         render.listen(false)
     }
     fun update() {
-        qqq("UPDATE SCREEN " + ident + " " + toolbar.items.last().position)
-        vm.position.postValue(toolbar.items.last().position)
+        qqq("UPDATE SCREEN $ident")
         render.listen(true)
     }
 }

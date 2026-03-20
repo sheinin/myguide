@@ -52,6 +52,7 @@ fun ViewItem(
     scale: Float,
     toggle: Boolean?,
     xy: XY,
+    modifier: Modifier
 ) {
     @Composable
     fun Content() {
@@ -153,19 +154,7 @@ fun ViewItem(
         .padding(bottom = MARGIN * margin * ratioV)
         .then(
             if (details.origin == null) Modifier
-            else
-                Modifier
-                    .clickable(
-                        onClick = {
-                            toolbar.navigate(
-                                id =
-                                    screen[current.value!!]!!.render.let {
-                                        it.list[it.data.point[xy.i]].id
-                                    },
-                                title = details.title
-                            )
-                        }
-                    )
+            else modifier
         )
     if (display != T)
         Row(

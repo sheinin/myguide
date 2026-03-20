@@ -30,7 +30,7 @@ class Cycler {
         _description.value = emptyList()
         _details.value = emptyList()
         _toggle.value = emptyList()
-        _xy
+        _xy.value = emptyList()
         repeat(batch) {
             _description.value += null
             _details.value +=

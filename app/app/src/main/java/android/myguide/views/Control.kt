@@ -130,8 +130,6 @@ fun Control(
                                     H -> T
                                     T -> V
                                 }
-                            screen[current.value!!]!!.render.display()
-//!!!??????
                         }
                     )
                     .size(

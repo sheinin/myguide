@@ -1,11 +1,13 @@
 package android.myguide.views
 
+import android.R.attr.scrollY
 import android.myguide.QueryType
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.UI.MARGIN
 import android.myguide.batch
 import android.myguide.colorScheme
+import android.myguide.current
 import android.myguide.data.VM.Display.*
 import android.myguide.qqq
 import android.myguide.toDp
@@ -76,7 +78,7 @@ fun Main(screen: Screen) {
     val scrollStateY = rememberScrollState()
     val sort by vm.sort.observeAsState()
     val stateX by vm.stateX.observeAsState()
-    val stateY by vm.stateY.observeAsState()
+    val stateY by vm.scrollY.observeAsState()
     val toggle by vm.cycler.toggle.collectAsStateWithLifecycle()
     val view = LocalView.current
     val viewItem by vm.details.observeAsState()
@@ -278,7 +280,16 @@ fun Main(screen: Screen) {
                                 ratioV = ratioV ?: ratio!!,
                                 scale = scale!!,
                                 toggle = toggle[it],
-                                xy = xy[it]!!
+                                xy = xy[it]!!,
+                                modifier = Modifier.clickable(
+                                    onClick = {
+                                        toolbar.items.last().scrollY = scrollStateY.value - heightInfo + heightView / 3f
+                                        toolbar.navigate(
+                                            id = screen.render.list[screen.render.data.point[xy[it]!!.i]].id,
+                                            title = details[it].title,
+                                        )
+                                    }
+                                )
                             )
                         }
                     }
