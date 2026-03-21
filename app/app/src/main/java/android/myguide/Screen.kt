@@ -17,8 +17,7 @@ class Screen(val ident: Boolean) {
         id: String?,
         type: VM.Type,
         queryType: QueryType,
-        scrollY: Int = 0,
-        toggle: List<Boolean>? = null
+        scrollY: Int = 0
     ) {
         this.id = id
         this.queryType = queryType
@@ -69,7 +68,6 @@ class Screen(val ident: Boolean) {
     }
     fun query() {
         vm.loading.postValue(false)
-        qqq("QU $ident $id ${toolbar.items.last().ident}")
         when (queryType) {
             ITEM -> db.fetchShops(id!!, render::load)
             ITEMS -> db.fetchTree(render::load)

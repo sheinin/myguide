@@ -22,7 +22,7 @@ class Toolbar {
     )
     var items = mutableListOf<Item>()
     var lock = false
-    private fun splash() {
+    fun splash() {
         crumbs[false]!!.value = List(3) { "" }
         crumbs[true]!!.value = List(3) { "" }
         current.value = null
@@ -86,16 +86,12 @@ class Toolbar {
     }
     private var cached = true
     fun goto(ix: Int) {
-
         current.value?.let { screen[it] }?.reset()
         val item = items[ix]
         val next = screen[!current.value!!]!!
         qqq("GOTO ${item.title} ${item.scrollY} ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
-       // current.value = !current.value!!
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
-        //items.last().ident = next.ident
-        //current.value = next.ident
         if (cached) {
             current.value = !current.value!!
             cached = false
@@ -114,8 +110,7 @@ class Toolbar {
                 id = item.id,
                 type = item.type,
                 queryType = item.queryType,
-                scrollY = item.scrollY,
-                toggle = item.toggle
+                scrollY = item.scrollY
             )
         }
     }

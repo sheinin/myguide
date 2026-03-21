@@ -416,8 +416,6 @@ class Render(private val vm: VM) {
                             w = screenWidth.toPx().toInt(),
                             i = ix
                         )
-                    //vm.cycler.update(ix.mod(batch), data.view.expand[index].second)
-                    //vm.cycler.update(mod, data.view.xy[index]!!)
                 }
             }
             H -> {

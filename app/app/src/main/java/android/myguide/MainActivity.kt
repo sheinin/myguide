@@ -26,12 +26,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.SpanStyle
@@ -89,6 +91,12 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent {
+            val configuration = LocalConfiguration.current
+
+            // LaunchedEffect will re-run whenever the orientation changes
+            LaunchedEffect(configuration.orientation) {
+                toolbar.splash()
+            }
             BackHandler(enabled = true) { toolbar.back() }
             GetScreenSize()
             density = LocalDensity.current
@@ -137,10 +145,8 @@ fun Measures(callback: () -> Unit = {}) {
             style = typography.bodyLarge,
             fontSize = typography.bodyLarge.fontSize,
             lineHeight = typography.bodyMedium.fontSize,
-            modifier = Modifier.onGloballyPositioned { coordinates ->
-                qqq("MT"+ITEM_HEIGHT+coordinates.size.height.toDp())
-                TITLE_HEIGHT = coordinates.size.height
-                // itemHeight = coordinates.size.height.toDp()
+            modifier = Modifier.onGloballyPositioned {
+                TITLE_HEIGHT = it.size.height
             }
         )
         Text(
