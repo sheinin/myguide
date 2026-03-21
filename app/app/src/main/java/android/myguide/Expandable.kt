@@ -25,7 +25,7 @@ object Expandable {
                     style = SpanStyle(
                         color = colorScheme.secondary,
                         fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize * ratioV,
+                        fontSize = typography.bodySmall.fontSize,
                         fontWeight = typography.bodySmall.fontWeight
                     )
                 ) { append(txt) }
@@ -34,7 +34,7 @@ object Expandable {
                         color = Color.Transparent,
                         textDecoration = TextDecoration.None,
                         fontStyle = typography.bodySmall.fontStyle,
-                        fontSize = typography.bodySmall.fontSize * ratioV,
+                        fontSize = typography.bodySmall.fontSize,
                         fontWeight = typography.bodySmall.fontWeight
                     )
                 ) { append("\u200A") }

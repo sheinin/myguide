@@ -100,7 +100,7 @@ class Render(private val vm: VM) {
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
         vm.scale.observeForever {
-            ruler()
+          //  ruler()
             zoom()
         }
         vm.type.observeForever {
@@ -120,48 +120,17 @@ class Render(private val vm: VM) {
         }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(100)
+                delay(15)
                 scroll()
             }
         }
     }
     private fun ex(index: Int): AnnotatedString {
-        if (data.view.expand[index].first) {
-            val s = list[index].description!! + " \u2026"
-            val p =
-                androidx.compose.ui.text.Paragraph(
-                    text = s,
-                    style = typography.bodySmall,
-                    spanStyles = listOf(
-                        AnnotatedString.Range(
-                            SpanStyle(
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
-                            ),
-                            0,
-                            s.length
-                        )
-                    ),
-                    constraints = Constraints(
-                        maxWidth = (
-                                (screenWidth.toPx() - (
-                                        ITEM_HEIGHT +
-                                                margin().times(4) +
-                                                margin().times(2) * list[index].level
-                                        ) * vm.ratioH())
-                                ).toInt()
-                    ),
-                    density = density,
-                    fontFamilyResolver = fontFamilyResolver,
-                )
+        qqq(">"+(data.view.expand[index].first)+index)
+        if (!data.view.expand[index].first) {
             data.display[index] =
-                data.display[index].first to
-                measure(index) + p.getLineHeight(1).toInt() * p.lineCount.minus(2)
-        }
-        else data.display[index] =
-            data.display[index].first to measure(index)
-        return if (!data.view.expand[index].first)
-            expandable(
+                data.display[index].first to measure(index)
+            return expandable(
                 index = index,
                 level = list[index].level,
                 margin = margin,
@@ -170,12 +139,42 @@ class Render(private val vm: VM) {
                 scale = vm.scale.value!!,
                 txt = list[index].description
             )
-        else
-            expanded(
-                index = index,
-                ratioV = vm.ratioV(),
-                txt = list[index].description!!
+        }
+        val s = list[index].description!! + " \u2026"
+        val p =
+            androidx.compose.ui.text.Paragraph(
+                text = s,
+                style = typography.bodySmall,
+                spanStyles = listOf(
+                    AnnotatedString.Range(
+                        SpanStyle(
+                            fontStyle = typography.bodySmall.fontStyle,
+                            fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                        ),
+                        0,
+                        s.length
+                    )
+                ),
+                constraints = Constraints(
+                    maxWidth = (
+                            (screenWidth.toPx() - (
+                                    ITEM_HEIGHT +
+                                            margin().times(4) +
+                                            margin().times(2) * list[index].level
+                                    ) * vm.ratioH())
+                            ).toInt()
+                ),
+                density = density,
+                fontFamilyResolver = fontFamilyResolver,
             )
+        data.display[index] =
+            data.display[index].first to
+                    measure(index) + p.getLineHeight(1).toInt() * p.lineCount.minus(2)
+        return expanded(
+            index = index,
+            ratioV = vm.ratioV(),
+            txt = list[index].description!!
+        )
     }
     private fun adjust() {
         qqq("ADJUST")
@@ -396,30 +395,29 @@ class Render(private val vm: VM) {
                 (from until min(from + batch, data.point.size)).map { xy(it) }
             }
             V -> {
-                val from = max(0, data.ruler.indexOfFirst { it > scroll } - batch / 3)
-                var sum = 0f
+                val from = max(0, data.ruler.indexOfFirst { it >= scroll } - batch / 3)
+                var sum = 0
                 (from until min(from + batch, data.point.size)).map { ix ->
                     val index = data.point[ix]
-                    val mod = ix.mod(batch)
-                    val m = measure(index)
-                    //qqq("MP "+mod + " "+index +" "+data.ruler.size+" "+ix)
+                    val m = data.display[index].second
+                    data.view.expand[index] =
+                        data.view.expand[index].first to ex(index)
+                    //qqq("Z index:$index ix:$ix sum:$sum m:$m ${data.display[index].second} ${(data.display[index].second > m)}/${(data.display[index].second < m)} ${data.view.expand[index]}")
+                    data.ruler[ix] += sum
+                    if (data.display[index].second > m)
+                        sum += data.display[index].second - m
+                    else if (data.display[index].second < m)
+                        sum -= m - data.display[index].second
                     data.view.xy[index] =
                         XY(
                             x = 0,
-                            y = (data.ruler[ix] + sum).toInt(),
-                            h = m + data.display[index].first + data.display[index].second,
+                            y = (data.ruler[ix]).toInt(),
+                            h = data.display[index].first + data.display[index].second,
                             w = screenWidth.toPx().toInt(),
                             i = ix
                         )
-                    //qqq("Z p:"+point+ " m:" + m + data.display[point].height + " sum:" +sum + " r:"+data.ruler[it])
-                    if (data.display[index].second < m)
-                        sum += m
-                    else if (data.display[index].second > m)
-                        sum -= m
-                    data.view.expand[index] =
-                        data.view.expand[index].first to ex(index)
-                    vm.cycler.update(mod, data.view.expand[index].second)
-                    vm.cycler.update(mod, data.view.xy[index]!!)
+                    //vm.cycler.update(ix.mod(batch), data.view.expand[index].second)
+                    //vm.cycler.update(mod, data.view.xy[index]!!)
                 }
             }
             H -> {
@@ -558,7 +556,7 @@ class Render(private val vm: VM) {
             //data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = data.view.xy.getOrNull(index) ?: return
         val toggle = data.view.toggle.getOrNull(index) ?: return
-        qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${data.view.details.getOrNull(index)?.title}")
+        //qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${data.view.details.getOrNull(index)?.title}")
         data.stack[mod] = ix
         vm.cycler.update(index = mod, description = data.view.expand[index].second)
         vm.cycler.update(index = mod, details = data.view.details[index])
