@@ -12,7 +12,9 @@ class Toolbar {
         val title: String,
         var ident: Boolean,
         var type: VM.Type,
-        var scrollY: Int = 0
+        var scrollY: Int = 0,
+        var toggle: List<Boolean>? = null
+
     )
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
@@ -112,7 +114,8 @@ class Toolbar {
                 id = item.id,
                 type = item.type,
                 queryType = item.queryType,
-                scrollY = item.scrollY
+                scrollY = item.scrollY,
+                toggle = item.toggle
             )
         }
     }

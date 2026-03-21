@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.em
 import kotlin.math.max
 
 object Expandable {
-    fun expanded(ix: Int, ratioV: Float, txt: String) : AnnotatedString =
+    fun expanded(index: Int, ratioV: Float, txt: String) : AnnotatedString =
         buildAnnotatedString {
             withStyle(ParagraphStyle(lineHeight = 1.em * ratioV)) {
                 withStyle(
@@ -42,7 +42,7 @@ object Expandable {
                     LinkAnnotation.Clickable(
                         tag = "lastThree",
                         linkInteractionListener = {
-                            screen[current.value!!]!!.render.expand(ix, false)
+                            screen[current.value!!]!!.render.expand(index, false)
                         }
                     )
                 ) {
@@ -75,7 +75,7 @@ object Expandable {
             }
         }
     fun expandable(
-        ix: Int,
+        index: Int,
         level: Int,
         margin: Float,
         ratioH: Float,
@@ -172,7 +172,7 @@ object Expandable {
                         LinkAnnotation.Clickable(
                             tag = "lastThree",
                             linkInteractionListener = {
-                                screen[current.value!!]!!.render.expand(ix, true)
+                                screen[current.value!!]!!.render.expand(index, true)
                             }
                         )
                     ) {

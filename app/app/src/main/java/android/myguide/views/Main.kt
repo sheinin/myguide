@@ -276,6 +276,8 @@ fun Main(screen: Screen) {
                                     onClick = {
                                         toolbar.items.last().scrollY =
                                             scrollStateY.value - heightInfo + heightView / 3
+                                        toolbar.items.last().toggle =
+                                            screen.render.data.view.toggle
                                         toolbar.navigate(
                                             id = screen.render.list[screen.render.data.point[xy[it]!!.i]].id,
                                             title = details[it].title,

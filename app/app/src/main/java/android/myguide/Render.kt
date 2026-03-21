@@ -1,7 +1,6 @@
 package android.myguide
 
 
-import android.R.attr.direction
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.Expandable.static
@@ -16,25 +15,21 @@ import android.myguide.data.Details
 import android.myguide.data.ListInterface
 import android.myguide.data.VM
 import android.myguide.data.VM.Type.*
-import android.util.Log.i
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.lang.Float.max
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.getOrNull
 import kotlin.collections.set
 import kotlin.collections.withIndex
-import kotlin.math.round
 import kotlin.ranges.until
 
 class Render(private val vm: VM) {
@@ -48,8 +43,8 @@ class Render(private val vm: VM) {
     ) {
         data class View(
             var details: MutableList<Details>,
-            var expand: MutableList<AnnotatedString?>,
-            var toggle: MutableList<Boolean?>,
+            var expand: MutableList<Pair<Boolean, AnnotatedString>>,
+            var toggle: MutableList<Boolean>,
             var xy: MutableList<XY?>
         )
         override fun equals(other: Any?): Boolean {
@@ -130,36 +125,78 @@ class Render(private val vm: VM) {
             }
         }
     }
+    private fun ex(index: Int): AnnotatedString {
+        if (data.view.expand[index].first) {
+            val s = list[index].description!! + " \u2026"
+            val p =
+                androidx.compose.ui.text.Paragraph(
+                    text = s,
+                    style = typography.bodySmall,
+                    spanStyles = listOf(
+                        AnnotatedString.Range(
+                            SpanStyle(
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
+                            ),
+                            0,
+                            s.length
+                        )
+                    ),
+                    constraints = Constraints(
+                        maxWidth = (
+                                (screenWidth.toPx() - (
+                                        ITEM_HEIGHT +
+                                                margin().times(4) +
+                                                margin().times(2) * list[index].level
+                                        ) * vm.ratioH())
+                                ).toInt()
+                    ),
+                    density = density,
+                    fontFamilyResolver = fontFamilyResolver,
+                )
+            data.display[index] =
+                data.display[index].first to
+                measure(index) + p.getLineHeight(1).toInt() * p.lineCount.minus(2)
+        }
+        else data.display[index] =
+            data.display[index].first to measure(index)
+        return if (!data.view.expand[index].first)
+            expandable(
+                index = index,
+                level = list[index].level,
+                margin = margin,
+                ratioH = vm.ratioH(),
+                ratioV = vm.ratioV(),
+                scale = vm.scale.value!!,
+                txt = list[index].description
+            )
+        else
+            expanded(
+                index = index,
+                ratioV = vm.ratioV(),
+                txt = list[index].description!!
+            )
+    }
     private fun adjust() {
         qqq("ADJUST")
         when (vm.type.value!!) {
             V -> {
                 var height = 0
                 data.point.mapIndexed { ix, index ->
-                    data.display[index] = data.display[index].first to measure(index)
-                    data.view.expand[index] =
-                        expandable(
-                            ix = index,
-                            level = list[index].level,
-                            margin = margin,
-                            ratioH = vm.ratioH(),
-                            ratioV = vm.ratioV(),
-                            scale = vm.scale.value!!,
-                            txt = list[index].description
-                        )
+                    data.display[index] =
+                        data.display[index].first to data.display[index].second + measure(index)
+                    data.view.expand[index] = data.view.expand[index].first to ex(index)
                     data.ruler[ix] = height
                     height += data.display[index].first + data.display[index].second
-                    xy(index)
+                    xy(ix)
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(height)
                 data.stack = IntArray(batch) { -1 }
-             //   data.stack.map { renderYSync(it) }
             }
             H ->
                 data.point
                     .map {
-                      //  expandable(it)
                         xy(it)
                     }
             T ->
@@ -175,8 +212,7 @@ class Render(private val vm: VM) {
                 vm.w.value = (mapViewWidth * data.ruler.size * vm.ratioH()).toInt()
                 vm.h.value = ((ITEM_HEIGHT + MARGIN * 2) * vm.ratioV()).toInt()
                 data.point.mapIndexed { ix, it ->
-                    data.view.expand[it] = static(vm.ratioV(), list[it].description!!)
-                   // vm.cycler.update(ix, data.view.expand[it])
+                    data.view.expand[it] = false to static(vm.ratioV(), list[it].description!!)
                     xy(ix)
                 }
             }
@@ -189,8 +225,8 @@ class Render(private val vm: VM) {
             }
             V -> {
                 data.point.indices.map {
-                    data.view.expand[it] = expandable(
-                        ix = it,
+                    data.view.expand[it] = false to expandable(
+                        index = it,
                         level = list[it].level,
                         margin = margin,
                         ratioH = vm.ratioH(),
@@ -206,13 +242,6 @@ class Render(private val vm: VM) {
         }
         data.stack = IntArray(batch) { -1 }
         qqq("DIS")
-        /*(0 until min(batch, data.point.size)).map {
-            val point = data.point[it]
-            val index = it.mod(batch)
-            data.stack[index] = it
-            vm.cycler.update(index, data.view.expand[point])
-            vm.cycler.update(index, data.view.xy[point]!!)
-        }*/
     }
     private fun filter() {
         val toggle = data.toggle
@@ -253,7 +282,7 @@ class Render(private val vm: VM) {
                                         margin().times(4) +
                                         margin() * list[ix].level / 2
                                 ) * vm.ratioH()).toInt()
-                    ).toInt()
+                    )
             ),
             density = Density(
                 density = density.density,
@@ -330,7 +359,7 @@ class Render(private val vm: VM) {
                         i += 1
                     }
                 }
-                qqq("SCROLL r:${r} ${scroll.toDp().round()} S:${data.stack.map { it }.toList()}")
+                //qqq("SCROLL r:${r} ${scroll.toDp().round()} S:${data.stack.map { it }.toList()}")
                 down()
                 up()
             }
@@ -378,7 +407,7 @@ class Render(private val vm: VM) {
                         XY(
                             x = 0,
                             y = (data.ruler[ix] + sum).toInt(),
-                            h = m + data.display[index].first,
+                            h = m + data.display[index].first + data.display[index].second,
                             w = screenWidth.toPx().toInt(),
                             i = ix
                         )
@@ -387,16 +416,9 @@ class Render(private val vm: VM) {
                         sum += m
                     else if (data.display[index].second > m)
                         sum -= m
-                    data.view.expand[index] = expandable(
-                        ix = index,
-                        level = list[index].level,
-                        margin = margin,
-                        ratioH = vm.ratioH(),
-                        ratioV = vm.ratioV(),
-                        scale = vm.scale.value!!,
-                        txt = list[index].description
-                    )
-                    vm.cycler.update(mod, data.view.expand[index])
+                    data.view.expand[index] =
+                        data.view.expand[index].first to ex(index)
+                    vm.cycler.update(mod, data.view.expand[index].second)
                     vm.cycler.update(mod, data.view.xy[index]!!)
                 }
             }
@@ -415,7 +437,7 @@ class Render(private val vm: VM) {
 
 
                    // expandable(point)
-                    vm.cycler.update(index, data.view.expand[point])
+                    vm.cycler.update(index, data.view.expand[point].second)
                   //  vm.cycler.update(index, data.view.xy[point])
                    // listen()
                 }
@@ -456,15 +478,15 @@ class Render(private val vm: VM) {
     }
 
     fun load(list: List<ListInterface>) {
-        //qqq("LOAD $ident "+list.size)
         this.list = list
         handler = vm.type.value
         data.display.clear()
         data.stack = IntArray(batch) { -1 }
         data.toggle.clear()
         data.view.details = MutableList(this@Render.list.size) { Details() }
-        data.view.expand = MutableList(this@Render.list.size) { null }
-        data.view.toggle = MutableList(this@Render.list.size) { null }
+        data.view.expand = MutableList(this@Render.list.size) { false to buildAnnotatedString {  } }
+        data.view.toggle = toolbar.items.last().toggle?.toMutableList() ?: MutableList(this@Render.list.size) { false }
+        qqq("LOAD ${data.view.toggle}  "+list.size)
         data.view.xy = MutableList(this@Render.list.size) { null }
         var count = 0
         while (count <= list.lastIndex) {
@@ -479,34 +501,40 @@ class Render(private val vm: VM) {
                                     || ix == list.size
                         }
                 if (i == -1) i = list.size
-                data.toggle[count] = count to i - count
+                data.toggle[count] =
+                    count to
+                    if (data.view.toggle[count]) (i - count).unaryMinus() else (i - count)
             }
             count++
         }
-        list.indices.map {
+        list.mapIndexed { index, it ->
             data.display.add(
-                (if (data.toggle[it] != null) BUTTON else ITEM_HEIGHT) +
-                        margin() to measure(it)
+                (if (data.toggle[index] != null) BUTTON else ITEM_HEIGHT) + margin() to
+                measure(index)
             )
-        }
-        filter()
-        ruler()
-        data.point.indices.map {
-            data.view.expand[it] = expandable(
-                ix = it,
-                level = list[it].level,
+            data.view.expand[index] = false to expandable(
+                index = index,
+                level = list[index].level,
                 margin = margin,
                 ratioH = vm.ratioH(),
                 ratioV = vm.ratioV(),
                 scale = vm.scale.value!!,
-                txt = list[it].description
+                txt = it.description
             )
-            val ix = data.point[it]
-            val item = list[ix]
-            //qqq("VM ix:"+ix+ " "+item.title + " "+item.level+item.description)
+            data.view.details[index] =
+                Details(
+                    title = it.title!!.trim(),
+                    origin = it.origin,
+                    drawable = it.drawable,
+                    level = it.level
+                )
+        }
+        filter()
+        ruler()
+        data.point.mapIndexed { ix, index ->
+            val item = list[index]
             xy(ix)
-            data.view.toggle[ix] = data.view.toggle.getOrNull(ix) ?: false
-            data.view.details[ix] =
+            data.view.details[index] =
                 Details(
                     title = item.title!!.trim(),
                     origin = item.origin,
@@ -523,70 +551,24 @@ class Render(private val vm: VM) {
             if (listen) vm.type.value!!
             else null
     }
-    private fun renderX(ix: Int) {
-        val point = data.point.getOrNull(ix) ?: return
-        val index = ix.mod(batch)
-        data.stack[index] = ix
-        //qqq("RX ix:$ix point:"+data.point.getOrNull(ix) + " index:"+index +data.vm[point].title+ "  "+data.vm[point].x)
-        vm.cycler.update(index, data.view.details[point])
-        vm.cycler.update(index, data.view.expand[point])
-        vm.cycler.update(index, data.view.xy[point])
-    }
     private fun syncY(ix: Int) {
         val index = data.point.getOrNull(ix) ?: return
         val mod =
             ix.mod(batch)
             //data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = data.view.xy.getOrNull(index) ?: return
+        val toggle = data.view.toggle.getOrNull(index) ?: return
         qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${data.view.details.getOrNull(index)?.title}")
         data.stack[mod] = ix
-        vm.cycler.update(index = mod, description = data.view.expand[index])
+        vm.cycler.update(index = mod, description = data.view.expand[index].second)
         vm.cycler.update(index = mod, details = data.view.details[index])
-        vm.cycler.update(index = mod, toggle = data.view.toggle[index])
+        vm.cycler.update(index = mod, toggle = toggle)
         vm.cycler.update(index = mod, xy = xy)
     }
-    fun expand(ix: Int, expand: Boolean) {
-        qqq("E "+ix + " " + expand + " "+data.point.indexOf(ix))
-        if (expand) {
-            val s = list[ix].description!! + " \u2026"
-            val p =
-                androidx.compose.ui.text.Paragraph(
-                    text = s,
-                    style = typography.bodySmall,
-                    spanStyles = listOf(
-                        AnnotatedString.Range(
-                            SpanStyle(
-                                fontStyle = typography.bodySmall.fontStyle,
-                                fontSize = typography.bodySmall.fontSize * vm.ratioV() * vm.scale.value!!,
-                            ),
-                            0,
-                            s.length
-                        )
-                    ),
-                    constraints = Constraints(
-                        maxWidth = (
-                                (screenWidth.toPx() - (
-                                        ITEM_HEIGHT +
-                                                margin().times(4) +
-                                                margin().times(2) * list[ix].level
-                                        ) * vm.ratioH())
-                                ).toInt()
-                    ),
-                    density = density,
-                    fontFamilyResolver = fontFamilyResolver,
-                )
-            data.display[ix] =
-                data.display[ix].first to
-                        data.display[ix].second +
-                        p.getLineHeight(1).toInt() * p.lineCount.minus(2)
-        }
-        else data.display[ix] =
-            data.display[ix].first to data.display[ix].second + measure(ix)
-        data.view.expand[ix] = expanded(
-            ix,
-            vm.ratioV(),
-            list[ix].description!!
-        )
+    fun expand(index: Int, expand: Boolean) {
+        qqq("E "+index + " " + expand + " "+data.point.indexOf(index))
+
+        data.view.expand[index] = expand to ex(index)
         ruler()
         data.point.indices
             .map { xy(it) }
@@ -594,14 +576,14 @@ class Render(private val vm: VM) {
             .map { syncY(it) }
     }
     fun toggle(ix: Int) {
-        val point = data.point[data.stack[ix]]
-        data.view.toggle[point] = data.toggle[point]!!.second > 0
-        data.toggle[point] =
-            data.toggle[point]!!.first to data.toggle[point]!!.second.unaryMinus()
+        val index = data.point[ix]
+        data.view.toggle[index] = data.toggle[index]!!.second > 0
+        data.toggle[index] =
+            data.toggle[index]!!.first to data.toggle[index]!!.second.unaryMinus()
         filter()
         ruler()
         data.point.indices
-            .map { ix -> xy(ix) }
+            .map { xy(it) }
         data.stack = IntArray(batch) { -1 }
     }
 }

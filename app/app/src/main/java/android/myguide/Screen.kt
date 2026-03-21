@@ -17,7 +17,8 @@ class Screen(val ident: Boolean) {
         id: String?,
         type: VM.Type,
         queryType: QueryType,
-        scrollY: Int = 0
+        scrollY: Int = 0,
+        toggle: List<Boolean>? = null
     ) {
         this.id = id
         this.queryType = queryType
@@ -58,6 +59,7 @@ class Screen(val ident: Boolean) {
                 current.value = !(current.value ?: true)
             }
         }
+     //   render.data.view.toggle = toggle?.toMutableList() ?: mutableListOf()
         vm.type.value = type
         vm.loading.value = true
         vm.h.value = screenHeight.toPx().toInt()
@@ -68,14 +70,11 @@ class Screen(val ident: Boolean) {
     fun query() {
         vm.loading.postValue(false)
         qqq("QU $ident $id ${toolbar.items.last().ident}")
-        fun callback(list: List<ListInterface>) {
-            render.load(list)
-        }
         when (queryType) {
-            ITEM -> db.fetchShops(id!!, ::callback)
-            ITEMS -> db.fetchTree(::callback)
-            SHOP -> db.fetchTree(id!!, ::callback)
-            SHOPS -> db.fetchShops(::callback)
+            ITEM -> db.fetchShops(id!!, render::load)
+            ITEMS -> db.fetchTree(render::load)
+            SHOP -> db.fetchTree(id!!, render::load)
+            SHOPS -> db.fetchShops(render::load)
             else -> {}
         }
     }
