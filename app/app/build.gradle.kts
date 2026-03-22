@@ -13,7 +13,7 @@ plugins {
 
 
 android {
-    namespace = "android.myguide"
+    namespace = "com.myguide"
     compileSdk {
         version = release(36)
     }
@@ -25,7 +25,7 @@ android {
     val localProperties: Properties = loadProperties("release-keystore.properties")
     */
     defaultConfig {
-        applicationId = "android.myguide"
+        applicationId = "com.myguide"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
