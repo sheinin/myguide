@@ -107,7 +107,7 @@ fun ViewItem(
                         colorFilter = ColorFilter.tint(colorScheme.secondary),
                         modifier = Modifier
                             .clickable(
-                                onClick = { screen[current.value!!]!!.render.toggle(xy.i) }
+                                onClick = { screen[current.value!!]!!.toggle(xy.i) }
                             )
                             .rotate(if (toggle == true) 90f else -90f)
                             .size(

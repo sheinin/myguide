@@ -1,7 +1,7 @@
 package android.myguide.views
 
 import android.content.res.Configuration
-import android.myguide.QueryType
+import android.myguide.Query
 import android.myguide.R
 import android.myguide.toolbar
 import androidx.compose.foundation.Image
@@ -56,7 +56,7 @@ fun Content(modifier: Modifier) {
             .clickable(
                 onClick = {
                     toolbar.navigate(
-                        queryType = QueryType.SHOPS,
+                        query = Query.SHOPS,
                         title = "All Shops"
                     )
                 }
@@ -71,7 +71,7 @@ fun Content(modifier: Modifier) {
             .clickable(
                 onClick = {
                     toolbar.navigate(
-                        queryType = QueryType.ITEMS,
+                        query = Query.ITEMS,
                         title = "All Items"
                     )
                 }

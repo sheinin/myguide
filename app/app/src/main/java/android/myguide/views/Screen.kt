@@ -1,6 +1,6 @@
 package android.myguide.views
 
-import android.myguide.QueryType
+import android.myguide.Query
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.UI.MARGIN
@@ -124,13 +124,13 @@ fun Screen(screen: Screen) {
                     }
                 if (display == H)
                     Control(
-                        control = screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS,
+                        control = toolbar.items.last().query == Query.ITEM || toolbar.items.last().query == Query.SHOPS,
                         filter = filter,
                         type = display,
                         ratioH = ratioH ?: ratio!!,
                         ratioV = ratioV ?: ratio!!,
                         sort = sort,
-                        title = screen.queryType!!.title
+                        title = toolbar.items.last().query.title
                     )
             }
             LaunchedEffect(stateY!!) {
@@ -139,7 +139,7 @@ fun Screen(screen: Screen) {
             DisposableEffect(view, display) {
                 if (display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
-                    screen.render.scroll = scrollStateY.value - heightInfo + heightView / 3
+                    screen.scroll = scrollStateY.value - heightInfo + heightView / 3
                 }
                 val vto = view.viewTreeObserver
                 vto.addOnScrollChangedListener(listener)
@@ -222,13 +222,15 @@ fun Screen(screen: Screen) {
                     }
                 if (display != H)
                     Control(
-                        control = screen.queryType == QueryType.ITEM || screen.queryType == QueryType.SHOPS,
+                        control =
+                            toolbar.items.last().query == Query.ITEM ||
+                            toolbar.items.last().query == Query.SHOPS,
                         type = display,
                         filter = filter,
                         ratioH = ratioH ?: ratio!!,
                         ratioV = ratioV ?: ratio!!,
                         sort = sort,
-                        title = screen.queryType!!.title
+                        title = toolbar.items.last().query.title
                     )
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
@@ -236,7 +238,7 @@ fun Screen(screen: Screen) {
                 DisposableEffect(view, display) {
                     if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
-                        screen.render.scroll = scrollStateX.value
+                        screen.scroll = scrollStateX.value
                     }
                     val vto = view.viewTreeObserver
                     vto.addOnScrollChangedListener(listener)
@@ -276,9 +278,9 @@ fun Screen(screen: Screen) {
                                         toolbar.items.last().scrollY =
                                             scrollStateY.value - heightInfo + heightView / 3
                                         toolbar.items.last().toggle =
-                                            screen.render.data.view.toggle
+                                            screen.mx.view.toggle
                                         toolbar.navigate(
-                                            id = screen.render.list[screen.render.data.point[xy[it]!!.i]].id,
+                                            id = screen.list[screen.mx.point[xy[it]!!.i]].id,
                                             title = details[it].title,
                                         )
                                     }

@@ -42,7 +42,7 @@ object Expandable {
                     LinkAnnotation.Clickable(
                         tag = "lastThree",
                         linkInteractionListener = {
-                            screen[current.value!!]!!.render.expand(index, false)
+                            screen[current.value!!]!!.expand(index, false)
                         }
                     )
                 ) {
@@ -172,7 +172,7 @@ object Expandable {
                         LinkAnnotation.Clickable(
                             tag = "lastThree",
                             linkInteractionListener = {
-                                screen[current.value!!]!!.render.expand(index, true)
+                                screen[current.value!!]!!.expand(index, true)
                             }
                         )
                     ) {

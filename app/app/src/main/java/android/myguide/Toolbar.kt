@@ -8,7 +8,7 @@ import androidx.lifecycle.MutableLiveData
 class Toolbar {
     class Item(
         var id: String?,
-        val queryType: QueryType,
+        val query: Query,
         val title: String,
         var ident: Boolean,
         var type: VM.Type,
@@ -27,8 +27,8 @@ class Toolbar {
         crumbs[true]!!.value = List(3) { "" }
         current.value = null
         items.clear()
-        screen[false]!!.reset()
-        screen[true]!!.reset()
+        screen[false]!!.listen(false)
+        screen[true]!!.listen(false)
     }
     fun back() {
         val i = items.lastIndex.dec()
@@ -46,15 +46,15 @@ class Toolbar {
     fun navigate(
         id: String? = null,
         type: VM.Type = V,
-        queryType: QueryType = screen[current.value!!]!!.queryType!!.next,
+        query: Query? = toolbar.items.lastOrNull()?.query?.next,
       //  scrollY: Float = 0f,
         title: String
     ) {
         if (lock) return
         lock = true
-        qqq("NAVIGATE items:${items.size} id:${id} title:${title} query:${queryType} scrollY:${scrollY} ${(items.getOrNull(0)?.title ?: "")}")
+        qqq("NAVIGATE items:${items.size} id:${id} title:${title} query:${query} scrollY:${scrollY} ${(items.getOrNull(0)?.title ?: "")}")
         items.mapIndexed { ix, it ->
-            if (it.queryType == queryType && it.id == id) {
+            if (it.query == query && it.id == id) {
                 goto(ix)
                 return
             }
@@ -66,7 +66,7 @@ class Toolbar {
                 ident = current,
                 type = type,
                 title = title,
-                queryType = queryType
+                query = query!!
             )
         cached = true
         crumbs[current]!!.value =
@@ -77,15 +77,13 @@ class Toolbar {
             )
         items.add(item)
         screen[current]!!.build(
-            id = id,
             type = type,
-            queryType = queryType,
         )
-        screen[!current]!!.reset()
+        screen[!current]!!.listen(false)
     }
     private var cached = true
     fun goto(ix: Int) {
-        current.value?.let { screen[it] }?.reset()
+        current.value?.let { screen[it] }?.listen(false)
         val item = items[ix]
         val next = screen[!current.value!!]!!
         qqq("GOTO ${item.title} ${item.scrollY} ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
@@ -95,7 +93,7 @@ class Toolbar {
             current.value = !current.value!!
             cached = false
             lock = false
-            next.update()
+            next.listen(true)
         } else {
             crumbs[next.ident]!!.value =
                 listOf(
@@ -106,9 +104,7 @@ class Toolbar {
                     if (items.size > 3) items[items.lastIndex.dec()].title else ""
                 )
             next.build(
-                id = item.id,
                 type = item.type,
-                queryType = item.queryType,
                 scrollY = item.scrollY
             )
         }
