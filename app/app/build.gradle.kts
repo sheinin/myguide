@@ -1,5 +1,4 @@
 import org.gradle.kotlin.dsl.implementation
-import org.gradle.kotlin.dsl.release
 import java.util.Properties
 import java.io.File
 
@@ -17,13 +16,11 @@ android {
     compileSdk {
         version = release(36)
     }
-/*
     fun loadProperties(fileName: String, path: String = rootDir.absolutePath) =
         Properties().apply {
             load(File("$path/$fileName").inputStream())
         }
-    val localProperties: Properties = loadProperties("release-keystore.properties")
-    */
+    val localProperties: Properties = loadProperties("local.properties")
     defaultConfig {
         applicationId = "com.myguide"
         minSdk = 24
@@ -32,19 +29,21 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    /*signingConfigs {
+    signingConfigs {
         create("release") {
-            storeFile = file("release-keystore.properties")
-            storePassword = localProperties.getProperty("storePassword")
-            keyAlias = "your-key-alias"
-            keyPassword = "your-key-password"
+            storeFile = file(localProperties.getProperty("RELEASE_STORE_FILE") ?: "")
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
         }
     }
-
-     */
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
         release {
-         //   signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
