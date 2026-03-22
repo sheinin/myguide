@@ -3,9 +3,7 @@ package android.myguide.views
 import android.content.res.Configuration
 import android.myguide.QueryType
 import android.myguide.R
-import android.myguide.screenWidth
 import android.myguide.toolbar
-import android.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,33 +11,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 
 
 @Composable
 fun Splash(modifier: Modifier) {
-    val configuration = LocalConfiguration.current
-    when (configuration.orientation) {
+    when (LocalConfiguration.current.orientation) {
         Configuration.ORIENTATION_LANDSCAPE ->
-
             Row (
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = modifier
                     .fillMaxSize()
             ) {
-                Button1()
-                Spacer(Modifier.height(16.dp))
-                Button2()
+                Content(Modifier.weight(1f))
             }
         else ->
             Column (
@@ -48,18 +39,20 @@ fun Splash(modifier: Modifier) {
                 modifier = modifier
                     .fillMaxSize()
             ) {
-                Button1()
-                Spacer(Modifier.height(16.dp))
-                Button2()
+                Content(Modifier.weight(1f))
             }
     }
 }
 
 @Composable
-fun Button1() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+fun Content(modifier: Modifier) {
+    Spacer(modifier)
+    Image(
+        painter = painterResource(R.drawable._shops),
+        "all shops",
+        colorFilter = ColorFilter.tint(Color.Blue),
+        modifier = modifier
+            .fillMaxSize()
             .clickable(
                 onClick = {
                     toolbar.navigate(
@@ -68,40 +61,21 @@ fun Button1() {
                     )
                 }
             )
-    ) {
-        Image(painter = painterResource(R.drawable.all_shops), "all shops",
-            modifier = Modifier.size(210.dp))
-        Text(
-            "SHOPS",
-            fontWeight = FontWeight.Bold,
-            style = typography.displayMedium,
-        )
-    }
-}
-
-@Composable
-fun Button2() {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
+    )
+    Spacer(modifier)
+    Image(
+        painter = painterResource(R.drawable._items),"all items",
+        colorFilter = ColorFilter.tint(Color.Red),
+        modifier = modifier
+            .fillMaxSize()
             .clickable(
                 onClick = {
-                    // showSplash.value = false
                     toolbar.navigate(
                         queryType = QueryType.ITEMS,
                         title = "All Items"
                     )
                 }
             )
-    ) {
-        Image(
-            painter = painterResource(R.drawable.all_items), "all items",
-            modifier = Modifier.size(210.dp)
-        )
-        Text(
-            "ITEMS",
-            fontWeight = FontWeight.Bold,
-            style = typography.displayMedium
-        )
-    }
+    )
+    Spacer(modifier)
 }

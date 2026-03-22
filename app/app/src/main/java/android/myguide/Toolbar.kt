@@ -66,7 +66,6 @@ class Toolbar {
                 ident = current,
                 type = type,
                 title = title,
-              //  scrollY = scrollY,
                 queryType = queryType
             )
         cached = true

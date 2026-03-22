@@ -7,7 +7,7 @@ import android.myguide.data.DB
 import android.myguide.data.Repository
 import android.myguide.data.StoreDatabase
 import android.myguide.ui.theme.MyGuideTheme
-import android.myguide.views.Content
+import android.myguide.views.Main
 import android.myguide.views.MyDialog
 import android.myguide.views.Splash
 import android.os.Bundle
@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                     if (ident.value == null)
                         Splash(Modifier.padding(innerPadding))
                     else {
-                        Content(innerPadding)
+                        Main(innerPadding)
                         val dialog by dialog.observeAsState()
                         if (dialog == true) MyDialog()
                     }
