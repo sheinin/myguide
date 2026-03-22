@@ -1,4 +1,5 @@
 import org.gradle.kotlin.dsl.implementation
+import org.gradle.kotlin.dsl.release
 import java.util.Properties
 import java.io.File
 
@@ -10,29 +11,40 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+
 android {
     namespace = "android.myguide"
     compileSdk {
         version = release(36)
     }
-
+/*
+    fun loadProperties(fileName: String, path: String = rootDir.absolutePath) =
+        Properties().apply {
+            load(File("$path/$fileName").inputStream())
+        }
+    val localProperties: Properties = loadProperties("release-keystore.properties")
+    */
     defaultConfig {
-        fun loadProperties(fileName: String, path: String = rootDir.absolutePath) =
-            Properties().apply {
-                load(File("$path/$fileName").inputStream())
-            }
-        val localProperties: Properties = loadProperties("local.properties")
         applicationId = "android.myguide"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-        manifestPlaceholders["googleMapsApiKey"] = localProperties["MAPS_API_KEY"]!!
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    /*signingConfigs {
+        create("release") {
+            storeFile = file("release-keystore.properties")
+            storePassword = localProperties.getProperty("storePassword")
+            keyAlias = "your-key-alias"
+            keyPassword = "your-key-password"
+        }
+    }
 
+     */
     buildTypes {
         release {
+         //   signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

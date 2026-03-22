@@ -43,6 +43,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsCompat.Type.*
 import androidx.lifecycle.MutableLiveData
 
 const val batch = 21
@@ -63,6 +66,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+     //   val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+       // windowInsetsController.hide(navigationBars())
+      //  windowInsetsController.hide(statusBars())
+
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         db = DB(repository)
