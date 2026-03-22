@@ -2,8 +2,6 @@ package android.myguide.data
 
 import android.myguide.batch
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -44,18 +42,18 @@ class Cycler {
             _xy.value += XY(0, 0, 0, 0)
         }
     }
-    fun update(index: Int, description: AnnotatedString?) {
+    fun update(mod: Int, description: AnnotatedString?) {
         _description.update {
             it.mapIndexed { ix, it ->
-                if (ix == index) description
+                if (ix == mod) description
                 else it
             }
         }
     }
-    fun update(index: Int, details: Details) {
+    fun update(mod: Int, details: Details) {
         _details.update {
             it.mapIndexed { ix, it ->
-                if (ix == index)
+                if (ix == mod)
                     it.copy(
                         title = details.title,
                         origin = details.origin,
@@ -66,18 +64,18 @@ class Cycler {
             }
         }
     }
-    fun update(index: Int, toggle: Boolean?) {
+    fun update(mod: Int, toggle: Boolean?) {
         _toggle.update {
             it.mapIndexed { ix, it ->
-                if (ix == index) toggle
+                if (ix == mod) toggle
                 else it
             }
         }
     }
-    fun update(index: Int, xy: XY?) {
+    fun update(mod: Int, xy: XY?) {
         _xy.update {
             it.mapIndexed { ix, it ->
-                if (ix == index)
+                if (ix == mod)
                     it?.copy(
                         x = xy!!.x,
                         y = xy.y,

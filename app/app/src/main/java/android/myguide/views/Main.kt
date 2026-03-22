@@ -64,7 +64,7 @@ fun Main(innerPadding: PaddingValues) {
                                     )
                                     * screen[false]!!.vm.scale.observeAsState().value!!
                             )
-                ) { Screen(screen = screen[false]!!) }
+                ) { View(screen = screen[false]!!) }
             }
             androidx.compose.animation.AnimatedVisibility(
                 visibleState = visibleState1,
@@ -77,7 +77,7 @@ fun Main(innerPadding: PaddingValues) {
                                 density = density.density,
                                 fontScale = screen[true]!!.vm.scale.observeAsState().value!!
                             )
-                ) { Screen(screen = screen[true]!!) }
+                ) { View(screen = screen[true]!!) }
             }
         }
     }

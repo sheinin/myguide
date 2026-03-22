@@ -186,7 +186,6 @@ fun Toolbar() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(colorScheme.surfaceContainer)
             .padding(horizontal = 8.dp)
     ) {
         Row(
@@ -293,7 +292,6 @@ fun SliderRow(
                 .padding(8.dp)
                 .clickable(onClick = action ?: {})
         )
-        //Spacer(Modifier.width(8.dp))
         Text(
             txt,
             style = typography.labelSmall,

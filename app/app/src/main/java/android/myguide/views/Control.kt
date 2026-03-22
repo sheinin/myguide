@@ -125,12 +125,13 @@ fun Control(
                 modifier = Modifier
                     .clickable(
                         onClick = {
-                            screen[current.value!!]!!.vm.type.value =
+                            screen[current.value!!]!!.display(
                                 when (screen[current.value!!]!!.vm.type.value!!) {
                                     V -> H
                                     H -> T
                                     T -> V
                                 }
+                            )
                         }
                     )
                     .size(

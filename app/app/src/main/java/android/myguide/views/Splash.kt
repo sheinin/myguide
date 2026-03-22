@@ -1,8 +1,8 @@
 package android.myguide.views
 
 import android.content.res.Configuration
-import android.myguide.Query
 import android.myguide.R
+import android.myguide.data.Query
 import android.myguide.toolbar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable

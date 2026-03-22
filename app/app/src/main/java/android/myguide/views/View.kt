@@ -1,11 +1,12 @@
 package android.myguide.views
 
-import android.myguide.Query
+
 import android.myguide.R
 import android.myguide.Screen
 import android.myguide.UI.MARGIN
 import android.myguide.batch
 import android.myguide.colorScheme
+import android.myguide.data.Query.*
 import android.myguide.data.VM.Type.*
 import android.myguide.toDp
 import android.myguide.toolbar
@@ -59,7 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Screen(screen: Screen) {
+fun View(screen: Screen) {
     val vm = screen.vm
     val description by vm.description.observeAsState()
     val details by vm.cycler.details.collectAsStateWithLifecycle()
@@ -124,7 +125,7 @@ fun Screen(screen: Screen) {
                     }
                 if (display == H)
                     Control(
-                        control = toolbar.items.last().query == Query.ITEM || toolbar.items.last().query == Query.SHOPS,
+                        control = toolbar.items.last().query == ITEM || toolbar.items.last().query == SHOPS,
                         filter = filter,
                         type = display,
                         ratioH = ratioH ?: ratio!!,
@@ -223,8 +224,8 @@ fun Screen(screen: Screen) {
                 if (display != H)
                     Control(
                         control =
-                            toolbar.items.last().query == Query.ITEM ||
-                            toolbar.items.last().query == Query.SHOPS,
+                            toolbar.items.last().query == ITEM ||
+                            toolbar.items.last().query == SHOPS,
                         type = display,
                         filter = filter,
                         ratioH = ratioH ?: ratio!!,
@@ -257,10 +258,6 @@ fun Screen(screen: Screen) {
                                 width = w.value!!.toDp(),
                                 height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
                             )
-                            .alpha(
-                                if (vm.loading.value == true) 0f
-                                else 1f
-                            )
                     ) {
                         repeat(batch) {
                             ViewItem(
@@ -275,8 +272,9 @@ fun Screen(screen: Screen) {
                                 xy = xy[it]!!,
                                 modifier = Modifier.clickable(
                                     onClick = {
-                                        toolbar.items.last().scrollY =
-                                            scrollStateY.value - heightInfo + heightView / 3
+                                        toolbar.items.last().scroll =
+                                            if (display == V) scrollStateX.value
+                                            else scrollStateY.value - heightInfo
                                         toolbar.items.last().toggle =
                                             screen.mx.view.toggle
                                         toolbar.navigate(

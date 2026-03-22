@@ -1,12 +1,9 @@
 package android.myguide
 
+import android.R.attr.scrollY
 import android.myguide.Expandable.expandable
 import android.myguide.Expandable.expanded
 import android.myguide.Expandable.static
-import android.myguide.Query.ITEM
-import android.myguide.Query.ITEMS
-import android.myguide.Query.SHOP
-import android.myguide.Query.SHOPS
 import android.myguide.UI.BUTTON
 import android.myguide.UI.COLUMNS
 import android.myguide.UI.ITEM_HEIGHT
@@ -16,6 +13,8 @@ import android.myguide.UI.mapViewWidth
 import android.myguide.data.Cycler.XY
 import android.myguide.data.Details
 import android.myguide.data.ListInterface
+import android.myguide.data.MX
+import android.myguide.data.Query.*
 import android.myguide.data.VM
 import android.myguide.data.VM.Type.H
 import android.myguide.data.VM.Type.T
@@ -35,12 +34,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class Screen(val ident: Boolean) {
     val vm = VM()
-    fun build(
-        type: VM.Type,
-        scrollY: Int = 0
-    ) {
+    fun build() {
+        val item = toolbar.items.last()
         qqq(
-            "BUILD qry:${toolbar.items.last().query} disp:$type ident:$ident id:${toolbar.items.last().id} xy:${scrollY.toDp().round()}"
+            "BUILD qry:${item.query} disp:${item.type} ident:$ident id:${item.id} xy:${scrollY.toDp().round()}"
         )
         when (toolbar.items.last().query) {
             ITEM ->
@@ -75,15 +72,15 @@ class Screen(val ident: Boolean) {
                 current.value = !(current.value ?: true)
             }
         }
-        vm.type.value = type
-        vm.loading.value = true
+        vm.type.value = item.type
         vm.h.value = screenHeight.toPx().toInt()
-        vm.scrollY.value = scrollY
-        vm.h.value = scrollY + screenHeight.toPx().toInt()
+        vm.scrollY.value = item.scroll
+        vm.scrollX.value = item.scroll
+        if (item.type != H) vm.h.value = item.scroll + screenHeight.toPx().toInt()
         vm.cycler.reset()
+        (0 until batch).map { vm.cycler.update(it, xy = XY()) }
     }
     fun query() {
-        vm.loading.postValue(false)
         when (toolbar.items.last().query) {
             ITEM -> db.fetchShops(toolbar.items.last().id!!, ::load)
             ITEMS -> db.fetchTree(::load)
@@ -127,9 +124,6 @@ class Screen(val ident: Boolean) {
         vm.ratioH.observeForever { zoom() }
         vm.ratioV.observeForever { zoom() }
         vm.scale.observeForever { zoom() }
-        vm.type.observeForever {
-            if (mx.point.isNotEmpty()) display()
-        }
         CoroutineScope(Dispatchers.IO).launch {
             vm.margin.collect { m ->
                 margin = m
@@ -226,13 +220,16 @@ class Screen(val ident: Boolean) {
                     .map { xy(it) }
         }
     }
-    private fun display() {
-        handler = vm.type.value
-        toolbar.items.lastOrNull()?.type = vm.type.value!!
-        when (vm.type.value!!) {
+    fun display(type: VM.Type) {
+        qqq("DISPL $handler ${type} ${list.size}")
+
+        handler = type
+        toolbar.items.last().type = type
+        vm.type.postValue(type)
+        when (type) {
             H -> {
-                vm.w.value = (mapViewWidth * mx.ruler.size * vm.ratioH()).toInt()
-                vm.h.value = ((ITEM_HEIGHT + MARGIN * 2) * vm.ratioV()).toInt()
+                vm.w.postValue((mapViewWidth * mx.ruler.size * vm.ratioH()).toInt())
+                vm.h.postValue(((ITEM_HEIGHT + MARGIN * 2) * vm.ratioV()).toInt())
                 mx.point.mapIndexed { ix, it ->
                     mx.view.expand[it] = false to static(vm.ratioV(), list[it].description!!)
                     xy(ix)
@@ -242,8 +239,8 @@ class Screen(val ident: Boolean) {
                 list.indices.map {
                     xy(it)
                 }
-                vm.w.value = screenWidth.toPx().toInt()
-                vm.h.value = ((ITEM_HEIGHT.times(2)) * (mx.point.size / COLUMNS) * vm.ratioV()).toInt()
+                vm.w.postValue(screenWidth.toPx().toInt())
+                vm.h.postValue(((ITEM_HEIGHT.times(2)) * (mx.point.size / COLUMNS) * vm.ratioV()).toInt())
             }
             V -> {
                 mx.point.indices.map {
@@ -256,14 +253,13 @@ class Screen(val ident: Boolean) {
                         scale = vm.scale.value!!,
                         txt = list[it].description
                     )
-
                     xy(it)
                 }
-                vm.w.value = screenWidth.toPx().toInt()
+                vm.w.postValue(screenWidth.toPx().toInt())
+                vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
             }
         }
         mx.stack = IntArray(batch) { -1 }
-        qqq("DIS")
     }
     private fun filter() {
         val toggle = mx.toggle
@@ -343,8 +339,6 @@ class Screen(val ident: Boolean) {
                         (scroll / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
                         0
                     )
-                qqq("ECHO MAP ${scroll.toDp().round()} r:$r ${mx.stack.toList()}")
-
                 (r -  batch / 2 until r + batch / 2)
                     .filter { it !in mx.stack }
                     .map { syncY(it) }
@@ -459,14 +453,13 @@ class Screen(val ident: Boolean) {
                     // listen()
                 }
                 qqq("MAP $from $scroll ")
-
             }
         }
     }
     private fun xy(ix: Int) {
         val index = mx.point[ix]
         mx.view.xy[index] =
-            when (vm.type.value!!) {
+            when (handler!!) {
                 T ->
                     XY(
                         x = screenWidth.toPx().toInt() / COLUMNS * ix.mod(COLUMNS),
@@ -548,9 +541,12 @@ class Screen(val ident: Boolean) {
         }
         filter()
         ruler()
+
+        //vm.type.value = type
+
         mx.point.mapIndexed { ix, index ->
             val item = list[index]
-            xy(ix)
+          //  xy(ix)
             mx.view.details[index] =
                 Details(
                     title = item.title!!.trim(),
@@ -559,6 +555,7 @@ class Screen(val ident: Boolean) {
                     level = item.level
                 )
         }
+        display(toolbar.items.last().type)
         scroll = vm.scrollY.value!!
         toolbar.lock = false
     }
@@ -575,16 +572,15 @@ class Screen(val ident: Boolean) {
         //data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = mx.view.xy.getOrNull(index) ?: return
         val toggle = mx.view.toggle.getOrNull(index) ?: return
-        //qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${data.view.details.getOrNull(index)?.title}")
+        qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${mx.view.details.getOrNull(index)?.title}")
         mx.stack[mod] = ix
-        vm.cycler.update(index = mod, description = mx.view.expand[index].second)
-        vm.cycler.update(index = mod, details = mx.view.details[index])
-        vm.cycler.update(index = mod, toggle = toggle)
-        vm.cycler.update(index = mod, xy = xy)
+        vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
+        vm.cycler.update(mod = mod, details = mx.view.details[index])
+        vm.cycler.update(mod = mod, toggle = toggle)
+        vm.cycler.update(mod = mod, xy = xy)
     }
     fun expand(index: Int, expand: Boolean) {
         qqq("E "+index + " " + expand + " "+mx.point.indexOf(index))
-
         mx.view.expand[index] = expand to ex(index)
         ruler()
         mx.point.indices
@@ -602,59 +598,8 @@ class Screen(val ident: Boolean) {
         mx.point.indices
             .map { xy(it) }
         mx.stack = IntArray(batch) { -1 }
+        if (mx.point.size < batch)
+            (mx.point.size until batch)
+                .map { mod -> vm.cycler.update(mod = mod, xy = XY()) }
     }
-}
-
-data class MX(
-    var toggle: MutableMap<Int, Pair<Int, Int>> = mutableMapOf(),
-    var display: CopyOnWriteArrayList<Pair<Int, Int>>,
-    var point: CopyOnWriteArrayList<Int>,
-    var ruler: CopyOnWriteArrayList<Int>,
-    var stack: IntArray,
-    var view: View,
-) {
-    data class View(
-        var details: MutableList<Details>,
-        var expand: MutableList<Pair<Boolean, AnnotatedString>>,
-        var toggle: MutableList<Boolean>,
-        var xy: MutableList<XY?>
-    )
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as MX
-        if (display != other.display) return false
-        if (ruler != other.ruler) return false
-        if (!stack.contentEquals(other.stack)) return false
-        if (view != other.view) return false
-        return true
-    }
-    override fun hashCode(): Int {
-        var result = display.hashCode()
-        result = 31 * result + ruler.hashCode()
-        result = 31 * result + stack.contentHashCode()
-        result = 31 * result + view.hashCode()
-        return result
-    }
-}
-
-enum class Query {
-    ITEM,
-    ITEMS,
-    SHOP,
-    SHOPS;
-    val next: Query
-        get() = when (this) {
-            ITEM -> SHOP
-            ITEMS -> ITEM
-            SHOP -> ITEM
-            SHOPS -> SHOP
-        }
-    val title: String
-        get() = when (this) {
-            ITEM -> "Available at These Shops:"
-            ITEMS -> "All Items:"
-            SHOP -> "Available Items:"
-            SHOPS -> "All Shops:"
-        }
 }

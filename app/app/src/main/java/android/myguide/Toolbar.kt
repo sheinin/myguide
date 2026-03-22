@@ -1,6 +1,7 @@
 package android.myguide
 
 import android.R.attr.scrollY
+import android.myguide.data.Query
 import android.myguide.data.VM
 import android.myguide.data.VM.Type.*
 import androidx.lifecycle.MutableLiveData
@@ -10,9 +11,8 @@ class Toolbar {
         var id: String?,
         val query: Query,
         val title: String,
-        var ident: Boolean,
         var type: VM.Type,
-        var scrollY: Int = 0,
+        var scroll: Int = 0,
         var toggle: List<Boolean>? = null
 
     )
@@ -47,7 +47,6 @@ class Toolbar {
         id: String? = null,
         type: VM.Type = V,
         query: Query? = toolbar.items.lastOrNull()?.query?.next,
-      //  scrollY: Float = 0f,
         title: String
     ) {
         if (lock) return
@@ -63,7 +62,6 @@ class Toolbar {
         val item =
             Item(
                 id = id,
-                ident = current,
                 type = type,
                 title = title,
                 query = query!!
@@ -76,9 +74,7 @@ class Toolbar {
                 if (items.size > 2) items.last().title else ""
             )
         items.add(item)
-        screen[current]!!.build(
-            type = type,
-        )
+        screen[current]!!.build()
         screen[!current]!!.listen(false)
     }
     private var cached = true
@@ -86,7 +82,7 @@ class Toolbar {
         current.value?.let { screen[it] }?.listen(false)
         val item = items[ix]
         val next = screen[!current.value!!]!!
-        qqq("GOTO ${item.title} ${item.scrollY} ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
+        qqq("GOTO ${item.title} ${item.scroll} ix:" +ix+" current:" + current.value +" next:" + next.ident + " cache:"+ cached +( ix == items.lastIndex.dec()))
         cached = cached && ix == items.lastIndex.dec()
         items.subList(ix.inc(), items.size).clear()
         if (cached) {
@@ -103,10 +99,7 @@ class Toolbar {
                     else items.getOrNull(1)?.title ?: "",
                     if (items.size > 3) items[items.lastIndex.dec()].title else ""
                 )
-            next.build(
-                type = item.type,
-                scrollY = item.scrollY
-            )
+            next.build()
         }
     }
 }
