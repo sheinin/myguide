@@ -62,9 +62,9 @@ fun Control(
             Image(
                 painter = painterResource(
                     when (filter) {
-                        false -> R.drawable.east
-                        true -> R.drawable.west
-                        null -> R.drawable.filter
+                        false -> R.drawable._east
+                        true -> R.drawable._west
+                        null -> R.drawable._filter
                     }
                 ),
                 contentDescription = "filter",
@@ -91,7 +91,7 @@ fun Control(
             )
             Spacer(Modifier.width(8.dp))
             Image(
-                painter = painterResource(R.drawable.sort),
+                painter = painterResource(R.drawable._sort),
                 contentDescription = "sort",
                 colorFilter = ColorFilter.tint(colorScheme.primary),
                 modifier = Modifier

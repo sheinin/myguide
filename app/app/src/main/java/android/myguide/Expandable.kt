@@ -20,7 +20,7 @@ import kotlin.math.max
 object Expandable {
     fun expanded(index: Int, ratioV: Float, txt: String) : AnnotatedString =
         buildAnnotatedString {
-            withStyle(ParagraphStyle(lineHeight = 1.em * ratioV)) {
+            withStyle(ParagraphStyle(lineHeight = typography.bodySmall.fontSize)) {
                 withStyle(
                     style = SpanStyle(
                         color = colorScheme.secondary,
@@ -110,7 +110,6 @@ object Expandable {
                                 ) * ratioH)
                         ).toInt()
                     )
-                    .toInt()
             ),
             density = Density(
                 density = density.density,

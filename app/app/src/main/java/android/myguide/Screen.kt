@@ -479,14 +479,13 @@ class Screen(val ident: Boolean) {
                 H ->
                     XY(
                         x = (mapViewWidth * ix * vm.ratioH()).toInt(),
-                        y = 0,//((mapViewWidth - margin()) * vm.ratioH()).toInt(),
+                        y = 0,
                         h = ITEM_HEIGHT + MARGIN * 2,
                         w = mapViewWidth,
                         i = ix
                     )
             }
     }
-
     fun load(list: List<ListInterface>) {
         this.list = list
         handler = vm.type.value
@@ -495,7 +494,7 @@ class Screen(val ident: Boolean) {
         mx.toggle.clear()
         mx.view.details = MutableList(list.size) { Details() }
         mx.view.expand = MutableList(list.size) { false to buildAnnotatedString {  } }
-        mx.view.toggle = toolbar.items.last().toggle?.toMutableList() ?: MutableList(list.size) { false }
+        mx.view.toggle = toolbar.items.lastOrNull()?.toggle?.toMutableList() ?: MutableList(list.size) { false }
         qqq("LOAD ${mx.view.toggle}  "+list.size)
         mx.view.xy = MutableList(list.size) { null }
         var count = 0
@@ -544,9 +543,8 @@ class Screen(val ident: Boolean) {
 
         //vm.type.value = type
 
-        mx.point.mapIndexed { ix, index ->
+        mx.point.map { index ->
             val item = list[index]
-          //  xy(ix)
             mx.view.details[index] =
                 Details(
                     title = item.title!!.trim(),

@@ -68,13 +68,14 @@ fun Toolbar() {
     @Composable
     fun Slider1(modifier: Modifier) {
         SliderRow(
-            action = { vm.scale.value = 1f },
+            action = {
+                vm.adjust.value = true
+                vm.scale.value = 1f
+            },
             icon = R.drawable._text,
             minus = {
-                vm.scale.value = vm.scale.value!! - .01f
                 vm.adjust.value = true
-
-                qqq("SCALE "+ITEM_HEIGHT*vm.scale.value!!)
+                vm.scale.value = vm.scale.value!! - .01f
             },
             plus = {
                 vm.scale.value = vm.scale.value!! + .01f
@@ -109,6 +110,7 @@ fun Toolbar() {
                     vm.ratio.value = 1f
                     vm.ratioH.value = null
                     vm.ratioV.value = null
+                    vm.adjust.value = true
                 }
             },
             icon = when (mode.value) {
@@ -162,11 +164,14 @@ fun Toolbar() {
     @Composable
     fun Slider3(modifier: Modifier) {
         SliderRow(
-            action = { vm.margin(1f) },
+            action = {
+                vm.adjust.value = true
+                vm.margin(1f)
+            },
             icon = R.drawable._margin,
             minus = {
-                vm.margin(false)
                 vm.adjust.value = true
+                vm.margin(false)
             },
             plus = {
                 vm.margin(true)
