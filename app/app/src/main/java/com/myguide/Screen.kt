@@ -15,12 +15,10 @@ import com.myguide.UI.ITEM_HEIGHT
 import com.myguide.UI.MARGIN
 import com.myguide.UI.TITLE_HEIGHT
 import com.myguide.UI.mapViewWidth
-import com.myguide.data.Cycler
 import com.myguide.data.Cycler.*
 import com.myguide.data.Details
 import com.myguide.data.ListInterface
 import com.myguide.data.MX
-import com.myguide.data.Query
 import com.myguide.data.Query.*
 import com.myguide.data.VM
 import com.myguide.data.VM.Type.*
@@ -92,7 +90,6 @@ class Screen(val ident: Boolean) {
             SHOPS -> db.fetchShops(::load)
         }
     }
-
     val mx = MX(
         point = CopyOnWriteArrayList(),
         ruler = CopyOnWriteArrayList(),
@@ -147,7 +144,7 @@ class Screen(val ident: Boolean) {
             }
         }
     }
-    private fun ex(index: Int): AnnotatedString {
+    private fun exp(index: Int): AnnotatedString {
         if (!mx.view.expand[index].first) {
             mx.display[index] =
                 mx.display[index].first to measure(index)
@@ -205,7 +202,7 @@ class Screen(val ident: Boolean) {
                 mx.point.mapIndexed { ix, index ->
                     mx.display[index] =
                         mx.display[index].first to mx.display[index].second + measure(index)
-                    mx.view.expand[index] = mx.view.expand[index].first to ex(index)
+                    mx.view.expand[index] = mx.view.expand[index].first to exp(index)
                     mx.ruler[ix] = height
                     height += mx.display[index].first + mx.display[index].second
                     xy(ix)
@@ -226,7 +223,6 @@ class Screen(val ident: Boolean) {
     }
     fun display(type: VM.Type) {
         qqq("DISPL $handler ${type} ${list.size}")
-
         handler = type
         toolbar.items.last().type = type
         vm.type.postValue(type)
@@ -235,12 +231,12 @@ class Screen(val ident: Boolean) {
                 vm.w.postValue((mapViewWidth * mx.ruler.size * vm.ratioH()).toInt())
                 vm.h.postValue(((ITEM_HEIGHT + MARGIN * 2) * vm.ratioV()).toInt())
                 mx.point.mapIndexed { ix, it ->
-                    mx.view.expand[it] = false to static(vm.ratioV(), list[it].description!!)
+                    mx.view.expand[it] = mx.view.expand[it].first to static(vm.ratioV(), list[it].description!!)
                     xy(ix)
                 }
             }
             T -> {
-                list.indices.map {
+                mx.point.indices.map {
                     xy(it)
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
@@ -248,15 +244,7 @@ class Screen(val ident: Boolean) {
             }
             V -> {
                 mx.point.indices.map {
-                    mx.view.expand[it] = false to expandable(
-                        index = it,
-                        level = list[it].level,
-                        margin = margin,
-                        ratioH = vm.ratioH(),
-                        ratioV = vm.ratioV(),
-                        scale = vm.scale.value!!,
-                        txt = list[it].description
-                    )
+                    mx.view.expand[it] = mx.view.expand[it].first to exp(it)
                     xy(it)
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
@@ -385,6 +373,7 @@ class Screen(val ident: Boolean) {
         }
     }
     private fun sort() {
+        qqq("SORT")
         val comparator = compareBy<String> { it }
         val finalComparator = if (vm.sort.value!!) comparator.reversed() else comparator
         mx.point =
@@ -420,7 +409,7 @@ class Screen(val ident: Boolean) {
                     val index = mx.point[ix]
                     val m = mx.display[index].second
                     mx.view.expand[index] =
-                        mx.view.expand[index].first to ex(index)
+                        mx.view.expand[index].first to exp(index)
                     //qqq("Z index:$index ix:$ix sum:$sum m:$m ${data.display[index].second} ${(data.display[index].second > m)}/${(data.display[index].second < m)} ${data.view.expand[index]}")
                     mx.ruler[ix] += sum
                     if (mx.display[index].second > m)
@@ -574,7 +563,7 @@ class Screen(val ident: Boolean) {
         //data.stack.indices.maxByOrNull { abs(data.stack[it] - ix) } ?: 0
         val xy = mx.view.xy.getOrNull(index) ?: return
         val toggle = mx.view.toggle.getOrNull(index) ?: return
-        qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${mx.view.details.getOrNull(index)?.title}")
+        //qqq("RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${mx.view.details.getOrNull(index)?.title}")
         mx.stack[mod] = ix
         vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
         vm.cycler.update(mod = mod, details = mx.view.details[index])
@@ -583,7 +572,7 @@ class Screen(val ident: Boolean) {
     }
     fun expand(index: Int, expand: Boolean) {
         qqq("E "+index + " " + expand + " "+mx.point.indexOf(index))
-        mx.view.expand[index] = expand to ex(index)
+        mx.view.expand[index] = expand to exp(index)
         ruler()
         mx.point.indices
             .map { xy(it) }

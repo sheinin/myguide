@@ -92,4 +92,5 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.compose.runtime.livedata)
+    implementation(libs.androidx.datastore.preferences)
 }

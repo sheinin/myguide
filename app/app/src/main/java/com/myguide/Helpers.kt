@@ -1,5 +1,6 @@
 package com.myguide
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.runtime.Composable
@@ -7,6 +8,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
 
 
@@ -17,6 +21,39 @@ fun GetScreenSize() {
     with (LocalDensity.current) {
         screenHeight = LocalWindowInfo.current.containerSize.height.toDp()
         screenWidth = LocalWindowInfo.current.containerSize.width.toDp()
+    }
+}
+
+suspend fun checkFirstRun(context: Context) {
+    val key = booleanPreferencesKey("example_key")
+    val run = context.dataStore.data.first()
+    if (run[key] == null) {
+        db.updateItemList { list ->
+            list.filter { it.pic != null }
+                .map {
+                    db.updateItem(
+                        context.resources.getIdentifier(
+                            it.pic,
+                            "drawable",
+                            context.packageName
+                        ),
+                        it.pic!!
+                    )
+                }
+        }
+        db.updateShopList { list ->
+            list.map {
+                db.updateShop(
+                    context.resources.getIdentifier(
+                        it.id,
+                        "drawable",
+                        context.packageName
+                    )
+                    , it.id
+                )
+            }
+        }
+        context.dataStore.edit { it[key] = false }
     }
 }
 

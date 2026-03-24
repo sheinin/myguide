@@ -1,6 +1,7 @@
 package com.myguide
 
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -37,7 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.*
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import com.myguide.UI.ITEM_HEIGHT
 import com.myguide.UI.TITLE_HEIGHT
 import com.myguide.data.DB
@@ -47,6 +52,7 @@ import com.myguide.ui.theme.MyGuideTheme
 import com.myguide.views.Main
 import com.myguide.views.MyDialog
 import com.myguide.views.Splash
+import kotlinx.coroutines.launch
 
 const val batch = 21
 lateinit var colorScheme: ColorScheme
@@ -56,52 +62,30 @@ lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var state: MutableTransitionState<Boolean>
 lateinit var screen: Map<Boolean, Screen>
 lateinit var typography: Typography
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
 val toolbar = Toolbar()
 var screenHeight = 0.dp
 var screenWidth = 0.dp
 
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-     //   val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-       // windowInsetsController.hide(navigationBars())
-      //  windowInsetsController.hide(statusBars())
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.hide(navigationBars())
+        windowInsetsController.hide(statusBars())
 
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
         db = DB(repository)
-        db.updateItemList { list ->
-            list.filter { it.pic != null }
-                .map {
-                    db.updateItem(
-                        this.resources.getIdentifier(
-                            it.pic,
-                            "drawable",
-                            this.packageName
-                        ),
-                        it.pic!!
-                    )
-                }
-        }
-        db.updateShopList { list ->
-            list.map {
-                db.updateShop(
-                    this.resources.getIdentifier(
-                        it.id,
-                        "drawable",
-                        this.packageName
-                    )
-                    , it.id
-                )
-            }
+        lifecycleScope.launch {
+            checkFirstRun(this@MainActivity)
         }
         setContent {
             val configuration = LocalConfiguration.current
-
-            // LaunchedEffect will re-run whenever the orientation changes
             LaunchedEffect(configuration.orientation) {
                 toolbar.splash()
             }
@@ -143,7 +127,6 @@ fun Measures(callback: () -> Unit = {}) {
                 translationX = screenWidth.toPx()
             }
             .onGloballyPositioned { coordinates ->
-                qqq("MM"+ITEM_HEIGHT+coordinates.size.height.toDp())
                 ITEM_HEIGHT = coordinates.size.height
                 callback()
             }

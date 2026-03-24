@@ -6,6 +6,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -159,23 +160,24 @@ object Expandable {
                             fontWeight = typography.bodySmall.fontWeight
                         )
                     ) { append(take.dropLast(1)) }
-                    withStyle(
-                        style = SpanStyle(
-                            color = Color.Transparent,
-                            textDecoration = TextDecoration.None,
-                            fontStyle = typography.bodySmall.fontStyle,
-                            fontSize = typography.bodySmall.fontSize,
-                            fontWeight = typography.bodySmall.fontWeight
-                        )
-                    ) { append("\u200A") }
                     withLink(
                         LinkAnnotation.Clickable(
-                            tag = "lastThree",
+                            tag = "expand",
+                            styles = TextLinkStyles(),
                             linkInteractionListener = {
                                 screen[current.value!!]!!.expand(index, true)
                             }
                         )
                     ) {
+                        withStyle(
+                            style = SpanStyle(
+                                color = Color.Transparent,
+                                textDecoration = TextDecoration.None,
+                                fontStyle = typography.bodySmall.fontStyle,
+                                fontSize = typography.bodySmall.fontSize,
+                                fontWeight = typography.bodySmall.fontWeight
+                            )
+                        ) { append("\u200A") }
                         withStyle(
                             style = SpanStyle(
                                 textDecoration = TextDecoration.None,
