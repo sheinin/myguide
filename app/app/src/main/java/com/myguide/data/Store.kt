@@ -44,8 +44,8 @@ data class Shop(
     val title: String,
     val description: String,
     val origin: String,
-    val lat: Double,
-    val lng: Double,
+    var lat: Double,
+    var lng: Double,
     val drawable: Int?
 ) {
     @Ignore
@@ -298,7 +298,7 @@ fun Shop.toInterface(): ListInterface {
         override val title = this@toInterface.title
         override val level = 0
         override val lat = this@toInterface.lat
-        override val lng = this@toInterface.lat
+        override val lng = this@toInterface.lng
     }
 }
 

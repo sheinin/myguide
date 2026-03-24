@@ -51,7 +51,7 @@ class Toolbar {
     ) {
         if (lock) return
         lock = true
-        qqq("NAVIGATE items:${items.size} id:${id} title:${title} query:${query} scrollY:${scrollY} ${(items.getOrNull(0)?.title ?: "")}")
+        qqq("NAVIGATE items:${items.size} id:${id} title:${title} query:${query} ${(items.getOrNull(0)?.title ?: "")}")
         items.mapIndexed { ix, it ->
             if (it.query == query && it.id == id) {
                 goto(ix)

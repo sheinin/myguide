@@ -115,9 +115,10 @@ fun Control(
             Image(
                 painter = painterResource(
                     when (type!!) {
-                        V -> R.drawable.view_list
-                        H -> R.drawable.map
-                        T -> R.drawable.grid
+                        D -> R.drawable._2d
+                        V -> R.drawable._list
+                        H -> R.drawable._map
+                        T -> R.drawable._grid
                     }
                 ),
                 contentDescription = "list",
@@ -129,7 +130,8 @@ fun Control(
                                 when (screen[current.value!!]!!.vm.type.value!!) {
                                     V -> H
                                     H -> T
-                                    T -> V
+                                    T -> D
+                                    D -> V
                                 }
                             )
                         }

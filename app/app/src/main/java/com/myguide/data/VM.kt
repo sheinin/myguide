@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.update
 
 class VM {
     enum class Type {
+        D,
         T,
         V,
         H;

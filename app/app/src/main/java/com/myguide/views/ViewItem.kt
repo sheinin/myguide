@@ -26,14 +26,13 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.myguide.R
 import com.myguide.UI.BUTTON
 import com.myguide.UI.ITEM_HEIGHT
 import com.myguide.UI.MARGIN
 import com.myguide.colorScheme
 import com.myguide.current
-import com.myguide.data.Cycler
 import com.myguide.data.Cycler.*
 import com.myguide.data.Details
 import com.myguide.data.VM
@@ -71,7 +70,7 @@ fun ViewItem(
             )
         Column(
             horizontalAlignment =
-                if (type == T) Alignment.CenterHorizontally
+                if (type == T || type == D) Alignment.CenterHorizontally
                 else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
@@ -86,6 +85,7 @@ fun ViewItem(
                             .fillMaxHeight()
                     else Modifier
             ) {
+                if (type != D)
                 Text(
                     details.title,
                     textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
@@ -96,7 +96,7 @@ fun ViewItem(
                         when (type!!) {
                             T -> 2
                             V -> Int.MAX_VALUE
-                            H -> 1
+                            D, H -> 1
                         },
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyLarge
@@ -104,7 +104,7 @@ fun ViewItem(
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
                     Image(
-                        painter = painterResource(R.drawable.back),
+                        painter = painterResource(R.drawable._back),
                         contentDescription = "",
                         colorFilter = ColorFilter.tint(colorScheme.secondary),
                         modifier = Modifier
@@ -134,7 +134,7 @@ fun ViewItem(
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
                 )
-            if (expand != null && type != T)
+            if (expand != null && type != T && type != D)
                 Text(
                     expand,
                     maxLines =
@@ -162,7 +162,8 @@ fun ViewItem(
             if (details.origin == null) Modifier
             else modifier
         )
-    if (type != T)
+        .zIndex(1f)
+    if (type != T && type != D)
         Row(
             modifier
                 .padding(
