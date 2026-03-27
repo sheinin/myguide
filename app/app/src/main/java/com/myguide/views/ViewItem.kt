@@ -33,10 +33,13 @@ import com.myguide.UI.ITEM_HEIGHT
 import com.myguide.UI.MARGIN
 import com.myguide.colorScheme
 import com.myguide.current
-import com.myguide.data.Cycler.*
+import com.myguide.data.Cycler.XY
 import com.myguide.data.Details
 import com.myguide.data.VM
-import com.myguide.data.VM.Type.*
+import com.myguide.data.VM.Type.D
+import com.myguide.data.VM.Type.H
+import com.myguide.data.VM.Type.T
+import com.myguide.data.VM.Type.V
 import com.myguide.screen
 import com.myguide.toDp
 import com.myguide.typography
@@ -123,7 +126,7 @@ fun ViewItem(
                     )
                 }
             }
-            if (details.origin != null)
+            if (details.origin != null && type != D)
                 Text(
                     details.origin,
                     color = colorScheme.secondary,
@@ -148,6 +151,7 @@ fun ViewItem(
                 )
         }
     }
+
     val modifier = Modifier
         .offset(
             x = xy.x.toDp(),
@@ -169,7 +173,7 @@ fun ViewItem(
                 .padding(
                     start =
                         MARGIN.toDp() * margin * ratioH
-                        + MARGIN.toDp() * margin * ratioH * details.level / 2,
+                                + MARGIN.toDp() * margin * ratioH * details.level / 2,
                     end = MARGIN.toDp() * margin * ratioH
                 )
                 .background(color = colorScheme.surfaceContainer)

@@ -1,15 +1,6 @@
 package com.myguide.views
 
 
-import com.myguide.Screen
-import com.myguide.UI.MARGIN
-import com.myguide.batch
-import com.myguide.colorScheme
-import com.myguide.data.Query.*
-import com.myguide.data.VM.Type.*
-import com.myguide.toDp
-import com.myguide.toolbar
-import com.myguide.typography
 import android.view.ViewTreeObserver
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -30,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,29 +43,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.myguide.R
+import com.myguide.Screen
 import com.myguide.UI.MAP_WIDTH
-import com.myguide.screenWidth
+import com.myguide.UI.MARGIN
+import com.myguide.batch
+import com.myguide.colorScheme
+import com.myguide.data.Query.ITEM
+import com.myguide.data.Query.SHOPS
+import com.myguide.data.VM.Type.D
+import com.myguide.data.VM.Type.H
+import com.myguide.data.VM.Type.V
+import com.myguide.toDp
 import com.myguide.toPx
-import kotlin.time.Instant
+import com.myguide.toolbar
+import com.myguide.typography
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,16 +95,14 @@ fun View(screen: Screen) {
     val xy by vm.cycler.xy.collectAsStateWithLifecycle()
     var heightView by remember { mutableIntStateOf(0) }
     var heightInfo by remember { mutableIntStateOf(0) }
-
-
     val pan = object {
         var offsetX by remember { mutableFloatStateOf(0f) }
         var offsetY by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
         val maxOffsetX = MAP_WIDTH.toPx()
-        val maxOffsetY = 600.dp.toPx()
+        val maxOffsetY = 1000.dp.toPx()
         val minOffsetX = -MAP_WIDTH.toPx()
-        val minOffsetY = 0f
+        val minOffsetY = -1000f
         val scrollState = rememberScrollable2DState { delta ->
             val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
             val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
@@ -247,7 +236,8 @@ fun View(screen: Screen) {
                                     )
                             )
                         }
-                        Text(description!!,
+                        Text(
+                            description!!,
                             style = typography.bodySmall,
                             lineHeight = 1.em * scale!!,
                             color = colorScheme.secondary,
@@ -259,7 +249,7 @@ fun View(screen: Screen) {
                     Control(
                         control =
                             toolbar.items.last().query == ITEM ||
-                            toolbar.items.last().query == SHOPS,
+                                    toolbar.items.last().query == SHOPS,
                         type = display,
                         filter = filter,
                         ratioH = ratioH ?: ratio!!,
@@ -289,7 +279,6 @@ fun View(screen: Screen) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
                             .size(
                                 width = w.value!!.toDp(),
                                 height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
@@ -322,35 +311,24 @@ fun View(screen: Screen) {
                                 )
                             )
                         }
-
-                      //  val bitmap =
-                        //    ContextCompat.getDrawable(LocalContext.current, R.drawable._logo)!!.toBitmap()
-                        // 2. Convert to androidx.compose.ui.graphics.ImageBitmap
-
-                        //val bmp = ImageBitmap.imageResource(id = R.drawable._logo)
-
                         if (display == D)
                             Surface(
                                 modifier = Modifier
                                     .zIndex(2f)
                                     .fillMaxSize()
-                                    //.size(width = screenWidth, height = 800.dp)
                                     .scrollable2D(
                                         state = pan.scrollState,
                                         enabled = true
                                     ),
                                 color = Color.Transparent
                             ) {
-                                val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
+                                //val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
                                 screen.scrollY = pan.offsetY.toInt().unaryMinus()
                                 screen.scrollX = pan.offsetX.toInt().unaryMinus()
                                 Canvas(modifier = Modifier) {
-                                    // Draw a simple grid, offset by scroll
                                     val step = MAP_WIDTH.toPx() / 18
                                     val width = size.width
                                     val height = size.height
-
-                                    // Vertical lines
                                     var x = (pan.offsetX % step) - step
                                     while (x < width) {
                                         drawLine(
@@ -361,8 +339,6 @@ fun View(screen: Screen) {
                                         )
                                         x += step
                                     }
-
-                                    // Horizontal lines
                                     var y = (pan.offsetY % step) - step
                                     while (y < height) {
                                         drawLine(
@@ -382,22 +358,25 @@ fun View(screen: Screen) {
                                         radius = 8.dp.toPx(),
                                         center = origin
                                     )
+                                    /*drawImage(
+                                        bitmap,
+                                        dstSize = IntSize(
+                                            width = 1600.dp.toPx().toInt(),
+                                            height = 600.dp.toPx().toInt()
+                                        ),
+                                        dstOffset = IntOffset(
+                                            x = pan.offset.x.toInt(),
+                                            y = pan.offset.y.toInt() //- 400.dp.toPx().toInt()
+                                        )
+                                    )
 
-
-                                   // drawImage(
-                                     //   bitmap,
-                                      //  dstSize = IntSize(width = 1600.dp.toPx().toInt(), height = 600.dp.toPx().toInt()),
-                                       // dstOffset = IntOffset(x = offset.x.toInt(), y = offset.y.toInt() - 400.dp.toPx().toInt())
-                                   // )
-
+                                     */
                                 }
 
 
                             }
                     }
                 }
-
-
 
 
             }

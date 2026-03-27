@@ -1,15 +1,5 @@
 package com.myguide.views
 
-import com.myguide.R
-import com.myguide.UI.BUTTON
-import com.myguide.UI.MARGIN
-import com.myguide.colorScheme
-import com.myguide.current
-import com.myguide.data.VM
-import com.myguide.data.VM.Type.*
-import com.myguide.screen
-import com.myguide.toDp
-import com.myguide.typography
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
@@ -29,6 +19,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
+import com.myguide.R
+import com.myguide.UI.BUTTON
+import com.myguide.UI.MARGIN
+import com.myguide.colorScheme
+import com.myguide.current
+import com.myguide.data.Query
+import com.myguide.data.VM
+import com.myguide.screen
+import com.myguide.toDp
+import com.myguide.toolbar
+import com.myguide.typography
 
 
 @Composable
@@ -113,34 +114,29 @@ fun Control(
                         vertical = 6.dp * ratioV
                     )
             )
-            Spacer(Modifier.width(8.dp))
-            Image(
-                painter = painterResource(type!!.drawable),
-                contentDescription = "list",
-                colorFilter = ColorFilter.tint(colorScheme.primary),
-                modifier = Modifier
-                    .clickable(
-                        onClick = {
-                            screen[current.value!!]!!.display(
-                                type.next
-                                /*when (screen[current.value!!]!!.vm.type.value!!) {
-                                    V -> H
-                                    H -> T
-                                    T -> D
-                                    D -> V
-                                }*/
-                            )
-                        }
-                    )
-                    .size(
-                        width = BUTTON.toDp() * ratioH,
-                        height = BUTTON.toDp() * ratioH
-                    )
-                    .padding(
-                        horizontal = 6.dp * ratioH,
-                        vertical = 6.dp * ratioV
-                    )
-            )
         }
+        Spacer(Modifier.width(8.dp))
+        Image(
+            painter = painterResource(type!!.drawable),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(colorScheme.primary),
+            modifier = Modifier
+                .clickable(onClick = {
+                    screen[current.value!!]!!.display(
+                        if (toolbar.items.last().query == Query.SHOPS || toolbar.items.last().query == Query.ITEM)
+                            type.nextShop
+                        else
+                            type.nextItem
+
+                ) })
+                .size(
+                    width = BUTTON.toDp() * ratioH,
+                    height = BUTTON.toDp() * ratioH
+                )
+                .padding(
+                    horizontal = 6.dp * ratioH,
+                    vertical = 6.dp * ratioV
+                )
+        )
     }
 }

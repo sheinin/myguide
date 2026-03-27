@@ -9,9 +9,8 @@ import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import kotlin.jvm.java
 
-@Entity(tableName = "items", primaryKeys = ["id","parent"])
+@Entity(tableName = "items", primaryKeys = ["id", "parent"])
 data class Item(
     val parent: String,
     val id: String,
@@ -19,23 +18,31 @@ data class Item(
     val title: String?,
     val origin: String?,
     val description: String?,
-    val drawable: Int?
+    val drawable: Int?,
 ) {
     @Ignore
     val level: Int = 0
+    @Ignore
+    var lat: Double = 0.0
+    @Ignore
+    var lng: Double = 0.0
 }
 
 data class ItemWithLevel(
-     val parent: String,
-     val id: String,
-     val pic: String?,
-     val title: String?,
-     val origin: String?,
-     val description: String?,
-     val drawable: Int?,
+    val parent: String,
+    val id: String,
+    val pic: String?,
+    val title: String?,
+    val origin: String?,
+    val description: String?,
+    val drawable: Int?,
     val level: Int
-)
-
+) {
+    @Ignore
+    var lat: Double = 0.0
+    @Ignore
+    var lng: Double = 0.0
+}
 
 
 @Entity(tableName = "shops", primaryKeys = ["id"])
@@ -62,8 +69,8 @@ interface ListInterface {
     val description: String?
     val drawable: Int?
     val id: String?
-    val lat: Double?
-    val lng: Double?
+    var lat: Double
+    var lng: Double
     val origin: String?
     val title: String?
     val level: Int
@@ -82,36 +89,43 @@ class Repository(private val storeDao: StoreDao) {
             callback(storeDao.shopDetails(id))
         }.start()
     }
+
     fun getItems(callback: (List<Item>) -> Unit) {
         Thread {
             callback(storeDao.items())
         }.start()
     }
+
     fun getShops(callback: (List<Shop>) -> Unit) {
         Thread {
             callback(storeDao.shops())
         }.start()
     }
-    fun getShops(id: String,callback: (List<Shop>) -> Unit) {
+
+    fun getShops(id: String, callback: (List<Shop>) -> Unit) {
         Thread {
             callback(storeDao.shops(id))
         }.start()
     }
+
     fun getTree(callback: (List<ItemWithLevel>) -> Unit) {
         Thread {
             callback(storeDao.tree())
         }.start()
     }
+
     fun getTree(id: String, callback: (List<ItemWithLevel>) -> Unit) {
         Thread {
             callback(storeDao.tree(id))
         }.start()
     }
+
     fun updateShop(drawable: Int, id: String) {
         Thread {
             storeDao.updateShop(drawable, id)
         }.start()
     }
+
     fun updateItem(drawable: Int, pic: String) {
         Thread {
             storeDao.updateItem(drawable, pic)
@@ -125,119 +139,133 @@ class Repository(private val storeDao: StoreDao) {
 interface StoreDao {
     @Query(
         "WITH RECURSIVE tree AS (\n" +
-        "    SELECT\n" +
-        "        id,\n" +
-        "        parent,\n" +
-        "        coalesce(title, id) as title,\n" +
-        "        description,\n" +
-        "        drawable,\n" +
-        "        origin,\n" +
-        "        0 AS level,\n" +
-        "        lower(id) AS sort_path       \n" +
-        "    FROM items\n" +
-        "    WHERE parent = 'ROOT'\n" +
-        "    UNION ALL\n" +
-        "    SELECT\n" +
-        "        n.id,\n" +
-        "        n.parent,\n" +
-        "        coalesce(n.title, n.id) as title,\n" +
-        "        n.description,\n" +
-        "        n.drawable,\n" +
-        "        n.origin,\n" +
-        "        tree.level + 1 AS level,\n" +
-        "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
-        "    FROM items AS n\n" +
-        "    JOIN tree ON n.parent = tree.id\n" +
-        ")\n" +
-        "SELECT\n" +
-        "    id,\n" +
-        "    parent,\n" +
-        "    title,\n" +
-        "    description,\n" +
-        "    origin,\n" +
-        "    drawable,\n" +
-        "    level\n" +
-        "FROM tree\n" +
-        "ORDER BY sort_path;"
+                "    SELECT\n" +
+                "        id,\n" +
+                "        parent,\n" +
+                "        coalesce(title, id) as title,\n" +
+                "        description,\n" +
+                "        drawable,\n" +
+                "        origin,\n" +
+                "        0 AS level,\n" +
+                "        lower(id) AS sort_path       \n" +
+               // "        0 AS lat,       \n" +
+               // "        0 AS lng       \n" +
+                "    FROM items\n" +
+                "    WHERE parent = 'ROOT'\n" +
+                "    UNION ALL\n" +
+                "    SELECT\n" +
+                "        n.id,\n" +
+                "        n.parent,\n" +
+                "        coalesce(n.title, n.id) as title,\n" +
+                "        n.description,\n" +
+                "        n.drawable,\n" +
+                "        n.origin,\n" +
+                "        tree.level + 1 AS level,\n" +
+                "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
+                "    FROM items AS n\n" +
+                "    JOIN tree ON n.parent = tree.id\n" +
+                ")\n" +
+                "SELECT\n" +
+                "    id,\n" +
+                "    parent,\n" +
+                "    title,\n" +
+                "    description,\n" +
+                "    origin,\n" +
+                "    drawable,\n" +
+                "    level\n" +
+                "FROM tree\n" +
+                "ORDER BY sort_path;"
     )
     fun tree(): List<ItemWithLevel>
+
     @Query(
         "WITH RECURSIVE tree AS (\n" +
-        "    SELECT\n" +
-        "        id,\n" +
-        "        parent,\n" +
-        "        coalesce(title, id) as title,\n" +
-        "        description,\n" +
-        "        drawable,\n" +
-        "        origin,\n" +
-        "        0 AS level,\n" +
-        "        lower(id) AS sort_path       \n" +
-        "    FROM items\n" +
-        "    WHERE parent = 'ROOT'\n" +
-        "    UNION ALL\n" +
-        "    SELECT\n" +
-        "        n.id,\n" +
-        "        n.parent,\n" +
-        "        coalesce(n.title, n.id) as title,\n" +
-        "        n.description,\n" +
-        "        n.drawable,\n" +
-        "        n.origin,\n" +
-        "        tree.level + 1 AS level,\n" +
-        "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
-        "    FROM items AS n\n" +
-        "    JOIN tree ON n.parent = tree.id\n" +
-        ")\n" +
-        "SELECT\n" +
-        "    id,\n" +
-        "    parent,\n" +
-        "    title,\n" +
-        "    description,\n" +
-        "    origin,\n" +
-        "    drawable,\n" +
-        "    level\n" +
-        "FROM tree\n" +
-        "WHERE id in\n" +
-        "\t (\n" +
-        "\t WITH RECURSIVE ancestors AS (\n" +
-        "\t\tSELECT\n" +
-        "\t\t\tid,\n" +
-        "\t\t\tparent\n" +
-        "\t\tFROM items\n" +
-        "\t\tWHERE id in (select item from shop_items where shop = :id)\n" +
-        "\t\tUNION ALL\n" +
-        "\t\tSELECT\n" +
-        "\t\t\tn.id,\n" +
-        "\t\t\tn.parent\n" +
-        "\t\tFROM items AS n\n" +
-        "\t\tJOIN ancestors AS a ON n.id = a.parent\n" +
-        "\t)\n" +
-        "\tSELECT id\n" +
-        "    FROM ancestors\n" +
-        ")\n" +
-        "ORDER BY sort_path;"
+                "    SELECT\n" +
+                "        id,\n" +
+                "        parent,\n" +
+                "        coalesce(title, id) as title,\n" +
+                "        description,\n" +
+                "        drawable,\n" +
+                "        origin,\n" +
+                "        0 AS level,\n" +
+                "        lower(id) AS sort_path       \n" +
+                "    FROM items\n" +
+                "    WHERE parent = 'ROOT'\n" +
+                "    UNION ALL\n" +
+                "    SELECT\n" +
+                "        n.id,\n" +
+                "        n.parent,\n" +
+                "        coalesce(n.title, n.id) as title,\n" +
+                "        n.description,\n" +
+                "        n.drawable,\n" +
+                "        n.origin,\n" +
+                "        tree.level + 1 AS level,\n" +
+                "        tree.sort_path || '>' || lower(n.id) AS sort_path\n" +
+                "    FROM items AS n\n" +
+                "    JOIN tree ON n.parent = tree.id\n" +
+                ")\n" +
+                "SELECT\n" +
+                "    id,\n" +
+                "    parent,\n" +
+                "    title,\n" +
+                "    description,\n" +
+                "    origin,\n" +
+                "    drawable,\n" +
+                "    level\n" +
+                "FROM tree\n" +
+                "WHERE id in\n" +
+                "\t (\n" +
+                "\t WITH RECURSIVE ancestors AS (\n" +
+                "\t\tSELECT\n" +
+                "\t\t\tid,\n" +
+                "\t\t\tparent\n" +
+                "\t\tFROM items\n" +
+                "\t\tWHERE id in (select item from shop_items where shop = :id)\n" +
+                "\t\tUNION ALL\n" +
+                "\t\tSELECT\n" +
+                "\t\t\tn.id,\n" +
+                "\t\t\tn.parent\n" +
+                "\t\tFROM items AS n\n" +
+                "\t\tJOIN ancestors AS a ON n.id = a.parent\n" +
+                "\t)\n" +
+                "\tSELECT id\n" +
+                "    FROM ancestors\n" +
+                ")\n" +
+                "ORDER BY sort_path;"
     )
     fun tree(id: String): List<ItemWithLevel>
+
     @Query("UPDATE items SET drawable = :drawable WHERE pic = :pic")
     fun updateItem(drawable: Int, pic: String)
+
     @Query("UPDATE shops SET drawable = :drawable WHERE id = :id")
     fun updateShop(drawable: Int, id: String)
+
     @Query("SELECT * FROM items WHERE title IS NOT NULL ORDER BY title")
     fun items(): List<Item>
+
     @Query("SELECT * FROM items WHERE id IN (SELECT item from shop_items where shop = :id) ORDER BY title")
     fun items(id: String): List<Item>
+
     @Query("SELECT * FROM shops ORDER BY title")
     fun shops(): List<Shop>
+
     @Query("SELECT * FROM shops WHERE id IN (SELECT shop from shop_items where item = :id) ORDER BY title")
     fun shops(id: String): List<Shop>
 
     @Query("SELECT * FROM items WHERE id = :id LIMIT 1")
     fun itemDetails(id: String): Item?
+
     @Query("SELECT * FROM shops WHERE id = :id LIMIT 1")
     fun shopDetails(id: String): Shop?
 }
 
 
-@Database(entities = [Item::class, Shop::class, ShopItems::class], version = 1, exportSchema = false)
+@Database(
+    entities = [Item::class, Shop::class, ShopItems::class],
+    version = 1,
+    exportSchema = false
+)
 abstract class StoreDatabase : RoomDatabase() {
     abstract fun storeDao(): StoreDao
 
@@ -248,10 +276,10 @@ abstract class StoreDatabase : RoomDatabase() {
         fun getDatabase(context: Context): StoreDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                        context.applicationContext,
-                        StoreDatabase::class.java,
-                        "store_database"
-                    )
+                    context.applicationContext,
+                    StoreDatabase::class.java,
+                    "store_database"
+                )
                     .createFromAsset("store_database")
                     .build()
                 INSTANCE = instance
@@ -267,9 +295,9 @@ fun Item.toInterface(): ListInterface {
         override val id = this@toInterface.id
         override val description = this@toInterface.description
         override val drawable = this@toInterface.drawable
-        override val lat = null
-        override val lng = null
-        override val origin= this@toInterface.origin
+        override var lat = this@toInterface.lat
+        override var lng = this@toInterface.lng
+        override val origin = this@toInterface.origin
         override val title = this@toInterface.title
         override val level = this@toInterface.level
     }
@@ -281,11 +309,11 @@ fun ItemWithLevel.toInterface(): ListInterface {
         override val id = this@toInterface.id
         override val description = this@toInterface.description
         override val drawable = this@toInterface.drawable
-        override val origin= this@toInterface.origin
+        override val origin = this@toInterface.origin
         override val title = this@toInterface.title
         override val level = this@toInterface.level
-        override val lat = null
-        override val lng = null
+        override var lat = this@toInterface.lat
+        override var lng = this@toInterface.lat
     }
 }
 
@@ -294,11 +322,11 @@ fun Shop.toInterface(): ListInterface {
         override val id = this@toInterface.id
         override val description = this@toInterface.description
         override val drawable = this@toInterface.drawable
-        override val origin= this@toInterface.origin
+        override val origin = this@toInterface.origin
         override val title = this@toInterface.title
         override val level = 0
-        override val lat = this@toInterface.lat
-        override val lng = this@toInterface.lng
+        override var lat = this@toInterface.lat ?: 0.0
+        override var lng = this@toInterface.lng
     }
 }
 

@@ -20,7 +20,7 @@ import com.myguide.UI.MARGIN
 import kotlin.math.max
 
 object Expandable {
-    fun expanded(index: Int, ratioV: Float, txt: String) : AnnotatedString =
+    fun expanded(index: Int, ratioV: Float, txt: String): AnnotatedString =
         buildAnnotatedString {
             withStyle(ParagraphStyle(lineHeight = typography.bodySmall.fontSize)) {
                 withStyle(
@@ -62,6 +62,7 @@ object Expandable {
                 }
             }
         }
+
     fun static(ratioV: Float, txt: String): AnnotatedString =
         buildAnnotatedString {
             withStyle(ParagraphStyle(lineHeight = 1.em * ratioV)) {
@@ -76,6 +77,7 @@ object Expandable {
                 ) { append(txt) }
             }
         }
+
     fun expandable(
         index: Int,
         level: Int,
@@ -105,12 +107,12 @@ object Expandable {
                     max(
                         MARGIN,
                         (
-                            (screenWidth.toPx().toInt() - (
-                                ITEM_HEIGHT +
-                                        MARGIN.times(4) * margin +
-                                        MARGIN * margin * level / 2
-                                ) * ratioH)
-                        ).toInt()
+                                (screenWidth.toPx().toInt() - (
+                                        ITEM_HEIGHT +
+                                                MARGIN.times(4) * margin +
+                                                MARGIN * margin * level / 2
+                                        ) * ratioH)
+                                ).toInt()
                     )
             ),
             density = Density(
@@ -131,19 +133,17 @@ object Expandable {
             )
         if (txt.length == take.length) return static(ratioV, txt)
 
-          /*      qqq(
-                     " EXPAND " + result.lineCount
-                    + txt.take(result.getLineEnd(0, true))
-                    + "=="
-                    + take
-                    + " == "
-                    + txt
-                )
+        /*      qqq(
+                   " EXPAND " + result.lineCount
+                  + txt.take(result.getLineEnd(0, true))
+                  + "=="
+                  + take
+                  + " == "
+                  + txt
+              )
 
 
-           */
-
-
+         */
 
 
         val str =

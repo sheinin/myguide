@@ -1,7 +1,7 @@
 package com.myguide.data
 
 import androidx.compose.ui.text.AnnotatedString
-import com.myguide.data.Cycler.*
+import com.myguide.data.Cycler.XY
 import java.util.concurrent.CopyOnWriteArrayList
 
 
@@ -19,6 +19,7 @@ data class MX(
         var toggle: MutableList<Boolean>,
         var xy: MutableList<XY?>
     )
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -29,6 +30,7 @@ data class MX(
         if (view != other.view) return false
         return true
     }
+
     override fun hashCode(): Int {
         var result = display.hashCode()
         result = 31 * result + ruler.hashCode()

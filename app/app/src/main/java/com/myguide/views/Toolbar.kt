@@ -61,6 +61,7 @@ fun Toolbar() {
     val ratioV by vm.ratioV.observeAsState()
     val scale by vm.scale.observeAsState()
     var visible by remember { mutableStateOf(true) }
+
     @Composable
     fun Slider1(modifier: Modifier) {
         SliderRow(
@@ -82,12 +83,13 @@ fun Toolbar() {
                 vm.adjust.value = false
                 vm.scale.value = it
             },
-            sliderFinished =  { vm.adjust.value = true },
+            sliderFinished = { vm.adjust.value = true },
             txt = "%.2f".format(vm.scale.value!!),
-            valueRange = 0.85f .. 2f,
+            valueRange = 0.85f..2f,
             modifier = modifier
         )
     }
+
     @Composable
     fun Slider2(modifier: Modifier) {
         SliderRow(
@@ -144,7 +146,7 @@ fun Toolbar() {
                     null -> vm.ratio.value = it
                 }
             },
-            sliderFinished =  { vm.adjust.value = true },
+            sliderFinished = { vm.adjust.value = true },
             txt =
                 "%.2f".format(
                     when (mode.value) {
@@ -153,10 +155,11 @@ fun Toolbar() {
                         null -> vm.ratio.value!!
                     }
                 ),
-            valueRange = 0.75f .. 1.5f,
+            valueRange = 0.75f..1.5f,
             modifier = modifier
         )
     }
+
     @Composable
     fun Slider3(modifier: Modifier) {
         SliderRow(
@@ -178,9 +181,9 @@ fun Toolbar() {
                 vm.adjust.value = false
                 vm.margin(it)
             },
-            sliderFinished =  { vm.adjust.value = true },
+            sliderFinished = { vm.adjust.value = true },
             txt = "%.2f".format(margin),
-            valueRange = 0.5f .. 2.5f,
+            valueRange = 0.5f..2.5f,
             modifier = modifier
         )
     }
@@ -253,6 +256,7 @@ fun Toolbar() {
                         Slider2(Modifier.weight(1f))
                         Slider3(Modifier.weight(1f))
                     }
+
                 else ->
                     Column {
                         Slider1(Modifier)

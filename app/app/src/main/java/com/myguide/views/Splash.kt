@@ -1,9 +1,6 @@
 package com.myguide.views
 
 import android.content.res.Configuration
-import com.myguide.R
-import com.myguide.data.Query
-import com.myguide.toolbar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,13 +15,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import com.myguide.R
+import com.myguide.data.Query
+import com.myguide.toolbar
 
 
 @Composable
 fun Splash(modifier: Modifier) {
     when (LocalConfiguration.current.orientation) {
         Configuration.ORIENTATION_LANDSCAPE ->
-            Row (
+            Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = modifier
@@ -32,8 +32,9 @@ fun Splash(modifier: Modifier) {
             ) {
                 Content(Modifier.weight(1f))
             }
+
         else ->
-            Column (
+            Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = modifier
@@ -64,7 +65,7 @@ fun Content(modifier: Modifier) {
     )
     Spacer(modifier)
     Image(
-        painter = painterResource(R.drawable._items),"all items",
+        painter = painterResource(R.drawable._items), "all items",
         colorFilter = ColorFilter.tint(Color.Red),
         modifier = modifier
             .fillMaxSize()

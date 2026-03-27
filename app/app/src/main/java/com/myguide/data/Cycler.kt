@@ -1,11 +1,10 @@
 package com.myguide.data
 
-import com.myguide.batch
 import androidx.compose.ui.text.AnnotatedString
+import com.myguide.batch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlin.collections.plus
 
 class Cycler {
     data class XY(
@@ -15,6 +14,7 @@ class Cycler {
         var w: Int = 0,
         var i: Int = -1
     )
+
     private val _description = MutableStateFlow<List<AnnotatedString?>>(emptyList())
     private val _details = MutableStateFlow<List<Details>>(emptyList())
     private val _toggle = MutableStateFlow<List<Boolean?>>(emptyList())
@@ -23,7 +23,11 @@ class Cycler {
     val toggle = _toggle.asStateFlow()
     val details = _details.asStateFlow()
     val xy = _xy.asStateFlow()
-    init { reset() }
+
+    init {
+        reset()
+    }
+
     fun reset() {
         _description.value = emptyList()
         _details.value = emptyList()
@@ -42,6 +46,7 @@ class Cycler {
             _xy.value += XY(0, 0, 0, 0)
         }
     }
+
     fun update(mod: Int, description: AnnotatedString?) {
         _description.update {
             it.mapIndexed { ix, it ->
@@ -50,6 +55,7 @@ class Cycler {
             }
         }
     }
+
     fun update(mod: Int, details: Details) {
         _details.update {
             it.mapIndexed { ix, it ->
@@ -64,6 +70,7 @@ class Cycler {
             }
         }
     }
+
     fun update(mod: Int, toggle: Boolean?) {
         _toggle.update {
             it.mapIndexed { ix, it ->
@@ -72,6 +79,7 @@ class Cycler {
             }
         }
     }
+
     fun update(mod: Int, xy: XY?) {
         _xy.update {
             it.mapIndexed { ix, it ->

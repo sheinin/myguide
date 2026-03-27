@@ -1,12 +1,12 @@
 package com.myguide.data
 
 
-
 enum class Query {
     ITEM,
     ITEMS,
     SHOP,
     SHOPS;
+
     val next: Query
         get() = when (this) {
             ITEM -> SHOP

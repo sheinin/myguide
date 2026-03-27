@@ -14,11 +14,13 @@ import kotlinx.coroutines.flow.first
 import kotlin.math.roundToInt
 
 
-fun qqq(q: String) { println("qqq $q") }
+fun qqq(q: String) {
+    println("qqq $q")
+}
 
 @Composable
 fun GetScreenSize() {
-    with (LocalDensity.current) {
+    with(LocalDensity.current) {
         screenHeight = LocalWindowInfo.current.containerSize.height.toDp()
         screenWidth = LocalWindowInfo.current.containerSize.width.toDp()
     }
@@ -48,8 +50,7 @@ suspend fun checkFirstRun(context: Context) {
                         it.id,
                         "drawable",
                         context.packageName
-                    )
-                    , it.id
+                    ), it.id
                 )
             }
         }
@@ -57,7 +58,9 @@ suspend fun checkFirstRun(context: Context) {
     }
 }
 
-fun sleep(delay: Long = 0, callback: (() -> Unit)) { Handler(Looper.getMainLooper()).postDelayed({ callback.invoke() }, delay) }
+fun sleep(delay: Long = 0, callback: (() -> Unit)) {
+    Handler(Looper.getMainLooper()).postDelayed({ callback.invoke() }, delay)
+}
 
 fun Dp.toPx(): Float {
     return with(density) {
@@ -83,7 +86,7 @@ fun Dp.round(): String {
 
 
 object UI {
-    val MAP_WIDTH = 800.dp
+    val MAP_WIDTH = 400.dp
     var TITLE_HEIGHT = 0
     var ITEM_HEIGHT = 0
     val mapViewWidth = (screenWidth - 16.dp).toPx().toInt()

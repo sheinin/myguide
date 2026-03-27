@@ -3,8 +3,6 @@ package com.myguide.data
 
 import androidx.lifecycle.MutableLiveData
 import com.myguide.R
-import com.myguide.current
-import com.myguide.screen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,13 +23,18 @@ class VM {
                 H -> R.drawable._map
                 T -> R.drawable._grid
             }
-        val next: Type
+        val nextItem: Type
+            get() = when (this) {
+                V -> D
+                D -> E
+                else -> V
+            }
+        val nextShop: Type
             get() = when (this) {
                 V -> H
                 H -> T
-                T -> D
-                D -> E
-                E -> V
+                T -> E
+                else -> V
             }
     }
     fun margin(margin: Float) = _margin.update { margin }

@@ -1,6 +1,8 @@
 package com.myguide.data
 
+import android.R.attr.level
 import com.myguide.qqq
+import com.myguide.toDp
 import kotlin.random.Random
 
 class DB(private val repository: Repository) {
@@ -9,42 +11,35 @@ class DB(private val repository: Repository) {
             callback.invoke(it!!)
         }
     }
+
     fun fetchShopDetails(id: String, callback: (Shop) -> Unit) {
         repository.getShopDetails(id) {
             callback.invoke(it!!)
         }
     }
+
     fun fetchShops(callback: (List<ListInterface>) -> Unit) {
         repository.getShops { list ->
-  /*          generateNonAdjacentRandomPoints(
-                width = 1000f,
-                height = 1000f,
-                rows = 1000,
-                cols = 1000,
-                count = list.size, // note: may return fewer if impossible
-                includeDiagonalsAsAdjacent = true
-            ).mapIndexed { ix, it ->
-                list[ix].lat = it.first.toDouble() * 10
-                list[ix].lng = it.second.toDouble() * 10
-                qqq("LL ${list[ix].title} ${list[ix].lat} ${list[ix].lng}")
-            }
-*/
-
-
-            list.mapIndexed { i, it ->
-
-           //     it.lat = (i / 5).toDouble()
-             //   it.lng = (i % 5.0)
-
-                qqq("LL ${it.title} ${it.lat} ${it.lng}")
-            }
-
+            /*          generateNonAdjacentRandomPoints(
+                          width = 1000f,
+                          height = 1000f,
+                          rows = 1000,
+                          cols = 1000,
+                          count = list.size, // note: may return fewer if impossible
+                          includeDiagonalsAsAdjacent = true
+                      ).mapIndexed { ix, it ->
+                          list[ix].lat = it.first.toDouble() * 10
+                          list[ix].lng = it.second.toDouble() * 10
+                          qqq("LL ${list[ix].title} ${list[ix].lat} ${list[ix].lng}")
+                      }
+          */
             callback.invoke(list.map { it.toInterface() }.toList())
         }
     }
+
     fun fetchShops(id: String, callback: (List<ListInterface>) -> Unit) {
         repository.getShops(id) { list ->
-            generateNonAdjacentRandomPoints(
+            /*generateNonAdjacentRandomPoints(
                 width = 1000f,
                 height = 1000f,
                 rows = 1000,
@@ -55,40 +50,68 @@ class DB(private val repository: Repository) {
                 qqq(">>> $ix $it")
                 list[ix].lat = it.first.toDouble()
                 list[ix].lng = it.second.toDouble()
-            }
+            }*/
             callback.invoke(list.map { it.toInterface() }.toList())
         }
     }
+
     fun fetchTree(callback: (List<ListInterface>) -> Unit) {
         repository.getTree { list ->
-            callback.invoke(list.map {
+            val l = list.map {
                 it.toInterface()
-            }.toList() )
+            }.toList()
+            var lv = -1
+            var x = 0
+            var y = 0
+            l.mapIndexed { i, it ->
+                if (lv != it.level) {
+                    it.lat = -y.toDouble()
+                    it.lng = x.toDouble()
+                    lv = it.level
+                    y++
+                    x = 0
+                } else {
+                    it.lat = -y.toDouble()
+                    it.lng = x.toDouble()
+                    x++
+                }
+                qqq("LL ${it.title} ${it.level} ${it.lat} ${it.lng}")
+            }
+            l.map {
+                it.lat += y/2
+
+                qqq("LL ${it.level} ${it.lat} ${it.lng} ${it.title} ")
+            }
+            callback.invoke(l)
         }
     }
+
     fun fetchTree(id: String, callback: (List<ListInterface>) -> Unit) {
         repository.getTree(id) { list ->
             callback.invoke(list.map { it.toInterface() }.toList())
         }
     }
+
     fun updateItemList(callback: (List<Item>) -> Unit) {
         repository.getItems {
             callback.invoke(it)
         }
     }
+
     fun updateShopList(callback: (List<Shop>) -> Unit) {
         repository.getShops {
             callback.invoke(it)
         }
     }
+
     fun updateItem(drawable: Int, pic: String) {
         repository.updateItem(drawable, pic)
     }
+
     fun updateShop(drawable: Int, id: String) {
         repository.updateShop(drawable, id)
     }
 }
-
 
 
 data class Cell(val row: Int, val col: Int)

@@ -1,8 +1,5 @@
 package com.myguide.views
 
-import com.myguide.current
-import com.myguide.density
-import com.myguide.screen
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -31,13 +28,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import com.myguide.toPx
+import com.myguide.current
+import com.myguide.density
+import com.myguide.screen
 
 
 @Composable
 fun Main(innerPadding: PaddingValues) {
     val ident = current.observeAsState()
-    Column(Modifier.fillMaxSize().padding(innerPadding)) {
+    Column(Modifier
+        .fillMaxSize()
+        .padding(innerPadding)) {
         Toolbar()
         Box {
             val visibleState = remember(ident.value == false) {
@@ -71,10 +72,10 @@ fun Main(innerPadding: PaddingValues) {
                                 density = density.density,
                                 fontScale =
                                     (
-                                        screen[false]!!.vm.ratioV.observeAsState().value ?:
-                                        screen[false]!!.vm.ratio.observeAsState().value!!
-                                    )
-                                    * screen[false]!!.vm.scale.observeAsState().value!!
+                                            screen[false]!!.vm.ratioV.observeAsState().value
+                                                ?: screen[false]!!.vm.ratio.observeAsState().value!!
+                                            )
+                                            * screen[false]!!.vm.scale.observeAsState().value!!
                             )
                 ) {
                     //Scrollable2DExample()
@@ -97,7 +98,6 @@ fun Main(innerPadding: PaddingValues) {
         }
     }
 }
-
 
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)

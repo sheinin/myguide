@@ -1,8 +1,5 @@
 package com.myguide.views
 
-import com.myguide.colorScheme
-import com.myguide.dialog
-import com.myguide.toolbar
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
+import com.myguide.colorScheme
+import com.myguide.dialog
+import com.myguide.toolbar
 
 @Composable
 fun MyDialog() {
