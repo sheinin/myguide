@@ -43,6 +43,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +72,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.myguide.R
+import com.myguide.UI.MAP_WIDTH
+import com.myguide.screenWidth
 import com.myguide.toPx
 import kotlin.time.Instant
 
@@ -103,35 +106,27 @@ fun View(screen: Screen) {
     var heightInfo by remember { mutableIntStateOf(0) }
 
 
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
-
-    // State that updates our offsets as the user scrolls in 2D
-    val scrollState = rememberScrollable2DState { delta ->
-        // delta: Offset where positive x = right, positive y = down
-        offsetX += delta.x
-        offsetY += delta.y
-        delta // Return the consumed delta
+    val pan = object {
+        var offsetX by remember { mutableFloatStateOf(0f) }
+        var offsetY by remember { mutableFloatStateOf(0f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+        val maxOffsetX = MAP_WIDTH.toPx()
+        val maxOffsetY = 600.dp.toPx()
+        val minOffsetX = -MAP_WIDTH.toPx()
+        val minOffsetY = 0f
+        val scrollState = rememberScrollable2DState { delta ->
+            val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
+            val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
+            offset = Offset(newX, newY)
+            this.offsetX = offset.x
+            this.offsetY = offset.y
+            delta
+        }
     }
     Box(
         Modifier
             .fillMaxSize()
     ) {
-        /*mage(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "logo",
-            modifier = Modifier
-                .fillMaxSize()
-                .scrollable2D(
-                    state = scrollState,
-                    enabled = true
-                )
-            ,
-            contentScale = ContentScale.Crop
-        )*/
-
-
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -191,7 +186,7 @@ fun View(screen: Screen) {
                 modifier = Modifier
                     .onSizeChanged { heightView = it.height }
                     .fillMaxWidth()
-                    .verticalScroll(scrollStateY)
+                    .then(if (display == V) Modifier.verticalScroll(scrollStateY) else Modifier)
                     .weight(1f)
                     .then(
                         if (display == H)
@@ -207,6 +202,7 @@ fun View(screen: Screen) {
                 if (display != H && viewItem != null)
                     Column(
                         Modifier
+                            .zIndex(3f)
                             .padding(8.dp)
                             .onGloballyPositioned(
                                 onGloballyPositioned = {
@@ -287,11 +283,13 @@ fun View(screen: Screen) {
                 }
                 Row(
                     modifier = Modifier
+                        .zIndex(2f)
                         .fillMaxWidth()
-                        .horizontalScroll(scrollStateX)
+                        .then(if (display == H) Modifier.horizontalScroll(scrollStateX) else Modifier)
                 ) {
                     Box(
                         modifier = Modifier
+                            .fillMaxSize()
                             .size(
                                 width = w.value!!.toDp(),
                                 height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
@@ -309,6 +307,7 @@ fun View(screen: Screen) {
                                 toggle = toggle[it],
                                 xy = xy[it]!!,
                                 modifier = Modifier.clickable(
+                                    enabled = false,
                                     onClick = {
                                         toolbar.items.last().scroll =
                                             if (display == V) scrollStateX.value
@@ -323,23 +322,7 @@ fun View(screen: Screen) {
                                 )
                             )
                         }
-                        var offsetX by remember { mutableStateOf(0f) }
-                        var offsetY by remember { mutableStateOf(0f) }
-                        var offset by remember { mutableStateOf(Offset.Zero) }
 
-                        val maxOffsetX = 800.dp.toPx()
-                        val maxOffsetY = 600.dp.toPx()
-                        val minOffsetX = -800.dp.toPx()
-                        val minOffsetY = 0f
-
-                        val scrollState = rememberScrollable2DState { delta ->
-                            val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
-                            val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
-                            offset = Offset(newX, newY)
-                            offsetX = offset.x
-                            offsetY = offset.y
-                            delta
-                        }
                       //  val bitmap =
                         //    ContextCompat.getDrawable(LocalContext.current, R.drawable._logo)!!.toBitmap()
                         // 2. Convert to androidx.compose.ui.graphics.ImageBitmap
@@ -349,25 +332,26 @@ fun View(screen: Screen) {
                         if (display == D)
                             Surface(
                                 modifier = Modifier
-                                    .zIndex(0f)
+                                    .zIndex(2f)
                                     .fillMaxSize()
+                                    //.size(width = screenWidth, height = 800.dp)
                                     .scrollable2D(
-                                        state = scrollState,
+                                        state = pan.scrollState,
                                         enabled = true
                                     ),
                                 color = Color.Transparent
                             ) {
                                 val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
-                                screen.scrollY = offsetY.toInt().unaryMinus()//+900
-                                screen.scrollX = offsetX.toInt().unaryMinus()
+                                screen.scrollY = pan.offsetY.toInt().unaryMinus()
+                                screen.scrollX = pan.offsetX.toInt().unaryMinus()
                                 Canvas(modifier = Modifier) {
                                     // Draw a simple grid, offset by scroll
-                                    val step = 50f
+                                    val step = MAP_WIDTH.toPx() / 18
                                     val width = size.width
                                     val height = size.height
 
                                     // Vertical lines
-                                    var x = (offsetX % step) - step
+                                    var x = (pan.offsetX % step) - step
                                     while (x < width) {
                                         drawLine(
                                             color = Color.LightGray,
@@ -379,7 +363,7 @@ fun View(screen: Screen) {
                                     }
 
                                     // Horizontal lines
-                                    var y = (offsetY % step) - step
+                                    var y = (pan.offsetY % step) - step
                                     while (y < height) {
                                         drawLine(
                                             color = Color.LightGray,
@@ -389,12 +373,9 @@ fun View(screen: Screen) {
                                         )
                                         y += step
                                     }
-
-
-                                    // A red dot at the origin (0,0) relative to the scroll
                                     val origin = Offset(
-                                        x = width / 2f - offsetX,
-                                        y = height / 2f - offsetY
+                                        x = width / 2f - pan.offsetX,
+                                        y = height / 2f - pan.offsetY
                                     )
                                     drawCircle(
                                         color = Color.Red,

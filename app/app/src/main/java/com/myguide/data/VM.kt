@@ -2,6 +2,9 @@ package com.myguide.data
 
 
 import androidx.lifecycle.MutableLiveData
+import com.myguide.R
+import com.myguide.current
+import com.myguide.screen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,9 +13,26 @@ import kotlinx.coroutines.flow.update
 class VM {
     enum class Type {
         D,
+        E,
+        H,
         T,
-        V,
-        H;
+        V;
+        val drawable: Int
+            get() = when (this) {
+                D -> R.drawable._2d
+                E -> R.drawable._exp
+                V -> R.drawable._list
+                H -> R.drawable._map
+                T -> R.drawable._grid
+            }
+        val next: Type
+            get() = when (this) {
+                V -> H
+                H -> T
+                T -> D
+                D -> E
+                E -> V
+            }
     }
     fun margin(margin: Float) = _margin.update { margin }
     fun margin(up: Boolean) = _margin.update { if (up) it + .1f else it - .1f }

@@ -83,6 +83,7 @@ fun Dp.round(): String {
 
 
 object UI {
+    val MAP_WIDTH = 800.dp
     var TITLE_HEIGHT = 0
     var ITEM_HEIGHT = 0
     val mapViewWidth = (screenWidth - 16.dp).toPx().toInt()

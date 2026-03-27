@@ -86,21 +86,21 @@ fun ViewItem(
                     else Modifier
             ) {
                 if (type != D)
-                Text(
-                    details.title,
-                    textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
-                    color = colorScheme.secondary,
-                    fontSize = typography.bodyLarge.fontSize,
-                    lineHeight = typography.bodyLarge.fontSize,
-                    maxLines =
-                        when (type!!) {
-                            T -> 2
-                            V -> Int.MAX_VALUE
-                            D, H -> 1
-                        },
-                    overflow = TextOverflow.Ellipsis,
-                    style = typography.bodyLarge
-                )
+                    Text(
+                        details.title,
+                        textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
+                        color = colorScheme.secondary,
+                        fontSize = typography.bodyLarge.fontSize,
+                        lineHeight = typography.bodyLarge.fontSize,
+                        maxLines =
+                            when (type!!) {
+                                T -> 2
+                                V -> Int.MAX_VALUE
+                                else -> 1
+                            },
+                        overflow = TextOverflow.Ellipsis,
+                        style = typography.bodyLarge
+                    )
                 if (details.origin == null) {
                     Spacer(modifier = Modifier.weight(1f))
                     Image(

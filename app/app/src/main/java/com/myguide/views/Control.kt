@@ -28,6 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.compose.ui.zIndex
 
 
 @Composable
@@ -43,6 +44,7 @@ fun Control(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .zIndex(3f)
             .fillMaxWidth()
             .padding(
                 horizontal = MARGIN.toDp() * ratioH,
@@ -113,26 +115,20 @@ fun Control(
             )
             Spacer(Modifier.width(8.dp))
             Image(
-                painter = painterResource(
-                    when (type!!) {
-                        D -> R.drawable._2d
-                        V -> R.drawable._list
-                        H -> R.drawable._map
-                        T -> R.drawable._grid
-                    }
-                ),
+                painter = painterResource(type!!.drawable),
                 contentDescription = "list",
                 colorFilter = ColorFilter.tint(colorScheme.primary),
                 modifier = Modifier
                     .clickable(
                         onClick = {
                             screen[current.value!!]!!.display(
-                                when (screen[current.value!!]!!.vm.type.value!!) {
+                                type.next
+                                /*when (screen[current.value!!]!!.vm.type.value!!) {
                                     V -> H
                                     H -> T
                                     T -> D
                                     D -> V
-                                }
+                                }*/
                             )
                         }
                     )
