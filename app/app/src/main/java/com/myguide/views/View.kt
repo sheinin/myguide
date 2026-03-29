@@ -100,9 +100,9 @@ fun View(screen: Screen) {
         var offsetY by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
         val maxOffsetX = MAP_WIDTH.toPx()
-        val maxOffsetY = 1000.dp.toPx()
+        val maxOffsetY = 0.dp.toPx()
         val minOffsetX = -MAP_WIDTH.toPx()
-        val minOffsetY = -1000f
+        val minOffsetY = -1000f.dp.toPx()
         val scrollState = rememberScrollable2DState { delta ->
             val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
             val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
@@ -323,8 +323,9 @@ fun View(screen: Screen) {
                                 color = Color.Transparent
                             ) {
                                 //val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
-                                screen.scrollY = pan.offsetY.toInt().unaryMinus()
-                                screen.scrollX = pan.offsetX.toInt().unaryMinus()
+                               // screen.scrollY = pan.offsetY.toInt().unaryMinus()
+                               // screen.scrollX = pan.offsetX.toInt().unaryMinus()
+
                                 Canvas(modifier = Modifier) {
                                     val step = MAP_WIDTH.toPx() / 18
                                     val width = size.width
@@ -358,6 +359,8 @@ fun View(screen: Screen) {
                                         radius = 8.dp.toPx(),
                                         center = origin
                                     )
+                                    screen.scrollY = origin.y.toInt()//.unaryMinus()
+                                    screen.scrollX = origin.x.toInt()//.unaryMinus()
                                     /*drawImage(
                                         bitmap,
                                         dstSize = IntSize(

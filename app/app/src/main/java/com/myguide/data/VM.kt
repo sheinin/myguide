@@ -11,14 +11,12 @@ import kotlinx.coroutines.flow.update
 class VM {
     enum class Type {
         D,
-        E,
         H,
         T,
         V;
         val drawable: Int
             get() = when (this) {
                 D -> R.drawable._2d
-                E -> R.drawable._exp
                 V -> R.drawable._list
                 H -> R.drawable._map
                 T -> R.drawable._grid
@@ -26,14 +24,13 @@ class VM {
         val nextItem: Type
             get() = when (this) {
                 V -> D
-                D -> E
+                D -> T
                 else -> V
             }
         val nextShop: Type
             get() = when (this) {
                 V -> H
                 H -> T
-                T -> E
                 else -> V
             }
     }
@@ -45,6 +42,7 @@ class VM {
     val adjust = MutableLiveData(false)
     val type = MutableLiveData(Type.V)
     val cycler = Cycler()
+    val exp = MutableLiveData(false)
     val filter = MutableLiveData<Boolean?>(null)
     val margin: StateFlow<Float> = _margin.asStateFlow()
     val ratio = MutableLiveData(1f)

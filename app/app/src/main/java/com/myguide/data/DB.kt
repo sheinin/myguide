@@ -63,24 +63,36 @@ class DB(private val repository: Repository) {
             var lv = -1
             var x = 0
             var y = 0
+            var sx = 0
+            var mx = 0
+            var my = 0
             l.mapIndexed { i, it ->
+                if (it.level == 0) {
+                    sx += mx
+                    mx = 0
+                    my = maxOf(my, y)
+                    x = 0
+                    y = 0
+                }
                 if (lv != it.level) {
-                    it.lat = -y.toDouble()
-                    it.lng = x.toDouble()
+                    it.lat = y.toDouble()
+                    it.lng = x.plus(sx).toDouble()
                     lv = it.level
                     y++
                     x = 0
                 } else {
-                    it.lat = -y.toDouble()
-                    it.lng = x.toDouble()
+                    it.lat = y.toDouble()
+                    it.lng = x.plus(sx).toDouble()
                     x++
+                    mx = maxOf(mx, x)
                 }
-                qqq("LL ${it.title} ${it.level} ${it.lat} ${it.lng}")
+               // qqq("LL ${it.title} ${it.level} ${it.lat} ${it.lng}")
             }
+            qqq("MX$mx $sx MY$my")
             l.map {
-                it.lat += y/2
-
-                qqq("LL ${it.level} ${it.lat} ${it.lng} ${it.title} ")
+               // it.lat += my / 2
+                it.lng -= sx.plus(mx) / 2
+                qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
             }
             callback.invoke(l)
         }

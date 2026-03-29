@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -137,6 +138,29 @@ fun Control(
                     horizontal = 6.dp * ratioH,
                     vertical = 6.dp * ratioV
                 )
+        )
+        Spacer(Modifier.width(8.dp))
+        Image(
+            painter = painterResource(R.drawable._exp),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(
+                if (screen[current.value!!]!!.vm.exp.observeAsState().value!!) colorScheme.primary
+                else colorScheme.secondary
+            ),
+            modifier = Modifier
+                .clickable(onClick = {
+                    screen[current.value!!]!!.vm.exp.value =
+                        !screen[current.value!!]!!.vm.exp.value!!
+                })
+                .size(
+                    width = BUTTON.toDp() * ratioH,
+                    height = BUTTON.toDp() * ratioH
+                )
+                .padding(
+                    horizontal = 6.dp * ratioH,
+                    vertical = 6.dp * ratioV
+                )
+
         )
     }
 }

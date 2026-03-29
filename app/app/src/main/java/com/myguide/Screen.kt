@@ -26,7 +26,6 @@ import com.myguide.data.Query.SHOP
 import com.myguide.data.Query.SHOPS
 import com.myguide.data.VM
 import com.myguide.data.VM.Type.D
-import com.myguide.data.VM.Type.E
 import com.myguide.data.VM.Type.H
 import com.myguide.data.VM.Type.T
 import com.myguide.data.VM.Type.V
@@ -38,6 +37,7 @@ import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 class Screen(val ident: Boolean) {
     val vm = VM()
@@ -215,7 +215,7 @@ class Screen(val ident: Boolean) {
     private fun adjust() {
         qqq("ADJUST")
         when (vm.type.value!!) {
-            D, E -> {}
+            D -> {}
             V -> {
                 var height = 0
                 mx.point.mapIndexed { ix, index ->
@@ -249,7 +249,6 @@ class Screen(val ident: Boolean) {
         toolbar.items.last().type = type
         vm.type.postValue(type)
         when (type) {
-            E -> {}
             D -> {
                 mx.point.indices.map {
                     mx.view.expand[it] = mx.view.expand[it].first to exp(it)
@@ -344,7 +343,7 @@ class Screen(val ident: Boolean) {
 
     private fun ruler() {
         when (vm.type.value!!) {
-            D, T, E -> {}
+            D, T,
             V -> {
                 mx.ruler.clear()
                 var height = 0
@@ -355,7 +354,6 @@ class Screen(val ident: Boolean) {
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(height)
             }
-
             H -> {
                 vm.w.postValue((mapViewWidth * mx.point.size * vm.ratioH()).toInt())
                 vm.h.postValue((ITEM_HEIGHT * vm.ratioH()).toInt())
@@ -366,6 +364,11 @@ class Screen(val ident: Boolean) {
     private fun scroll() {
         when (handler) {
             D -> {
+                fun distance(x1: Double, y1: Double, x2: Double, y2: Double): Double {
+                    val dx = x2 - x1
+                    val dy = y2 - y1
+                    return sqrt(dx * dx + dy * dy)
+                }
                 fun getDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
                     val results = FloatArray(1)
                     Location.distanceBetween(lat1, lon1, lat2, lon2, results)
@@ -373,18 +376,18 @@ class Screen(val ident: Boolean) {
                 }
 
                 var c = 0
-                val x = scrollX.toDouble() /// MAP_WIDTH.toPx() * 180.0
-                val y = scrollY.toDouble() /// 10.0 + 41
+                val x = scrollX.toDouble() / 1200 * 12/// MAP_WIDTH.toPx() * 180.0
+                val y = scrollY.toDouble() / 3000 * -10/// 10.0 + 41
                 val l = mx.point.withIndex()
                     .sortedBy {
-                        getDistance(
-                            list[it.value].lat!!.unaryMinus(),
+                        distance(
                             list[it.value].lng!!,
-                            y,
-                            x
+                            list[it.value].lat!!,
+                            x,
+                            y
                         )
                     }
-                 //   .filter { list[it.value].lat!!.toInt().unaryMinus() - scrollY > 0 }
+                    //.filter { list[it.value].lat!!.toInt() + y > 0 }
                     .take(batch)
                 l.map {
                     val d = getDistance(
@@ -402,7 +405,7 @@ class Screen(val ident: Boolean) {
                     val xy = mx.view.xy.getOrNull(index) ?: return
                     val toggle = mx.view.toggle.getOrNull(index) ?: return
                     qqq(
-                        "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${
+                        "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${list[index].lat}/${list[index].lng} ${list[index].title} ${
                             mx.view.details.getOrNull(
                                 index
                             )?.title
@@ -415,8 +418,6 @@ class Screen(val ident: Boolean) {
                     vm.cycler.update(mod = mod, xy = xy)
                 }
             }
-
-            E -> {}
             H -> {
                 val r =
                     max(
@@ -490,7 +491,6 @@ class Screen(val ident: Boolean) {
     private fun zoom() {
         when (vm.type.value!!) {
             D -> {}
-            E -> {}
             T -> {
                 val from =
                     max(
@@ -544,20 +544,18 @@ class Screen(val ident: Boolean) {
             }
         }
     }
-
     private fun xy(ix: Int) {
         val index = mx.point[ix]
         mx.view.xy[index] =
             when (handler!!) {
                 D ->
                     XY(
-                        x = list[index].lng.toInt() * ITEM_HEIGHT - scrollX,
-                        y = list[index].lat.toInt().unaryMinus() * ITEM_HEIGHT - scrollY,
+                        x = list[index].lng.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollX,
+                        y = list[index].lat.toInt() * ITEM_HEIGHT - scrollY,
                         h = ITEM_HEIGHT + MARGIN * 2,
                         w = ITEM_HEIGHT + MARGIN * 2,
                         i = ix
                     )
-                E -> XY()
                 T ->
                     XY(
                         x = screenWidth.toPx().toInt() / COLUMNS * ix.mod(COLUMNS),
