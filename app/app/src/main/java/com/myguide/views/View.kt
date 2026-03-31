@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.myguide.Screen
+import com.myguide.UI.ITEM_HEIGHT
 import com.myguide.UI.MAP_WIDTH
 import com.myguide.UI.MARGIN
 import com.myguide.batch
@@ -99,10 +100,10 @@ fun View(screen: Screen) {
         var offsetX by remember { mutableFloatStateOf(0f) }
         var offsetY by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
-        val maxOffsetX = MAP_WIDTH.toPx()
-        val maxOffsetY = 0.dp.toPx()
-        val minOffsetX = -MAP_WIDTH.toPx()
-        val minOffsetY = -1000f.dp.toPx()
+        val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * 6).toDp().toPx()
+        val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * 11).toDp().toPx()
+        val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * -6).toDp().toPx()
+        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * -11).toDp().toPx()
         val scrollState = rememberScrollable2DState { delta ->
             val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
             val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
@@ -323,8 +324,8 @@ fun View(screen: Screen) {
                                 color = Color.Transparent
                             ) {
                                 //val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
-                               // screen.scrollY = pan.offsetY.toInt().unaryMinus()
-                               // screen.scrollX = pan.offsetX.toInt().unaryMinus()
+                                screen.scrollY = pan.offsetY.toInt().unaryMinus()
+                                screen.scrollX = pan.offsetX.toInt().unaryMinus()
 
                                 Canvas(modifier = Modifier) {
                                     val step = MAP_WIDTH.toPx() / 18
@@ -359,8 +360,8 @@ fun View(screen: Screen) {
                                         radius = 8.dp.toPx(),
                                         center = origin
                                     )
-                                    screen.scrollY = origin.y.toInt()//.unaryMinus()
-                                    screen.scrollX = origin.x.toInt()//.unaryMinus()
+                                //    screen.scrollY = origin.y.toInt()//.unaryMinus()
+                                  //  screen.scrollX = origin.x.toInt()//.unaryMinus()
                                     /*drawImage(
                                         bitmap,
                                         dstSize = IntSize(

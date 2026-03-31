@@ -88,23 +88,22 @@ fun ViewItem(
                             .fillMaxHeight()
                     else Modifier
             ) {
-                if (type != D)
-                    Text(
-                        details.title,
-                        textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
-                        color = colorScheme.secondary,
-                        fontSize = typography.bodyLarge.fontSize,
-                        lineHeight = typography.bodyLarge.fontSize,
-                        maxLines =
-                            when (type!!) {
-                                T -> 2
-                                V -> Int.MAX_VALUE
-                                else -> 1
-                            },
-                        overflow = TextOverflow.Ellipsis,
-                        style = typography.bodyLarge
-                    )
-                if (details.origin == null) {
+                Text(
+                    details.title,
+                    textAlign = if (type == T) TextAlign.Center else TextAlign.Start,
+                    color = colorScheme.secondary,
+                    fontSize = typography.bodyLarge.fontSize,
+                    lineHeight = typography.bodyLarge.fontSize,
+                    maxLines =
+                        when (type!!) {
+                            D, T -> 2
+                            V -> Int.MAX_VALUE
+                            else -> 1
+                        },
+                    overflow = TextOverflow.Ellipsis,
+                    style = typography.bodyLarge
+                )
+                if (details.origin == null && type != D) {
                     Spacer(modifier = Modifier.weight(1f))
                     Image(
                         painter = painterResource(R.drawable._back),

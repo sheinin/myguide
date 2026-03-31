@@ -75,25 +75,36 @@ class DB(private val repository: Repository) {
                     y = 0
                 }
                 if (lv != it.level) {
+                    y++
+                    x = 0
                     it.lat = y.toDouble()
                     it.lng = x.plus(sx).toDouble()
                     lv = it.level
-                    y++
-                    x = 0
-                } else {
-                    it.lat = y.toDouble()
-                    it.lng = x.plus(sx).toDouble()
-                    x++
-                    mx = maxOf(mx, x)
+
                 }
-               // qqq("LL ${it.title} ${it.level} ${it.lat} ${it.lng}")
+                else {
+                    if (x > 3) {
+                        y++
+                        x = 0
+                        it.lat = y.toDouble()
+                        it.lng = x.plus(sx).toDouble()
+                        //mx = maxOf(mx, x)
+                    } else {
+                        it.lat = y.toDouble()
+                        it.lng = x.plus(sx).toDouble()
+                        x++
+                        mx = maxOf(mx, x)
+                    }
+                }
+                qqq("ITEM ${it.title} ${it.level} ${it.lat} ${it.lng} x:$x y:$y mx:$mx sx:$sx lv:$lv")
             }
             qqq("MX$mx $sx MY$my")
             l.map {
-               // it.lat += my / 2
+                it.lat -= my / 2
                 it.lng -= sx.plus(mx) / 2
                 qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
             }
+            qqq("M/M lat:${l.minOf { it.lat }}/${l.maxOf { it.lat }} lng:${l.minOf { it.lng }}/${l.maxOf { it.lng }}")
             callback.invoke(l)
         }
     }

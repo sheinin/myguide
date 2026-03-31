@@ -376,8 +376,8 @@ class Screen(val ident: Boolean) {
                 }
 
                 var c = 0
-                val x = scrollX.toDouble() / 1200 * 12/// MAP_WIDTH.toPx() * 180.0
-                val y = scrollY.toDouble() / 3000 * -10/// 10.0 + 41
+                val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )/// MAP_WIDTH.toPx() * 180.0
+                val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )/// 10.0 + 41
                 val l = mx.point.withIndex()
                     .sortedBy {
                         distance(
@@ -390,7 +390,7 @@ class Screen(val ident: Boolean) {
                     //.filter { list[it.value].lat!!.toInt() + y > 0 }
                     .take(batch)
                 l.map {
-                    val d = getDistance(
+                    val d = distance(
                         list[it.value].lat!!,
                         list[it.value].lng!!,
                         y,
@@ -409,7 +409,7 @@ class Screen(val ident: Boolean) {
                             mx.view.details.getOrNull(
                                 index
                             )?.title
-                        } ${list[it.value].origin} ${screenWidth.toPx()} $screenWidth}"
+                        } ${xy.x.toDp().round()} ${xy.y.toDp().round()}}"
                     )
                     mx.stack[mod] = ix
                     vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
@@ -551,7 +551,7 @@ class Screen(val ident: Boolean) {
                 D ->
                     XY(
                         x = list[index].lng.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollX,
-                        y = list[index].lat.toInt() * ITEM_HEIGHT - scrollY,
+                        y = list[index].lat.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollY,
                         h = ITEM_HEIGHT + MARGIN * 2,
                         w = ITEM_HEIGHT + MARGIN * 2,
                         i = ix
