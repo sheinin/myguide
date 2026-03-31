@@ -1,6 +1,7 @@
 package com.myguide.views
 
 
+import android.R.attr.type
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -30,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -44,9 +47,14 @@ import com.myguide.R
 import com.myguide.UI.BUTTON
 import com.myguide.colorScheme
 import com.myguide.current
+import com.myguide.data.Query
+import com.myguide.data.Query.ITEM
+import com.myguide.data.Query.SHOPS
 import com.myguide.data.VM
 import com.myguide.screen
+import com.myguide.sortable
 import com.myguide.toDp
+import com.myguide.toolbar
 import com.myguide.typography
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,15 +63,17 @@ fun Toolbar(modifier: Modifier) {
     val ident by current.observeAsState()
     if (ident == null) return
     val vm = screen[ident!!]!!.vm
-    val mode = remember { mutableStateOf<Boolean?>(null) }
+    val display by vm.type.observeAsState()
+    val filter by vm.filter.observeAsState()
+    val fps by vm.fps.observeAsState(VM.FPS.FPS30)
     val margin by vm.margin.collectAsStateWithLifecycle()
+    val mode = remember { mutableStateOf<Boolean?>(null) }
     val ratio by vm.ratio.observeAsState()
     val ratioH by vm.ratioH.observeAsState()
     val ratioV by vm.ratioV.observeAsState()
     val scale by vm.scale.observeAsState()
-    val fps by vm.fps.observeAsState(VM.FPS.FPS30)
+    val sort by vm.sort.observeAsState()
     var visible by remember { mutableStateOf(true) }
-
     @Composable
     fun Slider1(modifier: Modifier) {
         SliderRow(
@@ -231,11 +241,97 @@ fun Toolbar(modifier: Modifier) {
             }
             Spacer(modifier = Modifier.weight(1f))
             Image(
+                painter = painterResource(
+                    when (filter) {
+                        false -> R.drawable._east
+                        true -> R.drawable._west
+                        null -> R.drawable._filter
+                    }
+                ),
+                contentDescription = "filter",
+                colorFilter =
+                    ColorFilter.tint(
+                        if (sortable.value!!) colorScheme.primary
+                        else colorScheme.secondary
+                    ),
+                modifier = Modifier
+                    .clickable(
+                        enabled = sortable.value!!,
+                        onClick = {
+                            screen[current.value!!]!!.vm.filter.value =
+                                when (screen[current.value!!]!!.vm.filter.value) {
+                                    false -> true
+                                    true -> null
+                                    null -> false
+                                }
+                        }
+                    )
+                    .size(BUTTON.toDp())
+                    .padding(8.dp)
+            )
+            Image(
+                painter = painterResource(R.drawable._sort),
+                contentDescription = "sort",
+                colorFilter =
+                    ColorFilter.tint(
+                        if (sortable.value!!) colorScheme.primary
+                        else colorScheme.secondary
+                    ),
+                modifier = Modifier
+                    .scale(scaleX = 1f, scaleY = if (sort == true) -1f else 1f)
+                    .clickable(
+                        enabled = sortable.value!!,
+                        onClick = {
+                            screen[current.value!!]!!.vm.sort.value =
+                                !screen[current.value!!]!!.vm.sort.value!!
+                        }
+                    )
+                    .size(BUTTON.toDp())
+                    .padding(8.dp)
+            )
+            Image(
+                painter = painterResource(display!!.drawable),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(colorScheme.primary),
+                modifier = Modifier
+                    .clickable(
+                        onClick = {
+                            screen[current.value!!]!!.display(
+                                if (toolbar.items.last().query == Query.SHOPS || toolbar.items.last().query == Query.ITEM)
+                                    display!!.nextShop
+                                else
+                                    display!!.nextItem
+                            )
+                        }
+                    )
+                    .size(BUTTON.toDp())
+                    .padding(8.dp)
+            )
+            Image(
                 painter = painterResource(fps.drawable),
                 contentDescription = "fps selector",
                 colorFilter = ColorFilter.tint(colorScheme.primary),
                 modifier = Modifier
                     .clickable(onClick = { vm.fps.value = fps.next })
+                    .size(BUTTON.toDp())
+                    .padding(8.dp)
+            )
+            Image(
+                painter = painterResource(R.drawable._exp),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(
+                    if (screen[current.value!!]!!.vm.exp.observeAsState().value!!) colorScheme.background
+                    else colorScheme.primary
+                ),
+                modifier = Modifier
+                    .background(
+                        if (screen[current.value!!]!!.vm.exp.observeAsState().value!!) colorScheme.primary
+                        else Color.Transparent
+                    )
+                    .clickable(onClick = {
+                        screen[current.value!!]!!.vm.exp.value =
+                            !screen[current.value!!]!!.vm.exp.value!!
+                    })
                     .size(BUTTON.toDp())
                     .padding(8.dp)
             )

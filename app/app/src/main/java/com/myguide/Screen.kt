@@ -353,7 +353,7 @@ class Screen(val ident: Boolean) {
                 mx.point.map {
                     mx.ruler.add(height)
                     height += mx.display[it].first + mx.display[it].second
-                    qqq("RULER $it ${height.toDp().round()} ${list[it].title}")
+                    //qqq("RULER $it ${height.toDp().round()} ${list[it].title}")
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(height)

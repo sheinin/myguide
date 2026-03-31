@@ -13,9 +13,7 @@ class Toolbar {
         var type: VM.Type,
         var scroll: Int = 0,
         var toggle: List<Boolean>? = null
-
     )
-
     val crumbs = mapOf(
         false to MutableLiveData(List(3) { "" }),
         true to MutableLiveData(List(3) { "" })
@@ -67,6 +65,7 @@ class Toolbar {
                 return
             }
         }
+        sortable.value = query?.sortable
         val current = !(current.value ?: true)
         val item =
             Item(

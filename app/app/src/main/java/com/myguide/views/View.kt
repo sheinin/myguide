@@ -145,16 +145,6 @@ fun View(modifier: Modifier, screen: Screen) {
                             )
                         }
                     }
-                if (display == H)
-                    Control(
-                        control = toolbar.items.last().query == ITEM || toolbar.items.last().query == SHOPS,
-                        filter = filter,
-                        type = display,
-                        ratioH = ratioH ?: ratio!!,
-                        ratioV = ratioV ?: ratio!!,
-                        sort = sort,
-                        title = toolbar.items.last().query.title
-                    )
             }
             LaunchedEffect(stateY!!) {
                 scrollStateY.scrollTo(stateY!!)
@@ -245,18 +235,6 @@ fun View(modifier: Modifier, screen: Screen) {
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
-                if (display != H)
-                    Control(
-                        control =
-                            toolbar.items.last().query == ITEM ||
-                            toolbar.items.last().query == SHOPS,
-                        type = display,
-                        filter = filter,
-                        ratioH = ratioH ?: ratio!!,
-                        ratioV = ratioV ?: ratio!!,
-                        sort = sort,
-                        title = toolbar.items.last().query.title
-                    )
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
                 LaunchedEffect(stateX) { scrollStateX.scrollBy(stateX!!) }

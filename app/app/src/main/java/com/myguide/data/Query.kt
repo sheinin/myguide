@@ -6,13 +6,17 @@ enum class Query {
     ITEMS,
     SHOP,
     SHOPS;
-
     val next: Query
         get() = when (this) {
             ITEM -> SHOP
             ITEMS -> ITEM
             SHOP -> ITEM
             SHOPS -> SHOP
+        }
+    val sortable: Boolean
+        get() = when (this) {
+            ITEM, SHOPS -> true
+            else -> false
         }
     val title: String
         get() = when (this) {

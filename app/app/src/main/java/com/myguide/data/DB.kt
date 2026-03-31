@@ -97,7 +97,7 @@ class DB(private val repository: Repository) {
                         mx = maxOf(mx, x)
                     }
                 }
-                qqq("ITEM lvl:${it.level} lng.x:${it.lng} lat.y${it.lat} x:$x y:$y mx:$mx sx:$sx lv:$lv ${it.title} ")
+                //qqq("ITEM lvl:${it.level} lng.x:${it.lng} lat.y${it.lat} x:$x y:$y mx:$mx sx:$sx lv:$lv ${it.title} ")
             }
             qqq("MX$mx $sx MY$my")
             l.map {
@@ -108,11 +108,11 @@ class DB(private val repository: Repository) {
 
 
 
-            l.map {
+            //l.map {
                 //  it.lat -= my / 2
              //   it.lng -= sx.plus(mx) / 2
-                qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
-            }
+              //  qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
+           // }
             qqq("M/M lat:${l.minOf { it.lat }}/${l.maxOf { it.lat }} lng:${l.minOf { it.lng }}/${l.maxOf { it.lng }}")
             callback.invoke(l)
         }

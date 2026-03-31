@@ -64,6 +64,7 @@ lateinit var typography: Typography
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 val current = MutableLiveData<Boolean?>(null)
 val dialog = MutableLiveData(false)
+val sortable = MutableLiveData(false)
 val toolbar = Toolbar()
 var screenHeight = 0.dp
 var screenWidth = 0.dp
