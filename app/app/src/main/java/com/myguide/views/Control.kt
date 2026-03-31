@@ -1,6 +1,7 @@
 package com.myguide.views
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,8 +47,8 @@ fun Control(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .zIndex(3f)
             .fillMaxWidth()
+            .background(colorScheme.background)
             .padding(
                 horizontal = MARGIN.toDp() * ratioH,
                 vertical = MARGIN.toDp() * ratioV

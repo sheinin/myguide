@@ -3,6 +3,7 @@ package com.myguide.data
 import android.R.attr.level
 import com.myguide.qqq
 import com.myguide.toDp
+import kotlin.collections.forEachIndexed
 import kotlin.random.Random
 
 class DB(private val repository: Repository) {
@@ -60,6 +61,7 @@ class DB(private val repository: Repository) {
             val l = list.map {
                 it.toInterface()
             }.toList()
+
             var lv = -1
             var x = 0
             var y = 0
@@ -68,40 +70,47 @@ class DB(private val repository: Repository) {
             var my = 0
             l.mapIndexed { i, it ->
                 if (it.level == 0) {
-                    sx += mx
+                    sx += mx.inc().inc()
                     mx = 0
                     my = maxOf(my, y)
                     x = 0
                     y = 0
                 }
-                if (lv != it.level) {
+                if (lv != it.level || it.origin.isNullOrEmpty()) {
                     y++
                     x = 0
                     it.lat = y.toDouble()
-                    it.lng = x.plus(sx).toDouble()
+                    it.lng = sx.toDouble()
                     lv = it.level
-
                 }
                 else {
-                    if (x > 3) {
+                    if (x >= 2) {
                         y++
                         x = 0
                         it.lat = y.toDouble()
-                        it.lng = x.plus(sx).toDouble()
-                        //mx = maxOf(mx, x)
+                        it.lng = sx.toDouble()
                     } else {
+                        x++
                         it.lat = y.toDouble()
                         it.lng = x.plus(sx).toDouble()
-                        x++
+
                         mx = maxOf(mx, x)
                     }
                 }
-                qqq("ITEM ${it.title} ${it.level} ${it.lat} ${it.lng} x:$x y:$y mx:$mx sx:$sx lv:$lv")
+                qqq("ITEM lvl:${it.level} lng.x:${it.lng} lat.y${it.lat} x:$x y:$y mx:$mx sx:$sx lv:$lv ${it.title} ")
             }
             qqq("MX$mx $sx MY$my")
             l.map {
-                it.lat -= my / 2
-                it.lng -= sx.plus(mx) / 2
+                it.lat -= my.inc() / 2
+                it.lng -= sx.inc().plus(mx) / 2
+                qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
+            }
+
+
+
+            l.map {
+                //  it.lat -= my / 2
+             //   it.lng -= sx.plus(mx) / 2
                 qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
             }
             qqq("M/M lat:${l.minOf { it.lat }}/${l.maxOf { it.lat }} lng:${l.minOf { it.lng }}/${l.maxOf { it.lng }}")
@@ -136,62 +145,3 @@ class DB(private val repository: Repository) {
     }
 }
 
-
-data class Cell(val row: Int, val col: Int)
-
-fun generateNonAdjacentRandomPoints(
-    width: Float = 1000f,
-    height: Float = 1000f,
-    rows: Int = 5,
-    cols: Int = 8,
-    count: Int = 40, // desired number (max possible may be smaller)
-    includeDiagonalsAsAdjacent: Boolean = true,
-    random: Random = Random.Default
-): List<Pair<Float, Float>> {
-
-    // 1. All possible logical cells
-    val allCells = mutableListOf<Cell>()
-    for (r in 0 until rows) {
-        for (c in 0 until cols) {
-            allCells += Cell(r, c)
-        }
-    }
-
-    // 2. Shuffle for randomness
-    allCells.shuffle(random)
-
-    // 3. Helper to check adjacency
-    fun isAdjacent(a: Cell, b: Cell): Boolean {
-        val dr = kotlin.math.abs(a.row - b.row)
-        val dc = kotlin.math.abs(a.col - b.col)
-        return if (includeDiagonalsAsAdjacent) {
-            // any neighbor in 3x3 block (excluding itself)
-            (dr <= 1 && dc <= 1) && !(dr == 0 && dc == 0)
-        } else {
-            // only up, down, left, right
-            (dr + dc == 1)
-        }
-    }
-
-    val chosen = mutableListOf<Cell>()
-
-    // 4. Greedy selection of non-adjacent cells
-    for (cell in allCells) {
-        if (chosen.size >= count) break
-
-        val hasAdjacent = chosen.any { existing -> isAdjacent(existing, cell) }
-        if (!hasAdjacent) {
-            chosen += cell
-        }
-    }
-
-    // 5. Convert logical grid cells to XY in 1000x1000
-    val cellW = width / cols
-    val cellH = height / rows
-
-    return chosen.map { cell ->
-        val x = (cell.col + 0.5f) * cellW
-        val y = (cell.row + 0.5f) * cellH
-        x to y
-    }
-}

@@ -44,13 +44,14 @@ import com.myguide.R
 import com.myguide.UI.BUTTON
 import com.myguide.colorScheme
 import com.myguide.current
+import com.myguide.data.VM
 import com.myguide.screen
 import com.myguide.toDp
 import com.myguide.typography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Toolbar() {
+fun Toolbar(modifier: Modifier) {
     val ident by current.observeAsState()
     if (ident == null) return
     val vm = screen[ident!!]!!.vm
@@ -60,6 +61,7 @@ fun Toolbar() {
     val ratioH by vm.ratioH.observeAsState()
     val ratioV by vm.ratioV.observeAsState()
     val scale by vm.scale.observeAsState()
+    val fps by vm.fps.observeAsState(VM.FPS.FPS30)
     var visible by remember { mutableStateOf(true) }
 
     @Composable
@@ -188,8 +190,9 @@ fun Toolbar() {
         )
     }
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .background(colorScheme.background)
             .padding(horizontal = 8.dp)
     ) {
         Row(
@@ -226,8 +229,16 @@ fun Toolbar() {
                     textAlign = TextAlign.Center,
                 )
             }
-
             Spacer(modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(fps.drawable),
+                contentDescription = "fps selector",
+                colorFilter = ColorFilter.tint(colorScheme.primary),
+                modifier = Modifier
+                    .clickable(onClick = { vm.fps.value = fps.next })
+                    .size(BUTTON.toDp())
+                    .padding(8.dp)
+            )
             Image(
                 painter = painterResource(R.drawable._back),
                 contentDescription = "",

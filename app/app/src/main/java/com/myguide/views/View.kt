@@ -61,9 +61,8 @@ import com.myguide.batch
 import com.myguide.colorScheme
 import com.myguide.data.Query.ITEM
 import com.myguide.data.Query.SHOPS
-import com.myguide.data.VM.Type.D
-import com.myguide.data.VM.Type.H
-import com.myguide.data.VM.Type.V
+import com.myguide.data.VM
+import com.myguide.data.VM.Type.*
 import com.myguide.toDp
 import com.myguide.toPx
 import com.myguide.toolbar
@@ -72,7 +71,7 @@ import com.myguide.typography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun View(screen: Screen) {
+fun View(modifier: Modifier, screen: Screen) {
     val vm = screen.vm
     val description by vm.description.observeAsState()
     val details by vm.cycler.details.collectAsStateWithLifecycle()
@@ -100,10 +99,10 @@ fun View(screen: Screen) {
         var offsetX by remember { mutableFloatStateOf(0f) }
         var offsetY by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
-        val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * 6).toDp().toPx()
-        val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * 11).toDp().toPx()
-        val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * -6).toDp().toPx()
-        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * -11).toDp().toPx()
+        val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * 4).toDp().toPx()
+        val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * -4).toDp().toPx()
+        val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * 12).toDp().toPx()
+        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * -11).toDp().toPx() * 2f
         val scrollState = rememberScrollable2DState { delta ->
             val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
             val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
@@ -114,7 +113,7 @@ fun View(screen: Screen) {
         }
     }
     Box(
-        Modifier
+        modifier
             .fillMaxSize()
     ) {
         Column(
@@ -172,11 +171,11 @@ fun View(screen: Screen) {
                 }
             }
             Column(
-                verticalArrangement = if (display == H) Arrangement.Bottom else Arrangement.Top,
+                verticalArrangement = if (display == H) Arrangement.Center else Arrangement.Top,
                 modifier = Modifier
                     .onSizeChanged { heightView = it.height }
                     .fillMaxWidth()
-                    .then(if (display == V) Modifier.verticalScroll(scrollStateY) else Modifier)
+                    .then(if (display == V || display == T) Modifier.verticalScroll(scrollStateY) else Modifier)
                     .weight(1f)
                     .then(
                         if (display == H)
@@ -250,7 +249,7 @@ fun View(screen: Screen) {
                     Control(
                         control =
                             toolbar.items.last().query == ITEM ||
-                                    toolbar.items.last().query == SHOPS,
+                            toolbar.items.last().query == SHOPS,
                         type = display,
                         filter = filter,
                         ratioH = ratioH ?: ratio!!,
@@ -264,7 +263,7 @@ fun View(screen: Screen) {
                 DisposableEffect(view, display) {
                     if (display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
-                        screen.scrollY = scrollStateX.value
+                        screen.scrollX = scrollStateX.value
                     }
                     val vto = view.viewTreeObserver
                     vto.addOnScrollChangedListener(listener)
@@ -276,10 +275,14 @@ fun View(screen: Screen) {
                     modifier = Modifier
                         .zIndex(2f)
                         .fillMaxWidth()
-                        .then(if (display == H) Modifier.horizontalScroll(scrollStateX) else Modifier)
+                        .then(
+                            if (display == H) Modifier.horizontalScroll(scrollStateX)
+                            else Modifier
+                        )
                 ) {
                     Box(
                         modifier = Modifier
+                            .zIndex(1f)
                             .size(
                                 width = w.value!!.toDp(),
                                 height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
@@ -297,7 +300,7 @@ fun View(screen: Screen) {
                                 toggle = toggle[it],
                                 xy = xy[it]!!,
                                 modifier = Modifier.clickable(
-                                    enabled = false,
+                                    enabled = true,
                                     onClick = {
                                         toolbar.items.last().scroll =
                                             if (display == V) scrollStateX.value
@@ -323,10 +326,8 @@ fun View(screen: Screen) {
                                     ),
                                 color = Color.Transparent
                             ) {
-                                //val bitmap = ImageBitmap.imageResource(id = R.drawable._world)
                                 screen.scrollY = pan.offsetY.toInt().unaryMinus()
                                 screen.scrollX = pan.offsetX.toInt().unaryMinus()
-
                                 Canvas(modifier = Modifier) {
                                     val step = MAP_WIDTH.toPx() / 18
                                     val width = size.width

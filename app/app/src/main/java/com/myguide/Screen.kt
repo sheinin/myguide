@@ -155,7 +155,7 @@ class Screen(val ident: Boolean) {
         }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(1000)
+                delay(vm.fps.value!!.delay)
                 scroll()
             }
         }
@@ -247,7 +247,12 @@ class Screen(val ident: Boolean) {
         qqq("DISPL $handler ${type} ${list.size}")
         handler = type
         toolbar.items.last().type = type
+        vm.cycler.reset()
+        vm.scrollX.postValue(0)
+        vm.scrollY.postValue(0)
         vm.type.postValue(type)
+        scrollX = 0
+        scrollY = 0
         when (type) {
             D -> {
                 mx.point.indices.map {
@@ -257,7 +262,6 @@ class Screen(val ident: Boolean) {
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(screenHeight.toPx().toInt())
             }
-
             H -> {
                 vm.w.postValue((mapViewWidth * mx.ruler.size * vm.ratioH()).toInt())
                 vm.h.postValue(((ITEM_HEIGHT + MARGIN * 2) * vm.ratioV()).toInt())
@@ -301,9 +305,9 @@ class Screen(val ident: Boolean) {
                     } && (
                             vm.filter.value == null ||
                                     vm.filter.value == true &&
-                                    list[it.index].lng!! > 0 ||
+                                    list[it.index].lng > 0 ||
                                     vm.filter.value == false &&
-                                    list[it.index].lng!! < 0
+                                    list[it.index].lng < 0
                             )
                 }
                 .map { it.index }
@@ -340,7 +344,6 @@ class Screen(val ident: Boolean) {
             return TITLE_HEIGHT * p.lineCount.dec()
         return 0
     }
-
     private fun ruler() {
         when (vm.type.value!!) {
             D, T,
@@ -350,6 +353,7 @@ class Screen(val ident: Boolean) {
                 mx.point.map {
                     mx.ruler.add(height)
                     height += mx.display[it].first + mx.display[it].second
+                    qqq("RULER $it ${height.toDp().round()} ${list[it].title}")
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(height)
@@ -381,18 +385,17 @@ class Screen(val ident: Boolean) {
                 val l = mx.point.withIndex()
                     .sortedBy {
                         distance(
-                            list[it.value].lng!!,
-                            list[it.value].lat!!,
+                            list[it.value].lng,
+                            list[it.value].lat,
                             x,
                             y
                         )
                     }
-                    //.filter { list[it.value].lat!!.toInt() + y > 0 }
                     .take(batch)
                 l.map {
                     val d = distance(
-                        list[it.value].lat!!,
-                        list[it.value].lng!!,
+                        list[it.value].lat,
+                        list[it.value].lng,
                         y,
                         x
                     )
@@ -404,13 +407,13 @@ class Screen(val ident: Boolean) {
                     c++
                     val xy = mx.view.xy.getOrNull(index) ?: return
                     val toggle = mx.view.toggle.getOrNull(index) ?: return
-                    qqq(
+                    /*qqq(
                         "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${list[index].lat}/${list[index].lng} ${list[index].title} ${
                             mx.view.details.getOrNull(
                                 index
                             )?.title
                         } ${xy.x.toDp().round()} ${xy.y.toDp().round()}}"
-                    )
+                    )*/
                     mx.stack[mod] = ix
                     vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
                     vm.cycler.update(mod = mod, details = mx.view.details[index])
@@ -424,12 +427,12 @@ class Screen(val ident: Boolean) {
                         (this@Screen.scrollX / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
                         0
                     )
+                qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
                 (r - batch / 2 until r + batch / 2)
                     .filter { it !in mx.stack }
                     .map { syncY(it) }
 
             }
-
             T, V -> {
                 val r = mx.ruler
                     .indexOfFirst {
@@ -461,7 +464,7 @@ class Screen(val ident: Boolean) {
                         i += 1
                     }
                 }
-                qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+              //  qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
                 down()
                 up()
             }
@@ -551,7 +554,7 @@ class Screen(val ident: Boolean) {
                 D ->
                     XY(
                         x = list[index].lng.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollX,
-                        y = list[index].lat.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollY,
+                        y = list[index].lat.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollY + screenHeight.toPx().toInt() / 3,
                         h = ITEM_HEIGHT + MARGIN * 2,
                         w = ITEM_HEIGHT + MARGIN * 2,
                         i = ix
@@ -567,7 +570,7 @@ class Screen(val ident: Boolean) {
                 V ->
                     XY(
                         x = 0,
-                        y = mx.ruler[ix].toInt() + scrollY,
+                        y = mx.ruler[ix].toInt(),
                         h = mx.display[index].first + mx.display[index].second,
                         w = screenWidth.toPx().toInt(),
                         i = ix
@@ -584,7 +587,7 @@ class Screen(val ident: Boolean) {
     }
 
     fun load(l: List<ListInterface>) {
-        list = l//.take(10)
+        list = l
         handler = vm.type.value
         mx.display.clear()
         mx.stack = IntArray(batch) { -1 }
@@ -672,7 +675,7 @@ class Screen(val ident: Boolean) {
         val xy = mx.view.xy.getOrNull(index) ?: return
         val toggle = mx.view.toggle.getOrNull(index) ?: return
         qqq(
-            "RS ix:$ix index:$index mod:$mod ${xy.x} ${xy.y} ${xy.w} ${xy.h} ${
+            "RS ix:$ix index:$index mod:$mod ${xy.x.toDp().round()} ${xy.y.toDp().round()} ${xy.w.toDp().round()} ${xy.h.toDp().round()} ${
                 mx.view.details.getOrNull(
                     index
                 )?.title
@@ -700,8 +703,12 @@ class Screen(val ident: Boolean) {
         mx.view.toggle[index] = mx.toggle[index]!!.second > 0
         mx.toggle[index] =
             mx.toggle[index]!!.first to mx.toggle[index]!!.second.unaryMinus()
+        qqq("TOGGLE 1 ${mx.ruler}")
+        qqq("TOGGLE 2 ${mx.point}")
         filter()
         ruler()
+        qqq("TOGGLE 11 ${mx.ruler}")
+        qqq("TOGGLE 12 ${mx.point}")
         mx.point.indices
             .map { xy(it) }
         mx.stack = IntArray(batch) { -1 }

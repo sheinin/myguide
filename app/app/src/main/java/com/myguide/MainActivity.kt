@@ -73,9 +73,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.hide(navigationBars())
-        windowInsetsController.hide(statusBars())
+    //    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+      //  windowInsetsController.hide(navigationBars())
+        //windowInsetsController.hide(statusBars())
 
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)

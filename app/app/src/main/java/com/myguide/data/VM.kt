@@ -9,6 +9,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class VM {
+    enum class FPS {
+        FPS24,
+        FPS30,
+        FPS60;
+        val delay: Long
+            get() = when (this) {
+                FPS24 -> 2500L
+                FPS30 -> 50L
+                FPS60 -> 15L
+            }
+        val drawable: Int
+            get() = when (this) {
+                FPS24 -> R.drawable._24fps
+                FPS30 -> R.drawable._30fps
+                FPS60 -> R.drawable._60fps
+            }
+        val next: FPS
+            get() = when (this) {
+                FPS24 -> FPS30
+                FPS30 -> FPS60
+                FPS60 -> FPS24
+            }
+    }
     enum class Type {
         D,
         H,
@@ -24,7 +47,6 @@ class VM {
         val nextItem: Type
             get() = when (this) {
                 V -> D
-                D -> T
                 else -> V
             }
         val nextShop: Type
@@ -41,6 +63,7 @@ class VM {
     private val _margin = MutableStateFlow(1f)
     val adjust = MutableLiveData(false)
     val type = MutableLiveData(Type.V)
+    val fps = MutableLiveData(FPS.FPS30)
     val cycler = Cycler()
     val exp = MutableLiveData(false)
     val filter = MutableLiveData<Boolean?>(null)

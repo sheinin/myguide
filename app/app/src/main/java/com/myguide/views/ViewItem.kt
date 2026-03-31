@@ -165,7 +165,7 @@ fun ViewItem(
             if (details.origin == null) Modifier
             else modifier
         )
-        .zIndex(1f)
+        .zIndex(0f)
     if (type != T && type != D)
         Row(
             modifier
