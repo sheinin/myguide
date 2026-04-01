@@ -18,9 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
@@ -40,6 +44,7 @@ import com.myguide.data.VM.Type.D
 import com.myguide.data.VM.Type.H
 import com.myguide.data.VM.Type.T
 import com.myguide.data.VM.Type.V
+import com.myguide.qqq
 import com.myguide.screen
 import com.myguide.toDp
 import com.myguide.typography
@@ -66,6 +71,9 @@ fun ViewItem(
                 "item icon",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
+                    .onGloballyPositioned {
+                        qqq("POS IMAGE ${it.positionInParent()} ${details.title} ${it.parentCoordinates?.boundsInParent()!!.let{""+it.size +" top:"+it.top+" botm:"+it.bottom}} ${it.size.width} ${it.size.height}")
+                    }
                     .size(
                         width = ITEM_HEIGHT.toDp() * ratioH,
                         height = ITEM_HEIGHT.toDp() * ratioV
@@ -169,6 +177,9 @@ fun ViewItem(
     if (type != T && type != D)
         Row(
             modifier
+                .onGloballyPositioned {
+                    qqq("POS ${it.positionInParent()}  ${details.title} ${it.parentCoordinates?.boundsInParent()!!.let{""+it.size +" top:"+it.top+" botm:"+it.bottom}} ${it.size.width} ${it.size.height}")
+                }
                 .padding(
                     start =
                         MARGIN.toDp() * margin * ratioH

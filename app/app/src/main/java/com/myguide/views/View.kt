@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,9 +47,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -59,10 +68,8 @@ import com.myguide.UI.MAP_WIDTH
 import com.myguide.UI.MARGIN
 import com.myguide.batch
 import com.myguide.colorScheme
-import com.myguide.data.Query.ITEM
-import com.myguide.data.Query.SHOPS
-import com.myguide.data.VM
 import com.myguide.data.VM.Type.*
+import com.myguide.qqq
 import com.myguide.toDp
 import com.myguide.toPx
 import com.myguide.toolbar
@@ -76,8 +83,8 @@ fun View(modifier: Modifier, screen: Screen) {
     val description by vm.description.observeAsState()
     val details by vm.cycler.details.collectAsStateWithLifecycle()
     val display by vm.type.observeAsState()
+    val exp by vm.exp.observeAsState()
     val expand by vm.cycler.description.collectAsStateWithLifecycle()
-    val filter by vm.filter.observeAsState()
     val h = vm.h.observeAsState()
     val margin by vm.margin.collectAsStateWithLifecycle()
     val ratio by vm.ratio.observeAsState()
@@ -85,7 +92,6 @@ fun View(modifier: Modifier, screen: Screen) {
     val ratioV by vm.ratioV.observeAsState()
     val scale by vm.scale.observeAsState()
     val scrollStateY = rememberScrollState()
-    val sort by vm.sort.observeAsState()
     val stateX by vm.stateX.observeAsState()
     val stateY by vm.scrollY.observeAsState()
     val toggle by vm.cycler.toggle.collectAsStateWithLifecycle()
@@ -149,8 +155,8 @@ fun View(modifier: Modifier, screen: Screen) {
             LaunchedEffect(stateY!!) {
                 scrollStateY.scrollTo(stateY!!)
             }
-            DisposableEffect(view, display) {
-                if (display == H) return@DisposableEffect onDispose {}
+            DisposableEffect(view, display, exp) {
+                if (exp!! || display == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     screen.scrollY = scrollStateY.value - heightInfo + heightView / 3
                 }
@@ -165,7 +171,10 @@ fun View(modifier: Modifier, screen: Screen) {
                 modifier = Modifier
                     .onSizeChanged { heightView = it.height }
                     .fillMaxWidth()
-                    .then(if (display == V || display == T) Modifier.verticalScroll(scrollStateY) else Modifier)
+                    .then(
+                        if (!exp!! && (display == V || display == T))
+                            Modifier.verticalScroll(scrollStateY) else Modifier
+                    )
                     .weight(1f)
                     .then(
                         if (display == H)
@@ -238,8 +247,8 @@ fun View(modifier: Modifier, screen: Screen) {
                 val scrollStateX = rememberScrollState()
                 val view = LocalView.current
                 LaunchedEffect(stateX) { scrollStateX.scrollBy(stateX!!) }
-                DisposableEffect(view, display) {
-                    if (display != H) return@DisposableEffect onDispose {}
+                DisposableEffect(view, display, exp) {
+                    if (exp!! || display != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
                         screen.scrollX = scrollStateX.value
                     }
@@ -253,19 +262,30 @@ fun View(modifier: Modifier, screen: Screen) {
                     modifier = Modifier
                         .zIndex(2f)
                         .fillMaxWidth()
+                        .fillMaxHeight()
                         .then(
-                            if (display == H) Modifier.horizontalScroll(scrollStateX)
+                            if (!exp!! && display == H) Modifier.horizontalScroll(scrollStateX)
                             else Modifier
                         )
                 ) {
                     Box(
+                        //contentAlignment =
+                        //    if (exp!!) Alignment.Center
+                        //else Alignment.TopStart,
                         modifier = Modifier
                             .zIndex(1f)
-                            .size(
-                                width = w.value!!.toDp(),
-                                height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
+                            .then(
+                                if (exp!!) Modifier.fillMaxSize()
+                                else Modifier.size(
+                                    width = w.value!!.toDp(),
+                                    height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
+                                )
                             )
                     ) {
+                       // if (exp!!) {
+
+
+                        //} else
                         repeat(batch) {
                             ViewItem(
                                 details = details[it],
@@ -293,7 +313,7 @@ fun View(modifier: Modifier, screen: Screen) {
                                 )
                             )
                         }
-                        if (display == D)
+                        if (display == D || exp!!)
                             Surface(
                                 modifier = Modifier
                                     .zIndex(2f)
@@ -304,6 +324,7 @@ fun View(modifier: Modifier, screen: Screen) {
                                     ),
                                 color = Color.Transparent
                             ) {
+                                qqq("SURFA ${pan.offsetY}  ${pan.offsetX}")
                                 screen.scrollY = pan.offsetY.toInt().unaryMinus()
                                 screen.scrollX = pan.offsetX.toInt().unaryMinus()
                                 Canvas(modifier = Modifier) {
@@ -401,266 +422,3 @@ fun ArrowText(
         }
     }
 }
-
-
-/*
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun View(screen: Screen) {
-    val vm = screen.vm
-    val description by vm.description.observeAsState()
-    val details by vm.cycler.details.collectAsStateWithLifecycle()
-    val display by vm.type.observeAsState()
-    val expand by vm.cycler.description.collectAsStateWithLifecycle()
-    val filter by vm.filter.observeAsState()
-    val h = vm.h.observeAsState()
-    val margin by vm.margin.collectAsStateWithLifecycle()
-    val ratio by vm.ratio.observeAsState()
-    val ratioH by vm.ratioH.observeAsState()
-    val ratioV by vm.ratioV.observeAsState()
-    val scale by vm.scale.observeAsState()
-    val scrollStateY = rememberScrollState()
-    val sort by vm.sort.observeAsState()
-    val stateX by vm.stateX.observeAsState()
-    val stateY by vm.scrollY.observeAsState()
-    val toggle by vm.cycler.toggle.collectAsStateWithLifecycle()
-    val view = LocalView.current
-    val viewItem by vm.details.observeAsState()
-    val w = vm.w.observeAsState()
-    val xy by vm.cycler.xy.collectAsStateWithLifecycle()
-    var heightView by remember { mutableIntStateOf(0) }
-    var heightInfo by remember { mutableIntStateOf(0) }
-
-
-    var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
-
-    // State that updates our offsets as the user scrolls in 2D
-    val scrollState = rememberScrollable2DState { delta ->
-        // delta: Offset where positive x = right, positive y = down
-        offsetX += delta.x
-        offsetY += delta.y
-        delta // Return the consumed delta
-    }
-    Box(
-        Modifier
-            .fillMaxSize()
-    ) {
-        /*mage(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = "logo",
-            modifier = Modifier
-                .fillMaxSize()
-                .scrollable2D(
-                    state = scrollState,
-                    enabled = true
-                )
-            ,
-            contentScale = ContentScale.Crop
-        )*/
-
-
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colorScheme.background)
-            ) {
-                if (toolbar.crumbs[screen.ident]!!.value!![0].isNotEmpty())
-                    Row(Modifier.padding(8.dp, 4.dp)) {
-                        repeat(3) {
-                            ArrowText(
-                                toolbar.crumbs[screen.ident]!!.value!![it],
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .alpha(
-                                        if (toolbar.crumbs[screen.ident]!!.value!![it].isNotEmpty()) 1f
-                                        else 0f
-                                    )
-                                    .clickable(
-                                        onClick = {
-                                            toolbar.click(it)
-                                        }
-                                    )
-                            )
-                        }
-                    }
-                if (display == H)
-                    Control(
-                        control = toolbar.items.last().query == ITEM || toolbar.items.last().query == SHOPS,
-                        filter = filter,
-                        type = display,
-                        ratioH = ratioH ?: ratio!!,
-                        ratioV = ratioV ?: ratio!!,
-                        sort = sort,
-                        title = toolbar.items.last().query.title
-                    )
-            }
-            LaunchedEffect(stateY!!) {
-                scrollStateY.scrollTo(stateY!!)
-            }
-            DisposableEffect(view, display) {
-                if (display == H) return@DisposableEffect onDispose {}
-                val listener = ViewTreeObserver.OnScrollChangedListener {
-                    screen.scroll = scrollStateY.value - heightInfo + heightView / 3
-                }
-                val vto = view.viewTreeObserver
-                vto.addOnScrollChangedListener(listener)
-                onDispose {
-                    vto.removeOnScrollChangedListener(listener)
-                }
-            }
-            Column(
-                verticalArrangement = if (display == H) Arrangement.Bottom else Arrangement.Top,
-                modifier = Modifier
-                    .onSizeChanged { heightView = it.height }
-                    .fillMaxWidth()
-                    .verticalScroll(scrollStateY)
-                    .weight(1f)
-                    .then(
-                        if (display == H)
-                            Modifier
-                                .height(h.value!!.toDp())
-                                .background(Color.Transparent)
-                        else
-                            Modifier
-                                .fillMaxHeight()
-                                .background(colorScheme.surface)
-                    )
-            ) {
-                if (display != H && viewItem != null)
-                    Column(
-                        Modifier
-                            .padding(8.dp)
-                            .onGloballyPositioned(
-                                onGloballyPositioned = {
-                                    heightInfo = it.size.height
-                                }
-                            )
-                    ) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    horizontal = MARGIN.toDp() * margin * (ratioH ?: ratio!!),
-                                    vertical = MARGIN.toDp() * margin * (ratioV ?: ratio!!)
-                                )
-                        ) {
-                            Column {
-                                Text(
-                                    viewItem!!.title,
-                                    style = typography.bodyLarge,
-                                    color = colorScheme.secondary,
-                                    lineHeight = 1.em * scale!!,
-                                    fontSize = typography.bodyLarge.fontSize * (ratioV ?: ratio!!),
-                                )
-                                Text(
-                                    viewItem!!.origin!!,
-                                    fontStyle = FontStyle.Italic,
-                                    style = typography.bodyMedium,
-                                    color = colorScheme.secondary,
-                                    lineHeight = 1.em * scale!!,
-                                    fontSize = typography.bodyMedium.fontSize * (ratioV ?: ratio!!),
-                                    modifier = Modifier.padding(bottom = 4.dp)
-                                )
-                            }
-                            Spacer(Modifier.weight(1f))
-                            Image(
-                                painterResource(viewItem!!.drawable!!),
-                                "item icon",
-                                modifier = Modifier
-                                    .size(
-                                        60.dp * (ratioH ?: ratio!!),
-                                        60.dp * (ratioV ?: ratio!!)
-                                    )
-                            )
-                        }
-                        Text(description!!,
-                            style = typography.bodySmall,
-                            lineHeight = 1.em * scale!!,
-                            color = colorScheme.secondary,
-                            fontSize = typography.bodySmall.fontSize * (ratioV ?: ratio!!),
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                if (display != H)
-                    Control(
-                        control =
-                            toolbar.items.last().query == ITEM ||
-                            toolbar.items.last().query == SHOPS,
-                        type = display,
-                        filter = filter,
-                        ratioH = ratioH ?: ratio!!,
-                        ratioV = ratioV ?: ratio!!,
-                        sort = sort,
-                        title = toolbar.items.last().query.title
-                    )
-                val scrollStateX = rememberScrollState()
-                val view = LocalView.current
-                LaunchedEffect(stateX) { scrollStateX.scrollBy(stateX!!) }
-                DisposableEffect(view, display) {
-                    if (display != H) return@DisposableEffect onDispose {}
-                    val listener = ViewTreeObserver.OnScrollChangedListener {
-                        screen.scroll = scrollStateX.value
-                    }
-                    val vto = view.viewTreeObserver
-                    vto.addOnScrollChangedListener(listener)
-                    onDispose {
-                        vto.removeOnScrollChangedListener(listener)
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(scrollStateX)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(
-                                width = w.value!!.toDp(),
-                                height = h.value!!.toDp() * (ratioV ?: ratio!!) * scale!!
-                            )
-                    ) {
-                        repeat(batch) {
-                            ViewItem(
-                                details = details[it],
-                                type = display,
-                                expand = expand[it],
-                                margin = margin,
-                                ratioH = ratioH ?: ratio!!,
-                                ratioV = ratioV ?: ratio!!,
-                                scale = scale!!,
-                                toggle = toggle[it],
-                                xy = xy[it]!!,
-                                modifier = Modifier.clickable(
-                                    onClick = {
-                                        toolbar.items.last().scroll =
-                                            if (display == V) scrollStateX.value
-                                            else scrollStateY.value - heightInfo
-                                        toolbar.items.last().toggle =
-                                            screen.mx.view.toggle
-                                        toolbar.navigate(
-                                            id = screen.list[screen.mx.point[xy[it]!!.i]].id,
-                                            title = details[it].title,
-                                        )
-                                    }
-                                )
-                            )
-                        }
-                    }
-                }
-
-            }
-        }
-
-    }
-}
-
-
-*/

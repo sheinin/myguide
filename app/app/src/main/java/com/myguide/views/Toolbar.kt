@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,13 +39,19 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.myguide.R
 import com.myguide.UI.BUTTON
@@ -51,11 +61,14 @@ import com.myguide.data.Query
 import com.myguide.data.Query.ITEM
 import com.myguide.data.Query.SHOPS
 import com.myguide.data.VM
+import com.myguide.data.VM.Type
 import com.myguide.screen
 import com.myguide.sortable
 import com.myguide.toDp
 import com.myguide.toolbar
 import com.myguide.typography
+
+private var experimental = MutableLiveData(false)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,6 +77,7 @@ fun Toolbar(modifier: Modifier) {
     if (ident == null) return
     val vm = screen[ident!!]!!.vm
     val display by vm.type.observeAsState()
+    val exp by vm.exp.observeAsState()
     val filter by vm.filter.observeAsState()
     val fps by vm.fps.observeAsState(VM.FPS.FPS30)
     val margin by vm.margin.collectAsStateWithLifecycle()
@@ -74,6 +88,18 @@ fun Toolbar(modifier: Modifier) {
     val scale by vm.scale.observeAsState()
     val sort by vm.sort.observeAsState()
     var visible by remember { mutableStateOf(true) }
+    var showExpDialog by remember { mutableStateOf(false) }
+    if (showExpDialog) {
+        AlertDialog(
+            onDismissRequest = { showExpDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showExpDialog = false }) {
+                    Text("Close")
+                }
+            },
+            text = { Exp() }
+        )
+    }
     @Composable
     fun Slider1(modifier: Modifier) {
         SliderRow(
@@ -251,12 +277,12 @@ fun Toolbar(modifier: Modifier) {
                 contentDescription = "filter",
                 colorFilter =
                     ColorFilter.tint(
-                        if (sortable.value!!) colorScheme.primary
+                        if (!exp!! && sortable.value!!) colorScheme.primary
                         else colorScheme.secondary
                     ),
                 modifier = Modifier
                     .clickable(
-                        enabled = sortable.value!!,
+                        enabled = !exp!! && sortable.value!!,
                         onClick = {
                             screen[current.value!!]!!.vm.filter.value =
                                 when (screen[current.value!!]!!.vm.filter.value) {
@@ -274,17 +300,14 @@ fun Toolbar(modifier: Modifier) {
                 contentDescription = "sort",
                 colorFilter =
                     ColorFilter.tint(
-                        if (sortable.value!!) colorScheme.primary
+                        if (!exp!! && sortable.value!!) colorScheme.primary
                         else colorScheme.secondary
                     ),
                 modifier = Modifier
                     .scale(scaleX = 1f, scaleY = if (sort == true) -1f else 1f)
                     .clickable(
-                        enabled = sortable.value!!,
-                        onClick = {
-                            screen[current.value!!]!!.vm.sort.value =
-                                !screen[current.value!!]!!.vm.sort.value!!
-                        }
+                        enabled = !exp!! && sortable.value!!,
+                        onClick = { vm.sort.value = !vm.sort.value!! }
                     )
                     .size(BUTTON.toDp())
                     .padding(8.dp)
@@ -295,9 +318,10 @@ fun Toolbar(modifier: Modifier) {
                 colorFilter = ColorFilter.tint(colorScheme.primary),
                 modifier = Modifier
                     .clickable(
+                        enabled = !exp!!,
                         onClick = {
                             screen[current.value!!]!!.display(
-                                if (toolbar.items.last().query == Query.SHOPS || toolbar.items.last().query == Query.ITEM)
+                                if (toolbar.items.last().query == SHOPS || toolbar.items.last().query == Query.ITEM)
                                     display!!.nextShop
                                 else
                                     display!!.nextItem
@@ -320,18 +344,21 @@ fun Toolbar(modifier: Modifier) {
                 painter = painterResource(R.drawable._exp),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(
-                    if (screen[current.value!!]!!.vm.exp.observeAsState().value!!) colorScheme.background
+                    if (exp!!) colorScheme.background
                     else colorScheme.primary
                 ),
                 modifier = Modifier
                     .background(
-                        if (screen[current.value!!]!!.vm.exp.observeAsState().value!!) colorScheme.primary
+                        if (exp!!) colorScheme.primary
                         else Color.Transparent
                     )
-                    .clickable(onClick = {
-                        screen[current.value!!]!!.vm.exp.value =
-                            !screen[current.value!!]!!.vm.exp.value!!
-                    })
+                    .clickable(
+                        onClick = {
+                            vm.exp.value = !vm.exp.value!!
+                            vm.type.value = Type.V
+                            if (vm.exp.value!!) showExpDialog = true
+                        }
+                    )
                     .size(BUTTON.toDp())
                     .padding(8.dp)
             )
@@ -449,6 +476,62 @@ fun SliderRow(
                 .size(BUTTON.toDp())
                 .padding(6.dp)
                 .clickable(onClick = plus)
+        )
+    }
+}
+
+@Composable
+fun Exp() {
+    val uriHandler = LocalUriHandler.current
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            "Experimental Mode",
+            fontSize = typography.bodyLarge.fontSize,
+            lineHeight = typography.bodyLarge.fontSize,
+            color = colorScheme.secondary,
+            style = typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(8.dp)
+        )
+        Text(
+            "This library aims to deliver Browsing functionality without reliance on UI libraries. " +
+                    "Instead it renders the document tree by applying basic algebra to view templates transpiled from " +
+                    "normal UI.\n" +
+                    "\n" +
+                    "It is under development.\n" +
+                    "\n" +
+                    "Prototype of the Browser may be viewed here:",
+            fontSize = typography.bodyMedium.fontSize,
+            lineHeight = typography.bodyMedium.fontSize,
+            color = colorScheme.secondary,
+            style = typography.bodyLarge,
+            modifier = Modifier.padding(8.dp)
+        )
+        val browserUrl = "https://sheinin.github.io/sheinin/"
+        val linkText = buildAnnotatedString {
+            pushStringAnnotation(tag = "URL", annotation = browserUrl)
+            withStyle(
+                style = SpanStyle(
+                    color = Color(0xFF1E88E5),
+                    textDecoration = TextDecoration.Underline
+                )
+            ) {
+                append(browserUrl)
+            }
+            pop()
+        }
+        ClickableText(
+            text = linkText,
+            style = typography.bodyMedium.copy(color = Color(0xFF1E88E5)),
+            modifier = Modifier.padding(horizontal = 8.dp),
+            onClick = { offset ->
+                linkText.getStringAnnotations("URL", offset, offset)
+                    .firstOrNull()
+                    ?.let { uriHandler.openUri(it.item) }
+            }
         )
     }
 }

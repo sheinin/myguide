@@ -132,8 +132,8 @@ object Expandable {
                 )
             )
         if (txt.length == take.length) return static(ratioV, txt)
-
-        /*      qqq(
+/*
+              qqq(
                    " EXPAND " + result.lineCount
                   + txt.take(result.getLineEnd(0, true))
                   + "=="
@@ -142,8 +142,8 @@ object Expandable {
                   + txt
               )
 
+*/
 
-         */
 
 
         val str =

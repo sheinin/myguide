@@ -34,8 +34,8 @@ import com.myguide.screen
 fun Main(innerPadding: PaddingValues) {
     val ident = current.observeAsState()
     Column(
-        Modifier
-         //   .padding(innerPadding)
+        Modifier.fillMaxSize()
+            .padding(bottom = innerPadding.calculateBottomPadding())
             .fillMaxSize()
             .background(colorScheme.background)
     ) {

@@ -285,8 +285,16 @@ class Screen(val ident: Boolean) {
                     mx.view.expand[it] = mx.view.expand[it].first to exp(it)
                     xy(it)
                 }
-                vm.w.postValue(screenWidth.toPx().toInt())
-                vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
+                when (vm.exp.value!!) {
+                    false -> {
+                        vm.w.postValue(screenWidth.toPx().toInt())
+                        vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
+                    }
+                    true -> {
+
+                    }
+                }
+
             }
         }
         mx.stack = IntArray(batch) { -1 }
@@ -438,35 +446,71 @@ class Screen(val ident: Boolean) {
                     .indexOfFirst {
                         it * vm.ratioV() * vm.scale.value!! > this@Screen.scrollY
                     }
-
-                fun down() {
-                    var i = 0
-                    while (i < batch / 2) {
-                        val down = r - i
-                        if (down >= 0 && !mx.stack.contains(down)) {
-                            syncY(down)
-                            break
+                when (vm.exp.value!!) {
+                    false -> {
+                        fun down() {
+                            var i = 0
+                            while (i < batch / 2) {
+                                val down = r - i
+                                if (down >= 0 && !mx.stack.contains(down)) {
+                                    syncY(down)
+                                    break
+                                }
+                                i += 1
+                            }
                         }
-                        i += 1
+                        fun up() {
+                            var i = 0
+                            while (i < batch / 2) {
+                                val up = r + i
+                                if (up in 0..mx.point.lastIndex &&
+                                    !mx.stack.contains(up)
+                                ) {
+                                    syncY(up)
+                                    break
+                                }
+                                i += 1
+                            }
+                        }
+                        down()
+                        up()
+                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+
+                    }
+                    true -> {
+                        mx.stack = IntArray(batch) { -1 }
+                        fun down() {
+                            var i = 0
+                            while (i < batch / 2) {
+                                val down = r - i
+                                if (down >= 0 && !mx.stack.contains(down)) {
+                                    xy(down)
+                                    syncY(down)
+                                   // break
+                                }
+                                i += 1
+                            }
+                        }
+                        fun up() {
+                            var i = 0
+                            while (i < batch / 2) {
+                                val up = r + i
+                                if (up in 0..mx.point.lastIndex &&
+                                    !mx.stack.contains(up)
+                                ) {
+                                    xy(up)
+                                    syncY(up)
+                                   // break
+                                }
+                                i += 1
+                            }
+                        }
+                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                        down()
+                        up()
                     }
                 }
 
-                fun up() {
-                    var i = 0
-                    while (i < batch / 2) {
-                        val up = r + i
-                        if (up in 0..mx.point.lastIndex &&
-                            !mx.stack.contains(up)
-                        ) {
-                            syncY(up)
-                            break
-                        }
-                        i += 1
-                    }
-                }
-              //  qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
-                down()
-                up()
             }
 
             null -> {}
@@ -505,7 +549,6 @@ class Screen(val ident: Boolean) {
                     )
                 (from until min(from + batch, mx.point.size)).map { xy(it) }
             }
-
             V -> {
                 val from = max(0, mx.ruler.indexOfFirst { it >= this@Screen.scrollY } - batch / 3)
                 var sum = 0
@@ -568,13 +611,24 @@ class Screen(val ident: Boolean) {
                         i = ix
                     )
                 V ->
-                    XY(
-                        x = 0,
-                        y = mx.ruler[ix].toInt(),
-                        h = mx.display[index].first + mx.display[index].second,
-                        w = screenWidth.toPx().toInt(),
-                        i = ix
-                    )
+                    when (vm.exp.value!!) {
+                        false ->
+                            XY(
+                                x = 0,
+                                y = mx.ruler[ix].toInt(),
+                                h = mx.display[index].first + mx.display[index].second,
+                                w = screenWidth.toPx().toInt(),
+                                i = ix
+                            )
+                        true ->
+                            XY(
+                                x = 0,
+                                y = mx.ruler[ix].toInt() - scrollY,
+                                h = mx.display[index].first + mx.display[index].second,
+                                w = screenWidth.toPx().toInt(),
+                                i = ix
+                            )
+                    }
                 H ->
                     XY(
                         x = (mapViewWidth * ix * vm.ratioH()).toInt(),
@@ -674,13 +728,15 @@ class Screen(val ident: Boolean) {
         // mx.stack.indices.maxByOrNull { abs(mx.stack[it] - ix) } ?: 0
         val xy = mx.view.xy.getOrNull(index) ?: return
         val toggle = mx.view.toggle.getOrNull(index) ?: return
-        qqq(
+       /* qqq(
             "RS ix:$ix index:$index mod:$mod ${xy.x.toDp().round()} ${xy.y.toDp().round()} ${xy.w.toDp().round()} ${xy.h.toDp().round()} ${
                 mx.view.details.getOrNull(
                     index
                 )?.title
             }"
         )
+
+        */
         mx.stack[mod] = ix
         vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
         vm.cycler.update(mod = mod, details = mx.view.details[index])
