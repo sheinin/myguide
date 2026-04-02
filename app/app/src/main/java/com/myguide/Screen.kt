@@ -271,7 +271,6 @@ class Screen(val ident: Boolean) {
                     xy(ix)
                 }
             }
-
             T -> {
                 mx.point.indices.map {
                     xy(it)
@@ -279,7 +278,6 @@ class Screen(val ident: Boolean) {
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(((ITEM_HEIGHT.times(2)) * (mx.point.size / COLUMNS) * vm.ratioV()).toInt())
             }
-
             V -> {
                 mx.point.indices.map {
                     mx.view.expand[it] = mx.view.expand[it].first to exp(it)
@@ -291,7 +289,8 @@ class Screen(val ident: Boolean) {
                         vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
                     }
                     true -> {
-
+                        qqq("P ${mx.point.size.toFloat()}")
+                        vm.dim.postValue((0f to 0f) to (mx.point.size.toFloat().unaryMinus() to 0f))
                     }
                 }
 
@@ -435,7 +434,7 @@ class Screen(val ident: Boolean) {
                         (this@Screen.scrollX / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
                         0
                     )
-                qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                //qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
                 (r - batch / 2 until r + batch / 2)
                     .filter { it !in mx.stack }
                     .map { syncY(it) }
@@ -474,7 +473,7 @@ class Screen(val ident: Boolean) {
                         }
                         down()
                         up()
-                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                        //qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
 
                     }
                     true -> {
@@ -505,7 +504,7 @@ class Screen(val ident: Boolean) {
                                 i += 1
                             }
                         }
-                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                        //qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
                         down()
                         up()
                     }
@@ -593,7 +592,7 @@ class Screen(val ident: Boolean) {
     private fun xy(ix: Int) {
         val index = mx.point[ix]
         mx.view.xy[index] =
-            when (handler!!) {
+            when (handler) {
                 D ->
                     XY(
                         x = list[index].lng.toInt() * (ITEM_HEIGHT + MARGIN * 2) - scrollX,
@@ -629,7 +628,7 @@ class Screen(val ident: Boolean) {
                                 i = ix
                             )
                     }
-                H ->
+                else ->
                     XY(
                         x = (mapViewWidth * ix * vm.ratioH()).toInt(),
                         y = 0,
@@ -642,7 +641,6 @@ class Screen(val ident: Boolean) {
 
     fun load(l: List<ListInterface>) {
         list = l
-        handler = vm.type.value
         mx.display.clear()
         mx.stack = IntArray(batch) { -1 }
         mx.toggle.clear()
@@ -695,9 +693,6 @@ class Screen(val ident: Boolean) {
         }
         filter()
         ruler()
-
-        //vm.type.value = type
-
         mx.point.map { index ->
             val item = list[index]
             mx.view.details[index] =
@@ -712,15 +707,14 @@ class Screen(val ident: Boolean) {
         this@Screen.scrollX = vm.scrollX.value!!
         this@Screen.scrollY = vm.scrollY.value!!
         toolbar.lock = false
+        handler = vm.type.value
     }
-
     fun listen(listen: Boolean) {
         qqq("LISTEN " + listen)
         handler =
             if (listen) vm.type.value!!
             else null
     }
-
     private fun syncY(ix: Int) {
         val index = mx.point.getOrNull(ix) ?: return
         val mod =
@@ -745,7 +739,6 @@ class Screen(val ident: Boolean) {
     }
 
     fun expand(index: Int, expand: Boolean) {
-        qqq("E " + index + " " + expand + " " + mx.point.indexOf(index))
         mx.view.expand[index] = expand to exp(index)
         ruler()
         mx.point.indices
@@ -759,12 +752,8 @@ class Screen(val ident: Boolean) {
         mx.view.toggle[index] = mx.toggle[index]!!.second > 0
         mx.toggle[index] =
             mx.toggle[index]!!.first to mx.toggle[index]!!.second.unaryMinus()
-        qqq("TOGGLE 1 ${mx.ruler}")
-        qqq("TOGGLE 2 ${mx.point}")
         filter()
         ruler()
-        qqq("TOGGLE 11 ${mx.ruler}")
-        qqq("TOGGLE 12 ${mx.point}")
         mx.point.indices
             .map { xy(it) }
         mx.stack = IntArray(batch) { -1 }

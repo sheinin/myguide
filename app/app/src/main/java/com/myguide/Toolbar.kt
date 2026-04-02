@@ -21,12 +21,13 @@ class Toolbar {
     var items = mutableListOf<Item>()
     var lock = false
     fun splash() {
+
+        screen[false]!!.listen(false)
+        screen[true]!!.listen(false)
         crumbs[false]!!.value = List(3) { "" }
         crumbs[true]!!.value = List(3) { "" }
         current.value = null
         items.clear()
-        screen[false]!!.listen(false)
-        screen[true]!!.listen(false)
     }
 
     fun back() {

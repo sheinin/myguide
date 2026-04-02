@@ -19,14 +19,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,16 +45,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -82,7 +73,7 @@ fun View(modifier: Modifier, screen: Screen) {
     val vm = screen.vm
     val description by vm.description.observeAsState()
     val details by vm.cycler.details.collectAsStateWithLifecycle()
-    val display by vm.type.observeAsState()
+    val dim by vm.dim.observeAsState()
     val exp by vm.exp.observeAsState()
     val expand by vm.cycler.description.collectAsStateWithLifecycle()
     val h = vm.h.observeAsState()
@@ -91,24 +82,28 @@ fun View(modifier: Modifier, screen: Screen) {
     val ratioH by vm.ratioH.observeAsState()
     val ratioV by vm.ratioV.observeAsState()
     val scale by vm.scale.observeAsState()
+    val scrollStateX = rememberScrollState()
     val scrollStateY = rememberScrollState()
     val stateX by vm.stateX.observeAsState()
     val stateY by vm.scrollY.observeAsState()
     val toggle by vm.cycler.toggle.collectAsStateWithLifecycle()
+    val type by vm.type.observeAsState()
     val view = LocalView.current
     val viewItem by vm.details.observeAsState()
     val w = vm.w.observeAsState()
     val xy by vm.cycler.xy.collectAsStateWithLifecycle()
-    var heightView by remember { mutableIntStateOf(0) }
     var heightInfo by remember { mutableIntStateOf(0) }
+    var heightView by remember { mutableIntStateOf(0) }
     val pan = object {
         var offsetX by remember { mutableFloatStateOf(0f) }
         var offsetY by remember { mutableFloatStateOf(0f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
-        val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * 4).toDp().toPx()
-        val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * -4).toDp().toPx()
-        val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * 12).toDp().toPx()
-        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * -11).toDp().toPx() * 2f
+
+        val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.first.first).toDp().toPx()
+        val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.first.second).toDp().toPx()
+        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.second.first).toDp().toPx() * 2f
+        val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.second.second).toDp().toPx()
+
         val scrollState = rememberScrollable2DState { delta ->
             val newX = (offset.x + delta.x).coerceIn(minOffsetX, maxOffsetX)
             val newY = (offset.y + delta.y).coerceIn(minOffsetY, maxOffsetY)
@@ -155,8 +150,8 @@ fun View(modifier: Modifier, screen: Screen) {
             LaunchedEffect(stateY!!) {
                 scrollStateY.scrollTo(stateY!!)
             }
-            DisposableEffect(view, display, exp) {
-                if (exp!! || display == H) return@DisposableEffect onDispose {}
+            DisposableEffect(view, type, exp) {
+                if (exp!! || type == H) return@DisposableEffect onDispose {}
                 val listener = ViewTreeObserver.OnScrollChangedListener {
                     screen.scrollY = scrollStateY.value - heightInfo + heightView / 3
                 }
@@ -167,17 +162,22 @@ fun View(modifier: Modifier, screen: Screen) {
                 }
             }
             Column(
-                verticalArrangement = if (display == H) Arrangement.Center else Arrangement.Top,
+                verticalArrangement = if (type == H) Arrangement.Center else Arrangement.Top,
                 modifier = Modifier
                     .onSizeChanged { heightView = it.height }
-                    .fillMaxWidth()
                     .then(
-                        if (!exp!! && (display == V || display == T))
+                        if (type == H)
+                            Modifier.fillMaxSize()
+                        else
+                            Modifier.fillMaxWidth()
+                    )
+                    .then(
+                        if (!exp!! && (type == V || type == T))
                             Modifier.verticalScroll(scrollStateY) else Modifier
                     )
                     .weight(1f)
                     .then(
-                        if (display == H)
+                        if (type == H)
                             Modifier
                                 .height(h.value!!.toDp())
                                 .background(Color.Transparent)
@@ -187,7 +187,7 @@ fun View(modifier: Modifier, screen: Screen) {
                                 .background(colorScheme.surface)
                     )
             ) {
-                if (display != H && viewItem != null)
+                if (type != H && viewItem != null)
                     Column(
                         Modifier
                             .zIndex(3f)
@@ -244,11 +244,9 @@ fun View(modifier: Modifier, screen: Screen) {
                             modifier = Modifier.padding(start = 8.dp)
                         )
                     }
-                val scrollStateX = rememberScrollState()
-                val view = LocalView.current
                 LaunchedEffect(stateX) { scrollStateX.scrollBy(stateX!!) }
-                DisposableEffect(view, display, exp) {
-                    if (exp!! || display != H) return@DisposableEffect onDispose {}
+                DisposableEffect(view, type, exp) {
+                    if (exp!! || type != H) return@DisposableEffect onDispose {}
                     val listener = ViewTreeObserver.OnScrollChangedListener {
                         screen.scrollX = scrollStateX.value
                     }
@@ -264,7 +262,7 @@ fun View(modifier: Modifier, screen: Screen) {
                         .fillMaxWidth()
                         .fillMaxHeight()
                         .then(
-                            if (!exp!! && display == H) Modifier.horizontalScroll(scrollStateX)
+                            if (!exp!! && type == H) Modifier.horizontalScroll(scrollStateX)
                             else Modifier
                         )
                 ) {
@@ -289,7 +287,7 @@ fun View(modifier: Modifier, screen: Screen) {
                         repeat(batch) {
                             ViewItem(
                                 details = details[it],
-                                type = display,
+                                type = type,
                                 expand = expand[it],
                                 margin = margin,
                                 ratioH = ratioH ?: ratio!!,
@@ -301,7 +299,7 @@ fun View(modifier: Modifier, screen: Screen) {
                                     enabled = true,
                                     onClick = {
                                         toolbar.items.last().scroll =
-                                            if (display == V) scrollStateX.value
+                                            if (type == V) scrollStateX.value
                                             else scrollStateY.value - heightInfo
                                         toolbar.items.last().toggle =
                                             screen.mx.view.toggle
@@ -313,7 +311,7 @@ fun View(modifier: Modifier, screen: Screen) {
                                 )
                             )
                         }
-                        if (display == D || exp!!)
+                        if (type == D || exp!!)
                             Surface(
                                 modifier = Modifier
                                     .zIndex(2f)
@@ -324,7 +322,6 @@ fun View(modifier: Modifier, screen: Screen) {
                                     ),
                                 color = Color.Transparent
                             ) {
-                                qqq("SURFA ${pan.offsetY}  ${pan.offsetX}")
                                 screen.scrollY = pan.offsetY.toInt().unaryMinus()
                                 screen.scrollX = pan.offsetX.toInt().unaryMinus()
                                 Canvas(modifier = Modifier) {
@@ -360,29 +357,10 @@ fun View(modifier: Modifier, screen: Screen) {
                                         radius = 8.dp.toPx(),
                                         center = origin
                                     )
-                                //    screen.scrollY = origin.y.toInt()//.unaryMinus()
-                                  //  screen.scrollX = origin.x.toInt()//.unaryMinus()
-                                    /*drawImage(
-                                        bitmap,
-                                        dstSize = IntSize(
-                                            width = 1600.dp.toPx().toInt(),
-                                            height = 600.dp.toPx().toInt()
-                                        ),
-                                        dstOffset = IntOffset(
-                                            x = pan.offset.x.toInt(),
-                                            y = pan.offset.y.toInt() //- 400.dp.toPx().toInt()
-                                        )
-                                    )
-
-                                     */
                                 }
-
-
                             }
                     }
                 }
-
-
             }
         }
 

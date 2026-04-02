@@ -89,7 +89,7 @@ fun Toolbar(modifier: Modifier) {
     val sort by vm.sort.observeAsState()
     var visible by remember { mutableStateOf(true) }
     var showExpDialog by remember { mutableStateOf(false) }
-    if (showExpDialog) {
+    if (false&&showExpDialog) {
         AlertDialog(
             onDismissRequest = { showExpDialog = false },
             confirmButton = {
@@ -355,7 +355,8 @@ fun Toolbar(modifier: Modifier) {
                     .clickable(
                         onClick = {
                             vm.exp.value = !vm.exp.value!!
-                            vm.type.value = Type.V
+                            //vm.type.value = Type.V
+                            screen[current.value!!]!!.display(Type.V)
                             if (vm.exp.value!!) showExpDialog = true
                         }
                     )

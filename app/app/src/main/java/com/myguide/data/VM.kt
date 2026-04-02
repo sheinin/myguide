@@ -15,8 +15,8 @@ class VM {
         FPS60;
         val delay: Long
             get() = when (this) {
-                FPS24 -> 2500L
-                FPS30 -> 50L
+                FPS24 -> 50L
+                FPS30 -> 30L
                 FPS60 -> 15L
             }
         val drawable: Int
@@ -62,8 +62,9 @@ class VM {
     fun ratioV(): Float = ratioV.value ?: ratio.value!!
     private val _margin = MutableStateFlow(1f)
     val adjust = MutableLiveData(false)
+    val dim = MutableLiveData((0f to 0f) to (0f to 0f))
     val type = MutableLiveData(Type.V)
-    val fps = MutableLiveData(FPS.FPS30)
+    val fps = MutableLiveData(FPS.FPS60)
     val cycler = Cycler()
     val exp = MutableLiveData(false)
     val filter = MutableLiveData<Boolean?>(null)

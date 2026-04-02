@@ -1,9 +1,12 @@
 package com.myguide.data
 
 import android.R.attr.level
+import com.myguide.current
 import com.myguide.qqq
+import com.myguide.screen
 import com.myguide.toDp
 import kotlin.collections.forEachIndexed
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 class DB(private val repository: Repository) {
@@ -99,14 +102,21 @@ class DB(private val repository: Repository) {
                 }
                 //qqq("ITEM lvl:${it.level} lng.x:${it.lng} lat.y${it.lat} x:$x y:$y mx:$mx sx:$sx lv:$lv ${it.title} ")
             }
-            qqq("MX$mx $sx MY$my")
+            //qqq("MX$mx $sx MY$my")
+            val a = (l.minOf { it.lat } + l.maxOf { it.lat }) / 2
+            val b = (l.minOf { it.lng } + l.maxOf { it.lng }) / 2
+
+
             l.map {
-                it.lat -= my.inc() / 2
-                it.lng -= sx.inc().plus(mx) / 2
-                qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
+                it.lat -= a//my.inc() / 2
+                it.lng -= b//sx.inc().plus(mx) / 2
+            //    qqq("LL lat:${it.lat} lng:${it.lng} ${it.title} ${it.level}")
             }
 
-
+            screen[current.value!!]!!.vm.dim.postValue(
+                (l.minOf { it.lng }.toFloat() to l.maxOf { it.lng }.toFloat()) to
+                (l.minOf { it.lat }.toFloat() to l.maxOf { it.lat }.toFloat())
+            )
 
             //l.map {
                 //  it.lat -= my / 2

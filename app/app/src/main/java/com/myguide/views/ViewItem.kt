@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
@@ -49,6 +50,21 @@ import com.myguide.screen
 import com.myguide.toDp
 import com.myguide.typography
 
+/*
+
+{BOX x:0, y:0, w:1080, h:204 },
+{IMAGE x:0, y:0, w:204, h:204 },
+{COL x:228, y:0, w:780, h:204 },
+{TXT1 x:0, y:0, w:298, h:58 },
+{TXT2 x:0, y:67, w:403, h:50 },
+{TXT3 x:0, y:117, w:780, h:78 },
+
+* */
+
+fun source(input: LayoutCoordinates, id: String) {
+    val pos = input.positionInParent()
+    qqq("{$id x:${pos.x.toInt()}, y:${pos.y.toInt()}, w:${input.size.width}, h:${input.size.height} },")
+}
 
 @Composable
 fun ViewItem(
@@ -71,9 +87,7 @@ fun ViewItem(
                 "item icon",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .onGloballyPositioned {
-                        qqq("POS IMAGE ${it.positionInParent()} ${details.title} ${it.parentCoordinates?.boundsInParent()!!.let{""+it.size +" top:"+it.top+" botm:"+it.bottom}} ${it.size.width} ${it.size.height}")
-                    }
+                 //   .onGloballyPositioned { source(it, "IMAGE") }
                     .size(
                         width = ITEM_HEIGHT.toDp() * ratioH,
                         height = ITEM_HEIGHT.toDp() * ratioV
@@ -85,7 +99,8 @@ fun ViewItem(
                 else Alignment.Start,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = MARGIN.toDp() * margin * ratioH),
+                .padding(horizontal = MARGIN.toDp() * margin * ratioH)
+                ,//.onGloballyPositioned { source(it, "COL") },
             verticalArrangement = Arrangement.Center
         ) {
             Row(
@@ -109,7 +124,9 @@ fun ViewItem(
                             else -> 1
                         },
                     overflow = TextOverflow.Ellipsis,
-                    style = typography.bodyLarge
+                    style = typography.bodyLarge,
+                    modifier = Modifier
+                        //.onGloballyPositioned { source(it, "TXT1") }
                 )
                 if (details.origin == null && type != D) {
                     Spacer(modifier = Modifier.weight(1f))
@@ -143,6 +160,8 @@ fun ViewItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodyMedium,
+                    modifier = Modifier
+                     //   .onGloballyPositioned { source(it, "TXT2") }
                 )
             if (expand != null && type != T && type != D)
                 Text(
@@ -151,14 +170,14 @@ fun ViewItem(
                         if (type == H) 2
                         else Int.MAX_VALUE,
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        ,//.onGloballyPositioned { source(it, "TXT3") },
                     lineHeight = typography.bodySmall.fontSize,
                     overflow = TextOverflow.Ellipsis,
                     style = typography.bodySmall,
                 )
         }
     }
-
     val modifier = Modifier
         .offset(
             x = xy.x.toDp(),
@@ -177,9 +196,7 @@ fun ViewItem(
     if (type != T && type != D)
         Row(
             modifier
-                .onGloballyPositioned {
-                    qqq("POS ${it.positionInParent()}  ${details.title} ${it.parentCoordinates?.boundsInParent()!!.let{""+it.size +" top:"+it.top+" botm:"+it.bottom}} ${it.size.width} ${it.size.height}")
-                }
+                //.onGloballyPositioned { source(it, "BOX") }
                 .padding(
                     start =
                         MARGIN.toDp() * margin * ratioH
