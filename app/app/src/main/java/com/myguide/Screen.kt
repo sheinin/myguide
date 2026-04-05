@@ -2,10 +2,7 @@ package com.myguide
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Color
 import kotlinx.serialization.json.*
-import android.location.Location
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -235,7 +232,6 @@ class Screen(private val context: Context, val ident: Boolean) {
                 vm.h.postValue(height)
                 mx.stack = IntArray(batch) { -1 }
             }
-
             H ->
                 mx.point
                     .map {
@@ -364,7 +360,6 @@ class Screen(private val context: Context, val ident: Boolean) {
                 mx.point.map {
                     mx.ruler.add(height)
                     height += mx.display[it].first + mx.display[it].second
-                    //qqq("RULER $it ${height.toDp().round()} ${list[it].title}")
                 }
                 vm.w.postValue(screenWidth.toPx().toInt())
                 vm.h.postValue(height)
@@ -375,7 +370,6 @@ class Screen(private val context: Context, val ident: Boolean) {
             }
         }
     }
-
     private fun scroll() {
         when (handler) {
             D -> {
@@ -384,15 +378,9 @@ class Screen(private val context: Context, val ident: Boolean) {
                     val dy = y2 - y1
                     return sqrt(dx * dx + dy * dy)
                 }
-                fun getDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
-                    val results = FloatArray(1)
-                    Location.distanceBetween(lat1, lon1, lat2, lon2, results)
-                    return results[0] // returns distance in meters
-                }
-
                 var c = 0
-                val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )/// MAP_WIDTH.toPx() * 180.0
-                val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )/// 10.0 + 41
+                val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
+                val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
                 val l = mx.point.withIndex()
                     .sortedBy {
                         distance(
@@ -501,7 +489,7 @@ class Screen(private val context: Context, val ident: Boolean) {
                                 i += 1
                             }
                         }
-                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                       // qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
                         down()
                         up()
                         pix(ixs)
@@ -708,13 +696,10 @@ class Screen(private val context: Context, val ident: Boolean) {
         handler = vm.type.value
     }
     fun listen(listen: Boolean) {
-        qqq("LISTEN " + listen)
         handler =
             if (listen) vm.type.value!!
             else null
     }
-
-
     fun traverse(element: JsonElement, index: Int, x: Int = 0, y: Int = 0) {
         when (element) {
             is JsonObject -> {
