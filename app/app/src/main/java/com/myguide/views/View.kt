@@ -178,16 +178,6 @@ fun View(modifier: Modifier, screen: Screen) {
                             Modifier.verticalScroll(scrollStateY) else Modifier
                     )
                     .weight(1f)
-                    .then(
-                        if (type == H)
-                            Modifier
-                                .height(h.value!!.toDp())
-                                .background(Color.Transparent)
-                        else
-                            Modifier
-                                .fillMaxHeight()
-                                .background(colorScheme.surface)
-                    )
             ) {
                 if (type != H && viewItem != null)
                     Column(
@@ -260,9 +250,9 @@ fun View(modifier: Modifier, screen: Screen) {
                 }
                 Row(
                     modifier = Modifier
-                        .zIndex(2f)
+                    //    .zIndex(2f)
                         .fillMaxWidth()
-                        .fillMaxHeight()
+                      //  .fillMaxHeight()
                         .then(
                             if (!exp!! && type == H) Modifier.horizontalScroll(scrollStateX)
                             else Modifier

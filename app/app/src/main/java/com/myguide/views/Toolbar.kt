@@ -277,12 +277,12 @@ fun Toolbar(modifier: Modifier) {
                 contentDescription = "filter",
                 colorFilter =
                     ColorFilter.tint(
-                        if (!exp!! && sortable.value!!) colorScheme.primary
+                        if (sortable.value!!) colorScheme.primary
                         else colorScheme.secondary
                     ),
                 modifier = Modifier
                     .clickable(
-                        enabled = !exp!! && sortable.value!!,
+                        enabled = sortable.value!!,
                         onClick = {
                             screen[current.value!!]!!.vm.filter.value =
                                 when (screen[current.value!!]!!.vm.filter.value) {
@@ -300,13 +300,13 @@ fun Toolbar(modifier: Modifier) {
                 contentDescription = "sort",
                 colorFilter =
                     ColorFilter.tint(
-                        if (!exp!! && sortable.value!!) colorScheme.primary
+                        if (sortable.value!!) colorScheme.primary
                         else colorScheme.secondary
                     ),
                 modifier = Modifier
                     .scale(scaleX = 1f, scaleY = if (sort == true) -1f else 1f)
                     .clickable(
-                        enabled = !exp!! && sortable.value!!,
+                        enabled = sortable.value!!,
                         onClick = { vm.sort.value = !vm.sort.value!! }
                     )
                     .size(BUTTON.toDp())
