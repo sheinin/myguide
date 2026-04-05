@@ -1,6 +1,7 @@
 package com.myguide.data
 
 
+import android.graphics.Bitmap
 import androidx.lifecycle.MutableLiveData
 import com.myguide.R
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,7 @@ class VM {
             get() = when (this) {
                 FPS24 -> 50L
                 FPS30 -> 30L
-                FPS60 -> 15L
+                FPS60 -> 2500L
             }
         val drawable: Int
             get() = when (this) {
@@ -56,12 +57,15 @@ class VM {
                 else -> V
             }
     }
+    fun bitmap(bitmap: Bitmap) = _bitmap.update { bitmap }
     fun margin(margin: Float) = _margin.update { margin }
     fun margin(up: Boolean) = _margin.update { if (up) it + .1f else it - .1f }
     fun ratioH(): Float = ratioV.value ?: ratio.value!!
     fun ratioV(): Float = ratioV.value ?: ratio.value!!
+    private val _bitmap = MutableStateFlow<Bitmap?>(null)
     private val _margin = MutableStateFlow(1f)
     val adjust = MutableLiveData(false)
+    val bitmap: StateFlow<Bitmap?> = _bitmap.asStateFlow()
     val dim = MutableLiveData((0f to 0f) to (0f to 0f))
     val type = MutableLiveData(Type.V)
     val fps = MutableLiveData(FPS.FPS60)

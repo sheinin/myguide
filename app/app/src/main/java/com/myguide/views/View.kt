@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
@@ -71,6 +72,7 @@ import com.myguide.typography
 @Composable
 fun View(modifier: Modifier, screen: Screen) {
     val vm = screen.vm
+    val bitmap by vm.bitmap.collectAsStateWithLifecycle()
     val description by vm.description.observeAsState()
     val details by vm.cycler.details.collectAsStateWithLifecycle()
     val dim by vm.dim.observeAsState()
@@ -101,7 +103,7 @@ fun View(modifier: Modifier, screen: Screen) {
 
         val minOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.first.first).toDp().toPx()
         val maxOffsetX = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.first.second).toDp().toPx()
-        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.second.first).toDp().toPx() * 2f
+        val minOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.second.first).toDp().toPx()
         val maxOffsetY = ((ITEM_HEIGHT + MARGIN * 2) * dim!!.second.second).toDp().toPx()
 
         val scrollState = rememberScrollable2DState { delta ->
@@ -280,37 +282,44 @@ fun View(modifier: Modifier, screen: Screen) {
                                 )
                             )
                     ) {
-                       // if (exp!!) {
+                        if (exp!!) {
+                            Canvas(modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Green.copy(alpha = .1f))
+                            ) {
+                                bitmap?.let {
+                                    drawImage(image = it.asImageBitmap())
+                                }
+                            }
 
-
-                        //} else
-                        repeat(batch) {
-                            ViewItem(
-                                details = details[it],
-                                type = type,
-                                expand = expand[it],
-                                margin = margin,
-                                ratioH = ratioH ?: ratio!!,
-                                ratioV = ratioV ?: ratio!!,
-                                scale = scale!!,
-                                toggle = toggle[it],
-                                xy = xy[it]!!,
-                                modifier = Modifier.clickable(
-                                    enabled = true,
-                                    onClick = {
-                                        toolbar.items.last().scroll =
-                                            if (type == V) scrollStateX.value
-                                            else scrollStateY.value - heightInfo
-                                        toolbar.items.last().toggle =
-                                            screen.mx.view.toggle
-                                        toolbar.navigate(
-                                            id = screen.list[screen.mx.point[xy[it]!!.i]].id,
-                                            title = details[it].title,
-                                        )
-                                    }
+                        } else
+                            repeat(batch) {
+                                ViewItem(
+                                    details = details[it],
+                                    type = type,
+                                    expand = expand[it],
+                                    margin = margin,
+                                    ratioH = ratioH ?: ratio!!,
+                                    ratioV = ratioV ?: ratio!!,
+                                    scale = scale!!,
+                                    toggle = toggle[it],
+                                    xy = xy[it]!!,
+                                    modifier = Modifier.clickable(
+                                        enabled = true,
+                                        onClick = {
+                                            toolbar.items.last().scroll =
+                                                if (type == V) scrollStateX.value
+                                                else scrollStateY.value - heightInfo
+                                            toolbar.items.last().toggle =
+                                                screen.mx.view.toggle
+                                            toolbar.navigate(
+                                                id = screen.list[screen.mx.point[xy[it]!!.i]].id,
+                                                title = details[it].title,
+                                            )
+                                        }
+                                    )
                                 )
-                            )
-                        }
+                            }
                         if (type == D || exp!!)
                             Surface(
                                 modifier = Modifier

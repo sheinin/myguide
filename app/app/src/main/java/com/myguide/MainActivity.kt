@@ -55,6 +55,7 @@ lateinit var colorScheme: ColorScheme
 lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
+lateinit var json: String
 lateinit var state: MutableTransitionState<Boolean>
 lateinit var screen: Map<Boolean, Screen>
 lateinit var typography: Typography
@@ -71,7 +72,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-    //    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+
+        //try {
+            // Open the file from assets
+            val inputStream = assets.open("view.json")
+            val size = inputStream.available()
+            val buffer = ByteArray(size)
+
+            // Read into buffer and close stream
+            inputStream.read(buffer)
+            inputStream.close()
+
+            // Convert byte array to String
+            json = String(buffer, Charsets.UTF_8)
+     //   } catch (e: IOException) {
+       //     e.printStackTrace()
+         //   null
+        //}
+
+        //    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
       //  windowInsetsController.hide(navigationBars())
         //windowInsetsController.hide(statusBars())
 
@@ -95,8 +114,8 @@ class MainActivity : ComponentActivity() {
             MyGuideTheme {
                 Measures {
                     screen = mapOf(
-                        false to Screen(ident = false),
-                        true to Screen(ident = true)
+                        false to Screen(context = applicationContext,ident = false),
+                        true to Screen(context = applicationContext, ident = true)
                     )
                 }
                 colorScheme = MaterialTheme.colorScheme

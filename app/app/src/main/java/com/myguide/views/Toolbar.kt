@@ -89,7 +89,7 @@ fun Toolbar(modifier: Modifier) {
     val sort by vm.sort.observeAsState()
     var visible by remember { mutableStateOf(true) }
     var showExpDialog by remember { mutableStateOf(false) }
-    if (false&&showExpDialog) {
+    if (showExpDialog) {
         AlertDialog(
             onDismissRequest = { showExpDialog = false },
             confirmButton = {
@@ -355,7 +355,6 @@ fun Toolbar(modifier: Modifier) {
                     .clickable(
                         onClick = {
                             vm.exp.value = !vm.exp.value!!
-                            //vm.type.value = Type.V
                             screen[current.value!!]!!.display(Type.V)
                             if (vm.exp.value!!) showExpDialog = true
                         }
@@ -498,18 +497,18 @@ fun Exp() {
             modifier = Modifier.padding(8.dp)
         )
         Text(
-            "This library aims to deliver Browsing functionality without reliance on UI libraries. " +
-                    "Instead it renders the document tree by applying basic algebra to view templates transpiled from " +
-                    "normal UI.\n" +
-                    "\n" +
-                    "It is under development.\n" +
-                    "\n" +
-                    "Prototype of the Browser may be viewed here:",
+            "This utility aims to deliver view rendering functionality without reliance on a complex UI engine. " +
+            "\n\nInstead it draws the document tree by applying arithmetic to a view template transpiled from " +
+            "normal UI and will find use in low power devices without a traditional OS.\n" +
+            "\n" +
+            "It is under development.\n" +
+            "\n" +
+            "Browser prototype:",
             fontSize = typography.bodyMedium.fontSize,
             lineHeight = typography.bodyMedium.fontSize,
             color = colorScheme.secondary,
             style = typography.bodyLarge,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp).fillMaxWidth()
         )
         val browserUrl = "https://sheinin.github.io/sheinin/"
         val linkText = buildAnnotatedString {
@@ -527,9 +526,40 @@ fun Exp() {
         ClickableText(
             text = linkText,
             style = typography.bodyMedium.copy(color = Color(0xFF1E88E5)),
-            modifier = Modifier.padding(horizontal = 8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
             onClick = { offset ->
                 linkText.getStringAnnotations("URL", offset, offset)
+                    .firstOrNull()
+                    ?.let { uriHandler.openUri(it.item) }
+            }
+        )
+        Text(
+            "Source code:",
+            fontSize = typography.bodyMedium.fontSize,
+            lineHeight = typography.bodyMedium.fontSize,
+            color = colorScheme.secondary,
+            style = typography.bodyLarge,
+            modifier = Modifier.padding(8.dp).fillMaxWidth()
+        )
+        val browserUrl1 = "https://github.com/sheinin/myguide"
+        val linkText1 = buildAnnotatedString {
+            pushStringAnnotation(tag = "URL", annotation = browserUrl1)
+            withStyle(
+                style = SpanStyle(
+                    color = Color(0xFF1E88E5),
+                    textDecoration = TextDecoration.Underline
+                )
+            ) {
+                append(browserUrl1)
+            }
+            pop()
+        }
+        ClickableText(
+            text = linkText1,
+            style = typography.bodyMedium.copy(color = Color(0xFF1E88E5)),
+            modifier = Modifier.padding(horizontal = 8.dp).fillMaxWidth(),
+            onClick = { offset ->
+                linkText1.getStringAnnotations("URL", offset, offset)
                     .firstOrNull()
                     ?.let { uriHandler.openUri(it.item) }
             }

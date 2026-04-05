@@ -1,5 +1,10 @@
 package com.myguide
 
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
+import kotlinx.serialization.json.*
 import android.location.Location
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -12,7 +17,6 @@ import com.myguide.Expandable.static
 import com.myguide.UI.BUTTON
 import com.myguide.UI.COLUMNS
 import com.myguide.UI.ITEM_HEIGHT
-import com.myguide.UI.MAP_WIDTH
 import com.myguide.UI.MARGIN
 import com.myguide.UI.TITLE_HEIGHT
 import com.myguide.UI.mapViewWidth
@@ -36,10 +40,11 @@ import kotlinx.coroutines.launch
 import java.lang.Integer.max
 import java.lang.Integer.min
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.toColorInt
 
-class Screen(val ident: Boolean) {
+class Screen(private val context: Context, val ident: Boolean) {
     val vm = VM()
     fun build() {
         val item = toolbar.items.last()
@@ -289,7 +294,6 @@ class Screen(val ident: Boolean) {
                         vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
                     }
                     true -> {
-                        qqq("P ${mx.point.size.toFloat()}")
                         vm.dim.postValue((0f to 0f) to (mx.point.size.toFloat().unaryMinus() to 0f))
                     }
                 }
@@ -400,12 +404,6 @@ class Screen(val ident: Boolean) {
                     }
                     .take(batch)
                 l.map {
-                    val d = distance(
-                        list[it.value].lat,
-                        list[it.value].lng,
-                        y,
-                        x
-                    )
                     //qqq("XYS $x $scrollX $scrollY ${it.index} ${list[it.value].title} ${list[it.value].origin}")
                     xy(it.index)
                     val ix = it.index
@@ -437,7 +435,7 @@ class Screen(val ident: Boolean) {
                 //qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
                 (r - batch / 2 until r + batch / 2)
                     .filter { it !in mx.stack }
-                    .map { syncY(it) }
+                    .map { sync(it) }
 
             }
             T, V -> {
@@ -452,7 +450,7 @@ class Screen(val ident: Boolean) {
                             while (i < batch / 2) {
                                 val down = r - i
                                 if (down >= 0 && !mx.stack.contains(down)) {
-                                    syncY(down)
+                                    sync(down)
                                     break
                                 }
                                 i += 1
@@ -465,7 +463,7 @@ class Screen(val ident: Boolean) {
                                 if (up in 0..mx.point.lastIndex &&
                                     !mx.stack.contains(up)
                                 ) {
-                                    syncY(up)
+                                    sync(up)
                                     break
                                 }
                                 i += 1
@@ -478,14 +476,14 @@ class Screen(val ident: Boolean) {
                     }
                     true -> {
                         mx.stack = IntArray(batch) { -1 }
+                        val ixs = mutableListOf<Int>()
                         fun down() {
                             var i = 0
                             while (i < batch / 2) {
                                 val down = r - i
                                 if (down >= 0 && !mx.stack.contains(down)) {
                                     xy(down)
-                                    syncY(down)
-                                   // break
+                                    ixs.add(down)
                                 }
                                 i += 1
                             }
@@ -498,15 +496,15 @@ class Screen(val ident: Boolean) {
                                     !mx.stack.contains(up)
                                 ) {
                                     xy(up)
-                                    syncY(up)
-                                   // break
+                                    ixs.add(up)
                                 }
                                 i += 1
                             }
                         }
-                        //qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                        qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
                         down()
                         up()
+                        pix(ixs)
                     }
                 }
 
@@ -715,21 +713,101 @@ class Screen(val ident: Boolean) {
             if (listen) vm.type.value!!
             else null
     }
-    private fun syncY(ix: Int) {
+
+
+    fun traverse(element: JsonElement, index: Int, x: Int = 0, y: Int = 0) {
+        when (element) {
+            is JsonObject -> {
+                when (element["element"]?.jsonPrimitive?.content) {
+                    "box" ->
+                        pixBox(
+                            element["w"]!!.jsonPrimitive.int,
+                            element["h"]!!.jsonPrimitive.int,
+                            element["background"]?.jsonPrimitive?.content?.toColorInt()
+                        )
+                    "image" ->
+                        pixImage(
+                            element["w"]!!.jsonPrimitive.int,
+                            element["h"]!!.jsonPrimitive.int,
+                            list[index].drawable?.let { context.getDrawable(it) },
+                            element["background"]?.jsonPrimitive?.content?.toColorInt()
+                        )
+                    "text" -> {
+                        pixText(
+                            element["w"]!!.jsonPrimitive.int,
+                            element["h"]!!.jsonPrimitive.int,
+                            when (element["text"]!!.jsonPrimitive.content) {
+                                "%%DESCRIPTION%%" -> list[index].description ?: ""
+                                "%%TITLE%%" -> list[index].title ?: ""
+                                "%%ORIGIN%%" -> list[index].origin ?: ""
+                                else -> ""
+                            },
+                            element["background"]?.jsonPrimitive?.content?.toColorInt()
+                        )
+
+                    }
+                    else -> null
+                }?.also {
+                    bitmap = mergeBitmaps(
+                        bitmap,
+                        it,
+                        x + element["x"]!!.jsonPrimitive.int,
+                        y + element["y"]!!.jsonPrimitive.int
+                    )
+                }
+                element["children"]?.jsonArray?.map {
+                    traverse(it, index,
+                        x + element["x"]!!.jsonPrimitive.int,
+                        y + element["y"]!!.jsonPrimitive.int
+                    )
+                }
+            }
+            is JsonArray -> {
+                for (item in element) {
+                    traverse(item, index)
+                }
+            }
+            is JsonPrimitive -> {}
+        }
+    }
+    /*
+
+{BOX x:0, y:0, w:1080, h:204 },
+{IMAGE x:0, y:0, w:204, h:204 },
+{COL x:228, y:0, w:780, h:204 },
+{TXT1 x:0, y:0, w:298, h:58 },
+{TXT2 x:0, y:67, w:403, h:50 },
+{TXT3 x:0, y:117, w:780, h:78 },
+
+* */
+    private var bitmap = createBitmap(screenWidth.toPx().toInt(), screenHeight.toPx().toInt())
+    @SuppressLint("UseKtx")
+    fun pix(elements: List<Int>) {
+        var scr = createBitmap(screenWidth.toPx().toInt(), screenHeight.toPx().toInt())
+        elements.map { ix ->
+            val index = mx.point.getOrNull(ix) ?: return
+            val xy = mx.view.xy.getOrNull(index) ?: return
+            val root = Json.parseToJsonElement(json)
+            bitmap = createBitmap(xy.w, xy.h)
+            traverse(root, index)
+            scr = mergeBitmaps(scr, bitmap, xy.x, xy.y)
+        }
+        vm.bitmap(scr)
+    }
+    private fun sync(ix: Int) {
         val index = mx.point.getOrNull(ix) ?: return
         val mod =
             ix.mod(batch)
-        // mx.stack.indices.maxByOrNull { abs(mx.stack[it] - ix) } ?: 0
         val xy = mx.view.xy.getOrNull(index) ?: return
         val toggle = mx.view.toggle.getOrNull(index) ?: return
-       /* qqq(
+       /*
+        qqq(
             "RS ix:$ix index:$index mod:$mod ${xy.x.toDp().round()} ${xy.y.toDp().round()} ${xy.w.toDp().round()} ${xy.h.toDp().round()} ${
                 mx.view.details.getOrNull(
                     index
                 )?.title
             }"
         )
-
         */
         mx.stack[mod] = ix
         vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
@@ -744,7 +822,7 @@ class Screen(val ident: Boolean) {
         mx.point.indices
             .map { xy(it) }
         mx.stack
-            .map { syncY(it) }
+            .map { sync(it) }
     }
 
     fun toggle(ix: Int) {
