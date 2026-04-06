@@ -1,7 +1,10 @@
 package com.myguide
 
+import android.R.attr.bitmap
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.runtime.key
+import androidx.compose.ui.geometry.Offset
 import kotlinx.serialization.json.*
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -40,6 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.sqrt
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
+import com.myguide.Screen.Tags.*
 
 class Screen(private val context: Context, val ident: Boolean) {
     val vm = VM()
@@ -522,7 +526,9 @@ class Screen(private val context: Context, val ident: Boolean) {
 
     private fun zoom() {
         when (vm.type.value!!) {
-            D -> {}
+            D -> {
+
+            }
             T -> {
                 val from =
                     max(
@@ -700,60 +706,110 @@ class Screen(private val context: Context, val ident: Boolean) {
             if (listen) vm.type.value!!
             else null
     }
-    fun traverse(element: JsonElement, index: Int, x: Int = 0, y: Int = 0) {
+
+    enum class Tags(val key: String) {
+        COLUMN("COLUMN"),
+        IMAGE("IMAGE"),
+        ROW("ROW"),
+        TEXT("TEXT");
+    }
+
+    fun traverse(
+        element: JsonElement,
+        index: Int,
+        x: Int,
+        y: Int,
+        w: Int,
+        h: Int,
+        tag: Tags? = null
+    ): Offset? {
         when (element) {
             is JsonObject -> {
-                when (element["element"]?.jsonPrimitive?.content) {
-                    "box" ->
+                val e = Tags.valueOf(element["element"]?.jsonPrimitive?.content?.uppercase()!!)
+                val w1 = element["w"]?.jsonPrimitive?.int ?: w
+                val h1 = element["h"]?.jsonPrimitive?.int ?: h
+                val bg =  element["background"]?.jsonPrimitive?.content?.toColorInt()
+                qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h")
+                when (e) {
+                    COLUMN, ROW ->
                         pixBox(
-                            element["w"]!!.jsonPrimitive.int,
-                            element["h"]!!.jsonPrimitive.int,
-                            element["background"]?.jsonPrimitive?.content?.toColorInt()
+                            w1,
+                            h1,
+                            bg
                         )
-                    "image" ->
-                        pixImage(
-                            element["w"]!!.jsonPrimitive.int,
-                            element["h"]!!.jsonPrimitive.int,
-                            list[index].drawable?.let { context.getDrawable(it) },
-                            element["background"]?.jsonPrimitive?.content?.toColorInt()
-                        )
-                    "text" -> {
-                        pixText(
-                            element["w"]!!.jsonPrimitive.int,
-                            element["h"]!!.jsonPrimitive.int,
+                    TEXT ->
+                        pixTextAutoHeight(
+                            w1,
                             when (element["text"]!!.jsonPrimitive.content) {
-                                "%%DESCRIPTION%%" -> list[index].description ?: ""
+                                "%%DESCRIPTION%%" ->
+                                    expandable(
+                                        index = index,
+                                        level = list[index].level,
+                                        margin = margin,
+                                        ratioH = vm.ratioH(),
+                                        ratioV = vm.ratioV(),
+                                        scale = vm.scale.value!!,
+                                        txt = list[index].description
+                                    ).toString()//list[index].description ?: ""
                                 "%%TITLE%%" -> list[index].title ?: ""
                                 "%%ORIGIN%%" -> list[index].origin ?: ""
                                 else -> ""
                             },
-                            element["background"]?.jsonPrimitive?.content?.toColorInt()
+                            bg
                         )
-
-                    }
-                    else -> null
-                }?.also {
+                    IMAGE ->
+                        pixImage(
+                            w1,
+                            h1,
+                            list[index].drawable?.let { context.getDrawable(it) },
+                            bg
+                        )
+                }.also { bmp ->
                     bitmap = mergeBitmaps(
                         bitmap,
-                        it,
-                        x + element["x"]!!.jsonPrimitive.int,
-                        y + element["y"]!!.jsonPrimitive.int
+                        bmp,
+                        x,
+                        y
                     )
+                    if (e == COLUMN) {
+                        var yy = y
+                        element["children"]?.jsonArray?.map {
+                            yy += traverse(
+                                element = it, index = index,
+                                x = x,
+                                y = yy,
+                                w = w,
+                                h = h - yy,
+                                tag = e
+                            )!!.y.toInt()
+                        }
+                    }
+                    else if (e == ROW) {
+                        var xx = x
+                        element["children"]?.jsonArray?.map {
+                            xx += traverse(
+                                element = it,
+                                index = index,
+                                x = xx,
+                                y = y,
+                                w = w - xx,
+                                h = h,
+                                tag = e
+                            )!!.x.toInt()
+                        }
+                    }
+                    return Offset(bmp.width.toFloat(), bmp.height.toFloat())
                 }
-                element["children"]?.jsonArray?.map {
-                    traverse(it, index,
-                        x + element["x"]!!.jsonPrimitive.int,
-                        y + element["y"]!!.jsonPrimitive.int
-                    )
-                }
+
             }
             is JsonArray -> {
                 for (item in element) {
-                    traverse(item, index)
+                    traverse(item, index, w, h, w, h, tag)
                 }
             }
             is JsonPrimitive -> {}
         }
+        return null
     }
     /*
 
@@ -774,7 +830,7 @@ class Screen(private val context: Context, val ident: Boolean) {
             val xy = mx.view.xy.getOrNull(index) ?: return
             val root = Json.parseToJsonElement(json)
             bitmap = createBitmap(xy.w, xy.h)
-            traverse(root, index)
+            traverse(root, index, 0, 0, xy.w, xy.h)
             scr = mergeBitmaps(scr, bitmap, xy.x, xy.y)
         }
         vm.bitmap(scr)

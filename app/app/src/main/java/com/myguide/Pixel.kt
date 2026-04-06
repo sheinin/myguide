@@ -1,57 +1,89 @@
 package com.myguide
 
-import android.R.attr.height
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.withClip
 
 
 fun pixBox(w: Int, h: Int, background: Int? = null): Bitmap {
     return createBitmap(w, h).also { background?.also { c -> it.eraseColor(c) } }
 }
-fun pixImage(w: Int, h: Int, drawable: Drawable?, background: Int? = null): Bitmap {
 
-    // 1. Create a blank bitmap of the desired size
+fun pixImage(w: Int, h: Int, drawable: Drawable?, background: Int? = null): Bitmap {
     val bitmap = createBitmap(w, h)
         .also { background?.also { c -> it.eraseColor(c) } }
-
-    // 2. Create a Canvas backed by that bitmap
     val canvas = Canvas(bitmap)
-
-    // 3. Set the drawable's bounds to match the target size
     drawable?.setBounds(0, 0, w, h)
-
-    // 4. Draw the drawable onto the canvas
     drawable?.draw(canvas)
-
     return bitmap
-
-    //return (drawable?.toBitmap(w, h) ?: createBitmap(w, h))
-      //  .also { background?.also { c -> it.eraseColor(c) } }
-
 }
-fun pixText(w: Int, h: Int, text: String, background: Int? = null): Bitmap {
-    val mutableBitmap = createBitmap(w, h).also { background?.also { c -> it.eraseColor(c) } }
 
-    val canvas = Canvas(mutableBitmap)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+
+
+fun pixTextAutoHeight(
+    w: Int,
+    text: String,
+    background: Int? = null,
+    horizontalPadding: Int = 0,
+    verticalPadding: Int = 0
+): Bitmap {
+    val contentWidth = (w - horizontalPadding * 2).coerceAtLeast(1)
+
+    val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         textSize = 40f
         textAlign = Paint.Align.LEFT
     }
 
-    // Draw from the start of the canvas; y uses baseline to avoid clipping ascenders.
-    val x = 0f
-    val y = -paint.ascent()
+    // 1) Measure multiline text with wrapping width
+    val layout = StaticLayout.Builder
+        .obtain(text, 0, text.length, paint, contentWidth)
+        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+        .setIncludePad(false)
+        .setLineSpacing(0f, 1f)
+        .build()
 
-    // 4. Draw text onto the bitmap
-    canvas.drawText(text, x, y, paint)
+    // 2) Create bitmap with measured height
+    val h = (layout.height + verticalPadding * 2).coerceAtLeast(1)
+    val bitmap = createBitmap(w, h).also { bg ->
+        background?.let { bg.eraseColor(it) }
+    }
 
+    // 3) Draw from top-left (with optional padding)
+    val canvas = Canvas(bitmap)
+    canvas.translate(horizontalPadding.toFloat(), verticalPadding.toFloat())
+    layout.draw(canvas)
+
+    return bitmap
+}
+
+fun pixText(w: Int, h: Int, text: String, background: Int? = null): Bitmap {
+    val mutableBitmap = createBitmap(w, h).also { background?.also { c -> it.eraseColor(c) } }
+    val canvas = Canvas(mutableBitmap)
+    val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.WHITE
+        textSize = 40f
+        textAlign = Paint.Align.LEFT
+    }
+
+    val layout = StaticLayout.Builder
+        .obtain(text, 0, text.length, paint, w)
+        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+        .setIncludePad(false)
+        .setLineSpacing(0f, 1f)
+        .build()
+
+    // Draw from the top-left corner and clip to bitmap bounds.
+    canvas.withClip(0, 0, w, h) {
+        layout.draw(this)
+    }
     return mutableBitmap
 }
 
