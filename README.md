@@ -1,3 +1,5 @@
+## Overview
+
 An incubating 2D scroll helper.
 
 - Measures the size and position of UI layouts on the screen
@@ -17,7 +19,7 @@ Example data mapping with containers A, B, C, D given scroll position of bottom 
 Filter and sort of list is attained by updating indexes of visible views, and does not need data reload:
 
     DATA
-    # | col1 | col2 |    #
+    # | col1 | col2      #
     0                    #
     .                    #
     N                    # Table data
@@ -32,7 +34,9 @@ Filter and sort of list is attained by updating indexes of visible views, and do
     # | FILTER.# | XYWH  #
     0          0         # View container
     .          .         # mapping
-    L          N         # L <= M
+    L          M         # L <= M
+
+## Screenshots
 
 ### 2D Scrolling
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
@@ -46,6 +50,8 @@ Filter and sort of list is attained by updating indexes of visible views, and do
 ### N-Column Table
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/table.png" width=200>
 
+[Watch the video](https://www.youtube.com/shorts/toolp38tKGo)
+
 ## Experimental Mode
 
 Rendering and positioning of layouts is handled internally, without relying on UI libraries or context.
@@ -53,6 +59,7 @@ Rendering and positioning of layouts is handled internally, without relying on U
 Layout templates are sourced from [serialized strings](https://raw.githubusercontent.com/sheinin/myguide/main/docs/view.json)
 
 In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach promises new Browsing capabilities to low power devices.
+
 
 
 [Browser prototype](https://sheinin.github.io/sheinin/) completed in 2020.

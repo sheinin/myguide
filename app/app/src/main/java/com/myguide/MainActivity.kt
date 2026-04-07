@@ -79,8 +79,8 @@ class MainActivity : ComponentActivity() {
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.hide(navigationBars())
         windowInsetsController.hide(statusBars())
-        //try {
-            // Open the file from assets
+
+        // Open the file from assets
         val inputStream = assets.open("view.json")
         val size = inputStream.available()
         val buffer = ByteArray(size)
@@ -91,10 +91,6 @@ class MainActivity : ComponentActivity() {
 
         // Convert byte array to String
         json = String(buffer, Charsets.UTF_8)
-     //   } catch (e: IOException) {
-       //     e.printStackTrace()
-         //   null
-        //}
 
 
         val dao = StoreDatabase.getDatabase(application).storeDao()

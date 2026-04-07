@@ -18,7 +18,7 @@ class VM {
             get() = when (this) {
                 FPS24 -> 50L
                 FPS30 -> 30L
-                FPS60 -> 2500L
+                FPS60 -> 15L
             }
         val drawable: Int
             get() = when (this) {
