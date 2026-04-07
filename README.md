@@ -17,25 +17,25 @@ Example data mapping with containers A, B, C, D given scroll position of bottom 
 
 Filter and sort of list is attained by updating indexes of visible views, and does not need data reload:
 
-                 INDEX STRUCTURE
+                 STRUCTURE
                    
     DATA
-    index | col1 | col2 |       #
-        0                       #
-        .                       #
-        N                       # Table data
+    # | col1 | col2 |    #
+    0                    #
+    .                    #
+    N                    # Table data
         
-    INDEX
-    index | DATA.index          # 
-        0            0          # Sorted, filtered
-        .            .          # data indexes
-        M            N          # M <= N
+    FILTER
+    # | DATA.i           # 
+    0        0           # Sorted, filtered
+    .        .           # data indexes
+    M        N           # M <= N
          
     DISPLAY
-    index | XYWH | INDEX.index  #
-        0                    0  # View container
-        .                    .  # mapping
-        K                    N  # K <= M
+    # | XYWH | FILTER.i  #
+    0                 0  # View container
+    .                 .  # mapping
+    L                 N  # L <= M
 
 ## 2D Scrolling
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
@@ -48,7 +48,7 @@ Filter and sort of list is attained by updating indexes of visible views, and do
 
 ## Experimental Mode
 
-Rendering and positioning of layouts is handled internally without relying on UI libraries or context.
+Rendering and positioning of layouts is handled internally, without relying on UI libraries or context.
 
 Layout templates are serialized strings:
 
@@ -89,5 +89,7 @@ Layout templates are serialized strings:
       ]
     }
 
-In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach will add browsing capabilities to low power devices.
+In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach promises new Browsing capabilities to low power devices.
 
+
+[Browser prototype: ](https://sheinin.github.io/sheinin/)
