@@ -1,12 +1,11 @@
 An incubating 2D scroll helper.
 
 - Measures the size and position of UI layouts on the screen
-- Asynchronous process continuously fetches views closest to scroll position
-- Adjusts X/Y of view containers
+- Continuously fetches views closest to scroll position
+- Applies offset X/Y to view containers
 - Binds data to the containers
 
 Example data mapping with containers A, B, C, D given scroll position of bottom right x: 4, y: 4:
-
 
          DATA        SCREEN   CONTAINERS  
     00 01 02 03 04  . . . . .  44 -> A  
@@ -37,14 +36,15 @@ Filter and sort of list is attained by updating indexes of visible views, and do
     .          .         # mapping
     L          N         # L <= M
 
-## 2D Scrolling
+### 2D Scrolling
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
 
-## Text Size Scaling and Zoom
+### Text Size Scaling and Zoom
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/zoom.png" width=200>
 
-## Collapsible Tree View
+### Collapsible Tree View
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/tree.png" width=200>
+
 
 ## Experimental Mode
 
@@ -52,44 +52,7 @@ Rendering and positioning of layouts is handled internally, without relying on U
 
 Layout templates are sourced from [serialized strings](https://raw.githubusercontent.com/sheinin/myguide/main/docs/view.json)
 
-    {
-      "element": "ROW",
-      "background": "#000022",
-      "paddingStart": 8,
-      "paddingEnd": 8,
-      "children": [
-        {
-          "element": "IMAGE",
-          "w": 194,
-          "h": 194,
-          "image": "%ICON%"
-        },
-        {
-          "element": "COLUMN",
-          "paddingStart": 8,
-          "paddingEnd": 8,
-          "children": [
-            {
-              "element": "TEXT",
-              "text": "%TITLE%",
-              "size": 48
-            },
-            {
-              "element": "TEXT",
-              "text": "%ORIGIN%",
-              "size": 44
-            },
-            {
-              "element": "TEXT",
-              "text": "%DESCRIPTION%",
-              "size": 36
-            }
-          ]
-        }
-      ]
-    }
-
 In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach promises new Browsing capabilities to low power devices.
 
 
-[Browser prototype](https://sheinin.github.io/sheinin/)
+[Browser prototype](https://sheinin.github.io/sheinin/) completed in 2020.
