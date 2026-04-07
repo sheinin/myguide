@@ -39,7 +39,7 @@ Filter and sort of list is attained by updating indexes of visible views, and do
         K             N  # K <= M
 
 
-"Experiemental" mode directs scrolling entirely to the utility's internal rendering engine. At that point all view containers and their positioning is handled internally without relying on high-level system UI libraries or context.
+"Experimental" mode directs scrolling entirely to the utility's internal rendering engine. At that point all view containers and their positioning is handled internally without relying on high-level system UI libraries or context.
 
 A UI element is rendered from JSON representation of a regular UI element:
 
@@ -80,7 +80,4 @@ A UI element is rendered from JSON representation of a regular UI element:
       ]
     }
 
-mode enables scrolling without relying on the native Android UI library. Instead it is performed by monitoring swipe gestures  
-and re-computing view positions on each pass. It is under development with the eventual aim of transpiling the code onto a device without a traditional OS -  
-for example, a low-cost, secure device that presents very large scroll view of expandable layouts.
-
+View rendering relies upon algebraic calculations with no need for external dependencies. This approach will add browsing capabilities to low power devices.

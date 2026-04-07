@@ -34,6 +34,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat.Type.navigationBars
+import androidx.core.view.WindowInsetsCompat.Type.statusBars
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -73,26 +76,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.hide(navigationBars())
+        windowInsetsController.hide(statusBars())
         //try {
             // Open the file from assets
-            val inputStream = assets.open("view.json")
-            val size = inputStream.available()
-            val buffer = ByteArray(size)
+        val inputStream = assets.open("view.json")
+        val size = inputStream.available()
+        val buffer = ByteArray(size)
 
-            // Read into buffer and close stream
-            inputStream.read(buffer)
-            inputStream.close()
+        // Read into buffer and close stream
+        inputStream.read(buffer)
+        inputStream.close()
 
-            // Convert byte array to String
-            json = String(buffer, Charsets.UTF_8)
+        // Convert byte array to String
+        json = String(buffer, Charsets.UTF_8)
      //   } catch (e: IOException) {
        //     e.printStackTrace()
          //   null
         //}
 
-        //    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-      //  windowInsetsController.hide(navigationBars())
-        //windowInsetsController.hide(statusBars())
 
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)
