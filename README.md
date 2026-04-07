@@ -17,25 +17,25 @@ Example data mapping with containers A, B, C, D given scroll position of bottom 
 
 Filter and sort of list is attained by updating indexes of visible views, and does not need data reload:
 
-                   INDEX STRUCTURE
+                 INDEX STRUCTURE
                    
     DATA
-    index | name | ... | #
-        0                # Array of
-        .                # table data
-        N                #
+    index | col1 | col2 |       #
+        0                       #
+        .                       #
+        N                       # Table data
         
     INDEX
-    index | DATA         # Array of sorted
-        0      0         # and filtered
-        .      .         # data indexes
-        M      N         # M <= N
+    index | DATA.index          # 
+        0            0          # Sorted, filtered
+        .            .          # data indexes
+        M            N          # M <= N
          
     DISPLAY
-    index | XYWH | DATA  #
-        0             0  # Index of available
-        .             .  # view containers
-        K             N  # K <= M
+    index | XYWH | INDEX.index  #
+        0                    0  # View container
+        .                    .  # mapping
+        K                    N  # K <= M
 
 ## 2D Scrolling
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
