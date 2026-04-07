@@ -1,4 +1,4 @@
-﻿An incubating 2D scroll helper.
+An incubating 2D scroll helper.
 
 - Measures the size and position of UI layouts on the screen
 - Asynchronous process continuously fetches views closest to scroll position
@@ -46,11 +46,11 @@ Filter and sort of list is attained by updating indexes of visible views, and do
 ## Collapsible Tree View
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/tree.png" width=200>
 
-## Experimental mode
+## Experimental Mode
 
-Relies entirely on the internal rendering engine. Rendering of view containers and their positioning is handled internally without relying on high-level system UI libraries or context.
+Rendering and positioning of layouts is handled internally without relying on UI libraries or context.
 
-UI layout is rendered from JSON representation of a regular layout:
+Layout templates are serialized strings:
 
     {
       "element": "ROW",
@@ -89,5 +89,5 @@ UI layout is rendered from JSON representation of a regular layout:
       ]
     }
 
-View rendering relies upon algebraic calculations with no need for external dependencies. This approach will add browsing capabilities to low power devices.
+In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach will add browsing capabilities to low power devices.
 
