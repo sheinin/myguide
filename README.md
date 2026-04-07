@@ -50,8 +50,6 @@ Filter and sort of list is attained by updating indexes of visible views, and do
 ### N-Column Table
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/table.png" width=200>
 
-[Watch the video](https://www.youtube.com/shorts/toolp38tKGo)
-
 ## Experimental Mode
 
 Rendering and positioning of layouts is handled internally, without relying on UI libraries or context.
@@ -60,6 +58,10 @@ Layout templates are sourced from [serialized strings](https://raw.githubusercon
 
 In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach promises new Browsing capabilities to low power devices.
 
+## Links
 
+[Watch the Video](https://www.youtube.com/shorts/toolp38tKGo)
 
-[Browser prototype](https://sheinin.github.io/sheinin/) completed in 2020.
+[Browser Prototype](https://sheinin.github.io/sheinin/)
+
+[PlayStore App](https://play.google.com/store/apps/details?id=com.myguide)
