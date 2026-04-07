@@ -17,8 +17,8 @@ Example data mapping with containers A, B, C, D given scroll position of bottom 
 
 Filter and sort of list is attained by updating indexes of visible views, and does not need data reload:
 
-                 STRUCTURE
-                   
+    STRUCTURE:
+
     DATA
     # | col1 | col2 |    #
     0                    #
@@ -26,16 +26,16 @@ Filter and sort of list is attained by updating indexes of visible views, and do
     N                    # Table data
         
     FILTER
-    # | DATA.i           # 
+    # | DATA.#           # 
     0        0           # Sorted, filtered
     .        .           # data indexes
     M        N           # M <= N
          
     DISPLAY
-    # | XYWH | FILTER.i  #
-    0                 0  # View container
-    .                 .  # mapping
-    L                 N  # L <= M
+    # | FILTER.# | XYWH  #
+    0          0         # View container
+    .          .         # mapping
+    L          N         # L <= M
 
 ## 2D Scrolling
 <img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
@@ -50,7 +50,7 @@ Filter and sort of list is attained by updating indexes of visible views, and do
 
 Rendering and positioning of layouts is handled internally, without relying on UI libraries or context.
 
-Layout templates are serialized strings:
+Layout templates are sourced from [serialized strings](https://raw.githubusercontent.com/sheinin/myguide/main/docs/view.json)
 
     {
       "element": "ROW",
@@ -92,4 +92,4 @@ Layout templates are serialized strings:
 In Experimental Mode, UI rendering relies on algebraic calculations with no need for external dependencies. This approach promises new Browsing capabilities to low power devices.
 
 
-[Browser prototype: ](https://sheinin.github.io/sheinin/)
+[Browser prototype](https://sheinin.github.io/sheinin/)
