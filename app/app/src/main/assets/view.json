@@ -1,37 +1,36 @@
-{
-  "element": "ROW",
-  "background": "#000022",
-  "paddingStart": 8,
-  "paddingEnd": 8,
-  "children": [
     {
-      "element": "IMAGE",
-      "w": 194,
-      "h": 194,
-      "image": "%ICON%"
-    },
-    {
-      "element": "COLUMN",
+      "element": "ROW",
+      "background": "#000022",
       "paddingStart": 8,
       "paddingEnd": 8,
       "children": [
         {
-          "element": "TEXT",
-          "text": "%TITLE%",
-          "size": 50
+          "element": "IMAGE",
+          "w": 194,
+          "h": 194,
+          "image": "%ICON%"
         },
         {
-          "element": "TEXT",
-          "text": "%ORIGIN%",
-          "size": 45
-        },
-        {
-          "element": "TEXT",
-          "text": "%DESCRIPTION%"
+          "element": "COLUMN",
+          "paddingStart": 8,
+          "paddingEnd": 8,
+          "children": [
+            {
+              "element": "TEXT",
+              "text": "%TITLE%",
+              "size": 48
+            },
+            {
+              "element": "TEXT",
+              "text": "%ORIGIN%",
+              "size": 44
+            },
+            {
+              "element": "TEXT",
+              "text": "%DESCRIPTION%",
+              "size": 36
+            }
+          ]
         }
       ]
     }
-  ]
-}
-
-
