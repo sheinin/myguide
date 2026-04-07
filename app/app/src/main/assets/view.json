@@ -8,7 +8,7 @@
       "element": "IMAGE",
       "w": 194,
       "h": 194,
-      "image": "%%ICON%%"
+      "image": "%ICON%"
     },
     {
       "element": "COLUMN",
@@ -17,15 +17,17 @@
       "children": [
         {
           "element": "TEXT",
-          "text": "%%TITLE%%"
+          "text": "%TITLE%",
+          "size": 50
         },
         {
           "element": "TEXT",
-          "text": "%%ORIGIN%%"
+          "text": "%ORIGIN%",
+          "size": 45
         },
         {
           "element": "TEXT",
-          "text": "%%DESCRIPTION%%"
+          "text": "%DESCRIPTION%"
         }
       ]
     }

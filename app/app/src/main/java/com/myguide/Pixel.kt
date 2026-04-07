@@ -32,13 +32,14 @@ fun pixTextAutoHeight(
     text: String,
     background: Int? = null,
     horizontalPadding: Int = 0,
-    verticalPadding: Int = 0
+    verticalPadding: Int = 0,
+    size: Int? = 40
 ): Bitmap {
     val contentWidth = (w - horizontalPadding * 2).coerceAtLeast(1)
 
     val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
-        textSize = 40f
+        textSize = size?.toFloat() ?: 40f
         textAlign = Paint.Align.LEFT
     }
 

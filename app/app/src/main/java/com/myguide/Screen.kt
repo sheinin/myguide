@@ -741,7 +741,7 @@ class Screen(private val context: Context, val ident: Boolean) {
                         pixTextAutoHeight(
                             w1,
                             when (element["text"]!!.jsonPrimitive.content) {
-                                "%%DESCRIPTION%%" ->
+                                "%DESCRIPTION%" ->
                                     expandable(
                                         index = index,
                                         level = list[index].level,
@@ -750,12 +750,13 @@ class Screen(private val context: Context, val ident: Boolean) {
                                         ratioV = vm.ratioV(),
                                         scale = vm.scale.value!!,
                                         txt = list[index].description
-                                    ).toString()//list[index].description ?: ""
-                                "%%TITLE%%" -> list[index].title ?: ""
-                                "%%ORIGIN%%" -> list[index].origin ?: ""
+                                    ).toString()
+                                "%TITLE%" -> list[index].title ?: ""
+                                "%ORIGIN%" -> list[index].origin ?: ""
                                 else -> ""
                             },
-                            bg
+                            bg,
+                            size = element["size"]?.jsonPrimitive?.int
                         )
                     IMAGE ->
                         pixImage(
@@ -771,9 +772,11 @@ class Screen(private val context: Context, val ident: Boolean) {
                         x,
                         y
                     )
+                    val children =
+                        element["children"]?.jsonArray ?: return Offset(bmp.width.toFloat(), bmp.height.toFloat())
                     if (e == COLUMN) {
                         var yy = y
-                        element["children"]?.jsonArray?.map {
+                        children.map {
                             yy += traverse(
                                 element = it, index = index,
                                 x = x,
@@ -786,7 +789,7 @@ class Screen(private val context: Context, val ident: Boolean) {
                     }
                     else if (e == ROW) {
                         var xx = x
-                        element["children"]?.jsonArray?.map {
+                        children.map {
                             xx += traverse(
                                 element = it,
                                 index = index,
@@ -800,7 +803,6 @@ class Screen(private val context: Context, val ident: Boolean) {
                     }
                     return Offset(bmp.width.toFloat(), bmp.height.toFloat())
                 }
-
             }
             is JsonArray -> {
                 for (item in element) {
@@ -811,16 +813,7 @@ class Screen(private val context: Context, val ident: Boolean) {
         }
         return null
     }
-    /*
 
-{BOX x:0, y:0, w:1080, h:204 },
-{IMAGE x:0, y:0, w:204, h:204 },
-{COL x:228, y:0, w:780, h:204 },
-{TXT1 x:0, y:0, w:298, h:58 },
-{TXT2 x:0, y:67, w:403, h:50 },
-{TXT3 x:0, y:117, w:780, h:78 },
-
-* */
     private var bitmap = createBitmap(screenWidth.toPx().toInt(), screenHeight.toPx().toInt())
     @SuppressLint("UseKtx")
     fun pix(elements: List<Int>) {
