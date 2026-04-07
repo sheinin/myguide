@@ -1,12 +1,11 @@
-
-An incubating 2D scroll helper.
+﻿An incubating 2D scroll helper.
 
 - Measures the size and position of UI layouts on the screen
 - Asynchronous process continuously fetches views closest to scroll position
 - Adjusts X/Y of view containers
 - Binds data to the containers
 
-Example data mapping given scroll position of x: 4, y: 4 and containers A, B, C, and D:
+Example data mapping with containers A, B, C, D given scroll position of bottom right x: 4, y: 4:
 
 
          DATA        SCREEN   CONTAINERS  
@@ -38,10 +37,20 @@ Filter and sort of list is attained by updating indexes of visible views, and do
         .             .  # view containers
         K             N  # K <= M
 
+## 2D Scrolling
+<img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/2d.png" height=200>
 
-"Experimental" mode directs scrolling entirely to the utility's internal rendering engine. At that point all view containers and their positioning is handled internally without relying on high-level system UI libraries or context.
+## Text Size Scaling and Zoom
+<img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/zoom.png" width=200>
 
-A UI element is rendered from JSON representation of a regular UI element:
+## Collapsible Tree View
+<img src="https://raw.githubusercontent.com/sheinin/myguide/main/docs/tree.png" width=200>
+
+## Experimental mode
+
+Relies entirely on the internal rendering engine. Rendering of view containers and their positioning is handled internally without relying on high-level system UI libraries or context.
+
+UI layout is rendered from JSON representation of a regular layout:
 
     {
       "element": "ROW",
@@ -81,3 +90,4 @@ A UI element is rendered from JSON representation of a regular UI element:
     }
 
 View rendering relies upon algebraic calculations with no need for external dependencies. This approach will add browsing capabilities to low power devices.
+
