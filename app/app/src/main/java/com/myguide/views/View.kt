@@ -250,18 +250,13 @@ fun View(modifier: Modifier, screen: Screen) {
                 }
                 Row(
                     modifier = Modifier
-                    //    .zIndex(2f)
                         .fillMaxWidth()
-                      //  .fillMaxHeight()
                         .then(
                             if (!exp!! && type == H) Modifier.horizontalScroll(scrollStateX)
                             else Modifier
                         )
                 ) {
                     Box(
-                        //contentAlignment =
-                        //    if (exp!!) Alignment.Center
-                        //else Alignment.TopStart,
                         modifier = Modifier
                             .zIndex(1f)
                             .then(
@@ -273,9 +268,10 @@ fun View(modifier: Modifier, screen: Screen) {
                             )
                     ) {
                         if (exp!!) {
-                            Canvas(modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Green.copy(alpha = .1f))
+                            Canvas(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Green.copy(alpha = .1f))
                             ) {
                                 bitmap?.let {
                                     drawImage(image = it.asImageBitmap())

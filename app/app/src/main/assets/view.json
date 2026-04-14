@@ -1,32 +1,32 @@
     {
-      "element": "ROW",
+      "tag": "ROW",
       "background": "#000022",
       "paddingStart": 8,
       "paddingEnd": 8,
       "children": [
         {
-          "element": "IMAGE",
+          "tag": "IMAGE",
           "w": 194,
           "h": 194,
           "image": "%ICON%"
         },
         {
-          "element": "COLUMN",
+          "tag": "COLUMN",
           "paddingStart": 8,
           "paddingEnd": 8,
           "children": [
             {
-              "element": "TEXT",
+              "tag": "TEXT",
               "text": "%TITLE%",
               "size": 48
             },
             {
-              "element": "TEXT",
+              "tag": "TEXT",
               "text": "%ORIGIN%",
               "size": 44
             },
             {
-              "element": "TEXT",
+              "tag": "TEXT",
               "text": "%DESCRIPTION%",
               "size": 36
             }

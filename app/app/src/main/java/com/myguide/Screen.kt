@@ -3,8 +3,11 @@ package com.myguide
 import android.R.attr.bitmap
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log.v
 import androidx.compose.runtime.key
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.serialization.json.*
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -46,7 +49,296 @@ import androidx.core.graphics.toColorInt
 import com.myguide.Screen.Tags.*
 
 class Screen(private val context: Context, val ident: Boolean) {
+    val mx = MX(
+        point = CopyOnWriteArrayList(),
+        ruler = CopyOnWriteArrayList(),
+        stack = IntArray(batch) { -1 },
+        view = MX.View(
+            bitmap = mutableListOf(),
+            details = mutableListOf(),
+            expand = mutableListOf(),
+            toggle = mutableListOf(),
+            xy = mutableListOf()
+        ),
+        display = CopyOnWriteArrayList()
+    )
     val vm = VM()
+    var list: List<ListInterface> = listOf()
+    var scrollX = 0
+    var scrollY = 0
+    private var margin = 1f
+    private var handler: VM.Type? = null
+    val experiment =
+        mapOf(
+            false to object: ExpInterface {
+                override fun zoom() {
+                    when (vm.type.value!!) {
+                        D -> {
+
+                        }
+                        T -> {
+                            val from =
+                                max(
+                                    mx.point
+                                        .withIndex()
+                                        .indexOfLast { ITEM_HEIGHT * vm.ratioV() * it.index < this@Screen.scrollY }
+                                            - batch / 4,
+                                    0
+                                )
+                            (from until min(from + batch, mx.point.size)).map { xy(it) }
+                        }
+                        V -> {
+                            val from = max(0, mx.ruler.indexOfFirst { it >= this@Screen.scrollY } - batch / 3)
+                            var sum = 0
+                            (from until min(from + batch, mx.point.size)).map { ix ->
+                                val index = mx.point[ix]
+                                val m = mx.display[index].second
+                                mx.view.expand[index] =
+                                    mx.view.expand[index].first to exp(index)
+                                //qqq("Z index:$index ix:$ix sum:$sum m:$m ${data.display[index].second} ${(data.display[index].second > m)}/${(data.display[index].second < m)} ${data.view.expand[index]}")
+                                mx.ruler[ix] += sum
+                                if (mx.display[index].second > m)
+                                    sum += mx.display[index].second - m
+                                else if (mx.display[index].second < m)
+                                    sum -= m - mx.display[index].second
+                                mx.view.xy[index] =
+                                    XY(
+                                        x = 0,
+                                        y = (mx.ruler[ix]).toInt(),
+                                        h = mx.display[index].first + mx.display[index].second,
+                                        w = screenWidth.toPx().toInt(),
+                                        i = ix
+                                    )
+                            }
+                        }
+
+                        H -> {
+                            val from =
+                                max(
+                                    (this@Screen.scrollX / (mapViewWidth + margin()) / vm.ratioH()
+                                            ).toInt() - batch / 4,
+                                    0
+                                )
+                            (from until min(from + batch, mx.point.size)).map {
+                                val point = mx.point[it]
+                                val index = it.mod(batch)
+                                xy(point)
+                                vm.cycler.update(index, mx.view.expand[point].second)
+                            }
+                        }
+                    }
+                }
+                override fun scroll() {
+                    when (handler) {
+                        D -> {
+                            fun distance(x1: Double, y1: Double, x2: Double, y2: Double): Double {
+                                val dx = x2 - x1
+                                val dy = y2 - y1
+                                return sqrt(dx * dx + dy * dy)
+                            }
+                            var c = 0
+                            val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
+                            val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
+                            val l = mx.point.withIndex()
+                                .sortedBy {
+                                    distance(
+                                        list[it.value].lng,
+                                        list[it.value].lat,
+                                        x,
+                                        y
+                                    )
+                                }
+                                .take(batch)
+                            l.map {
+                                //qqq("XYS $x $scrollX $scrollY ${it.index} ${list[it.value].title} ${list[it.value].origin}")
+                                xy(it.index)
+                                val ix = it.index
+                                val index = it.value
+                                val mod = c
+                                c++
+                                val xy = mx.view.xy.getOrNull(index) ?: return
+                                val toggle = mx.view.toggle.getOrNull(index) ?: return
+                                /*qqq(
+                                    "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${list[index].lat}/${list[index].lng} ${list[index].title} ${
+                                        mx.view.details.getOrNull(
+                                            index
+                                        )?.title
+                                    } ${xy.x.toDp().round()} ${xy.y.toDp().round()}}"
+                                )*/
+                                mx.stack[mod] = ix
+                                vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
+                                vm.cycler.update(mod = mod, details = mx.view.details[index])
+                                vm.cycler.update(mod = mod, toggle = toggle)
+                                vm.cycler.update(mod = mod, xy = xy)
+                            }
+                        }
+                        H -> {
+                            val r =
+                                max(
+                                    (this@Screen.scrollX / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
+                                    0
+                                )
+                            //qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                            (r - batch / 2 until r + batch / 2)
+                                .filter { it !in mx.stack }
+                                .map { sync(it) }
+
+                        }
+                        T, V -> {
+                            val r = mx.ruler
+                                .indexOfFirst {
+                                    it * vm.ratioV() * vm.scale.value!! > this@Screen.scrollY
+                                }
+                            fun down() {
+                                var i = 0
+                                while (i < batch / 2) {
+                                    val down = r - i
+                                    if (down >= 0 && !mx.stack.contains(down)) {
+                                        sync(down)
+                                        break
+                                    }
+                                    i += 1
+                                }
+                            }
+                            fun up() {
+                                var i = 0
+                                while (i < batch / 2) {
+                                    val up = r + i
+                                    if (up in 0..mx.point.lastIndex &&
+                                        !mx.stack.contains(up)
+                                    ) {
+                                        sync(up)
+                                        break
+                                    }
+                                    i += 1
+                                }
+                            }
+                            down()
+                            up()
+                            //qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+
+                        }
+
+                        null -> {}
+                    }
+                }
+            },
+            true to object: ExpInterface {
+                override fun zoom() {
+                    when (vm.type.value!!) {
+                        D, T, H -> {}
+                        V -> {
+                            ruler()
+                            display(V)
+                        }
+                    }
+                }
+                override fun scroll() {
+                    when (handler) {
+                        D -> {
+                            fun distance(x1: Double, y1: Double, x2: Double, y2: Double): Double {
+                                val dx = x2 - x1
+                                val dy = y2 - y1
+                                return sqrt(dx * dx + dy * dy)
+                            }
+                            var c = 0
+                            val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
+                            val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
+                            val l = mx.point.withIndex()
+                                .sortedBy {
+                                    distance(
+                                        list[it.value].lng,
+                                        list[it.value].lat,
+                                        x,
+                                        y
+                                    )
+                                }
+                                .take(batch)
+                            l.map {
+                                //qqq("XYS $x $scrollX $scrollY ${it.index} ${list[it.value].title} ${list[it.value].origin}")
+                                xy(it.index)
+                                val ix = it.index
+                                val index = it.value
+                                val mod = c
+                                c++
+                                val xy = mx.view.xy.getOrNull(index) ?: return
+                                val toggle = mx.view.toggle.getOrNull(index) ?: return
+                                /*qqq(
+                                    "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${list[index].lat}/${list[index].lng} ${list[index].title} ${
+                                        mx.view.details.getOrNull(
+                                            index
+                                        )?.title
+                                    } ${xy.x.toDp().round()} ${xy.y.toDp().round()}}"
+                                )*/
+                                mx.stack[mod] = ix
+                                vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
+                                vm.cycler.update(mod = mod, details = mx.view.details[index])
+                                vm.cycler.update(mod = mod, toggle = toggle)
+                                vm.cycler.update(mod = mod, xy = xy)
+                            }
+                        }
+                        H -> {
+                            val r =
+                                max(
+                                    (this@Screen.scrollX / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
+                                    0
+                                )
+                            //qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                            (r - batch / 2 until r + batch / 2)
+                                .filter { it !in mx.stack }
+                                .map { sync(it) }
+
+                        }
+                        T, V -> {
+                            val r = mx.ruler
+                                .indexOfFirst {
+                                    it * vm.ratioV() * vm.scale.value!! > this@Screen.scrollY
+                                }
+                            mx.stack = IntArray(batch) { -1 }
+                            val ixs = mutableListOf<Int>()
+                            fun down() {
+                                var i = 0
+                                while (i < batch / 2) {
+                                    val down = r - i
+                                    if (down >= 0 && !mx.stack.contains(down)) {
+                                        xy(down)
+                                        ixs.add(down)
+                                    }
+                                    i += 1
+                                }
+                            }
+                            fun up() {
+                                var i = 0
+                                while (i < batch / 2) {
+                                    val up = r + i
+                                    if (up in 0..mx.point.lastIndex &&
+                                        !mx.stack.contains(up)
+                                    ) {
+                                        xy(up)
+                                        ixs.add(up)
+                                    }
+                                    i += 1
+                                }
+                            }
+                            // qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
+                            down()
+                            up()
+                            var scr = createBitmap(screenWidth.toPx().toInt(), screenHeight.toPx().toInt())
+                            ixs.map { ix ->
+                                val index = mx.point.getOrNull(ix) ?: return
+                                val xy = mx.view.xy.getOrNull(index) ?: return
+                                mx.view.bitmap.getOrNull(index)?.also {
+                                    scr = mergeBitmaps(scr, it, xy.x, xy.y)
+                                }
+                            }
+                            vm.bitmap(scr)
+                        }
+                        null -> {}
+                    }
+                }
+            }
+        )
+
     fun build() {
         val item = toolbar.items.last()
         qqq(
@@ -109,25 +401,6 @@ class Screen(private val context: Context, val ident: Boolean) {
             null -> {}
         }
     }
-
-    val mx = MX(
-        point = CopyOnWriteArrayList(),
-        ruler = CopyOnWriteArrayList(),
-        stack = IntArray(batch) { -1 },
-        view = MX.View(
-            details = mutableListOf(),
-            expand = mutableListOf(),
-            toggle = mutableListOf(),
-            xy = mutableListOf()
-        ),
-        display = CopyOnWriteArrayList()
-    )
-    var list: List<ListInterface> = listOf()
-    var scrollX = 0
-    var scrollY = 0
-    private var margin = 1f
-    private var handler: VM.Type? = null
-
     init {
         vm.adjust.observeForever {
             if (!it) {
@@ -143,10 +416,10 @@ class Screen(private val context: Context, val ident: Boolean) {
             mx.stack = IntArray(batch) { -1 }
         }
         vm.sort.observeForever { sort() }
-        vm.ratio.observeForever { zoom() }
-        vm.ratioH.observeForever { zoom() }
-        vm.ratioV.observeForever { zoom() }
-        vm.scale.observeForever { zoom() }
+        vm.ratio.observeForever { experiment[vm.exp.value!!]!!.zoom() }
+        vm.ratioH.observeForever { experiment[vm.exp.value!!]!!.zoom() }
+        vm.ratioV.observeForever { experiment[vm.exp.value!!]!!.zoom() }
+        vm.scale.observeForever { experiment[vm.exp.value!!]!!.zoom() }
         CoroutineScope(Dispatchers.IO).launch {
             vm.margin.collect { m ->
                 margin = m
@@ -156,13 +429,13 @@ class Screen(private val context: Context, val ident: Boolean) {
                                 margin() to measure(index)
                 }
                 ruler()
-                zoom()
+                experiment[vm.exp.value!!]!!.zoom()
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
             while (true) {
                 delay(vm.fps.value!!.delay)
-                scroll()
+                experiment[vm.exp.value!!]!!.scroll()
             }
         }
     }
@@ -249,7 +522,7 @@ class Screen(private val context: Context, val ident: Boolean) {
     }
 
     fun display(type: VM.Type) {
-        qqq("DISPL $handler ${type} ${list.size}")
+        qqq("DIS old:$handler new:$type exp:${vm.exp.value!!}")
         handler = type
         toolbar.items.last().type = type
         vm.cycler.reset()
@@ -294,6 +567,12 @@ class Screen(private val context: Context, val ident: Boolean) {
                         vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
                     }
                     true -> {
+                        list.indices.map { index ->
+                            val h = mx.display[index].first + mx.display[index].second
+                            bitmap = createBitmap(screenWidth.toPx().toInt(), h)
+                            traverse(json1, index, 0, 0, screenWidth.toPx().toInt(), h)
+                            mx.view.bitmap.add(bitmap)
+                        }
                         vm.dim.postValue((0f to 0f) to (mx.point.size.toFloat().unaryMinus() to 0f))
                     }
                 }
@@ -374,138 +653,6 @@ class Screen(private val context: Context, val ident: Boolean) {
             }
         }
     }
-    private fun scroll() {
-        when (handler) {
-            D -> {
-                fun distance(x1: Double, y1: Double, x2: Double, y2: Double): Double {
-                    val dx = x2 - x1
-                    val dy = y2 - y1
-                    return sqrt(dx * dx + dy * dy)
-                }
-                var c = 0
-                val x = scrollX.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
-                val y = scrollY.toDouble() / ((ITEM_HEIGHT + MARGIN * 2) )
-                val l = mx.point.withIndex()
-                    .sortedBy {
-                        distance(
-                            list[it.value].lng,
-                            list[it.value].lat,
-                            x,
-                            y
-                        )
-                    }
-                    .take(batch)
-                l.map {
-                    //qqq("XYS $x $scrollX $scrollY ${it.index} ${list[it.value].title} ${list[it.value].origin}")
-                    xy(it.index)
-                    val ix = it.index
-                    val index = it.value
-                    val mod = c
-                    c++
-                    val xy = mx.view.xy.getOrNull(index) ?: return
-                    val toggle = mx.view.toggle.getOrNull(index) ?: return
-                    /*qqq(
-                        "DDD sx:$scrollX sy:$scrollY d:$d x:${x.roundToInt()} y:${y.roundToInt()} ix:$ix index:$index mod:$mod ${list[index].lat}/${list[index].lng} ${list[index].title} ${
-                            mx.view.details.getOrNull(
-                                index
-                            )?.title
-                        } ${xy.x.toDp().round()} ${xy.y.toDp().round()}}"
-                    )*/
-                    mx.stack[mod] = ix
-                    vm.cycler.update(mod = mod, description = mx.view.expand[index].second)
-                    vm.cycler.update(mod = mod, details = mx.view.details[index])
-                    vm.cycler.update(mod = mod, toggle = toggle)
-                    vm.cycler.update(mod = mod, xy = xy)
-                }
-            }
-            H -> {
-                val r =
-                    max(
-                        (this@Screen.scrollX / ((mapViewWidth + margin()) * vm.ratioH())).toInt(),
-                        0
-                    )
-                //qqq("SCROLL r:${r} ${scrollX.toDp().round()} S:${mx.stack.map { it }.toList()}")
-                (r - batch / 2 until r + batch / 2)
-                    .filter { it !in mx.stack }
-                    .map { sync(it) }
-
-            }
-            T, V -> {
-                val r = mx.ruler
-                    .indexOfFirst {
-                        it * vm.ratioV() * vm.scale.value!! > this@Screen.scrollY
-                    }
-                when (vm.exp.value!!) {
-                    false -> {
-                        fun down() {
-                            var i = 0
-                            while (i < batch / 2) {
-                                val down = r - i
-                                if (down >= 0 && !mx.stack.contains(down)) {
-                                    sync(down)
-                                    break
-                                }
-                                i += 1
-                            }
-                        }
-                        fun up() {
-                            var i = 0
-                            while (i < batch / 2) {
-                                val up = r + i
-                                if (up in 0..mx.point.lastIndex &&
-                                    !mx.stack.contains(up)
-                                ) {
-                                    sync(up)
-                                    break
-                                }
-                                i += 1
-                            }
-                        }
-                        down()
-                        up()
-                        //qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
-
-                    }
-                    true -> {
-                        mx.stack = IntArray(batch) { -1 }
-                        val ixs = mutableListOf<Int>()
-                        fun down() {
-                            var i = 0
-                            while (i < batch / 2) {
-                                val down = r - i
-                                if (down >= 0 && !mx.stack.contains(down)) {
-                                    xy(down)
-                                    ixs.add(down)
-                                }
-                                i += 1
-                            }
-                        }
-                        fun up() {
-                            var i = 0
-                            while (i < batch / 2) {
-                                val up = r + i
-                                if (up in 0..mx.point.lastIndex &&
-                                    !mx.stack.contains(up)
-                                ) {
-                                    xy(up)
-                                    ixs.add(up)
-                                }
-                                i += 1
-                            }
-                        }
-                       // qqq("SCROLL r:${r} ${scrollY.toDp().round()} S:${mx.stack.map { it }.toList()}")
-                        down()
-                        up()
-                        pix(ixs)
-                    }
-                }
-
-            }
-
-            null -> {}
-        }
-    }
-
     private fun sort() {
         qqq("SORT")
         val comparator = compareBy<String> { it }
@@ -523,64 +670,11 @@ class Screen(private val context: Context, val ident: Boolean) {
         mx.point.indices.map { xy(it) }
         mx.stack = IntArray(batch) { -1 }
     }
-
-    private fun zoom() {
-        when (vm.type.value!!) {
-            D -> {
-
-            }
-            T -> {
-                val from =
-                    max(
-                        mx.point
-                            .withIndex()
-                            .indexOfLast { ITEM_HEIGHT * vm.ratioV() * it.index < this@Screen.scrollY }
-                                - batch / 4,
-                        0
-                    )
-                (from until min(from + batch, mx.point.size)).map { xy(it) }
-            }
-            V -> {
-                val from = max(0, mx.ruler.indexOfFirst { it >= this@Screen.scrollY } - batch / 3)
-                var sum = 0
-                (from until min(from + batch, mx.point.size)).map { ix ->
-                    val index = mx.point[ix]
-                    val m = mx.display[index].second
-                    mx.view.expand[index] =
-                        mx.view.expand[index].first to exp(index)
-                    //qqq("Z index:$index ix:$ix sum:$sum m:$m ${data.display[index].second} ${(data.display[index].second > m)}/${(data.display[index].second < m)} ${data.view.expand[index]}")
-                    mx.ruler[ix] += sum
-                    if (mx.display[index].second > m)
-                        sum += mx.display[index].second - m
-                    else if (mx.display[index].second < m)
-                        sum -= m - mx.display[index].second
-                    mx.view.xy[index] =
-                        XY(
-                            x = 0,
-                            y = (mx.ruler[ix]).toInt(),
-                            h = mx.display[index].first + mx.display[index].second,
-                            w = screenWidth.toPx().toInt(),
-                            i = ix
-                        )
-                }
-            }
-
-            H -> {
-                val from =
-                    max(
-                        (this@Screen.scrollX / (mapViewWidth + margin()) / vm.ratioH()
-                                ).toInt() - batch / 4,
-                        0
-                    )
-                (from until min(from + batch, mx.point.size)).map {
-                    val point = mx.point[it]
-                    val index = it.mod(batch)
-                    xy(point)
-                    vm.cycler.update(index, mx.view.expand[point].second)
-                }
-            }
-        }
+    interface ExpInterface {
+        fun scroll()
+        fun zoom()
     }
+
     private fun xy(ix: Int) {
         val index = mx.point[ix]
         mx.view.xy[index] =
@@ -611,7 +705,7 @@ class Screen(private val context: Context, val ident: Boolean) {
                                 w = screenWidth.toPx().toInt(),
                                 i = ix
                             )
-                        true ->
+                        true -> {
                             XY(
                                 x = 0,
                                 y = mx.ruler[ix].toInt() - scrollY,
@@ -619,6 +713,7 @@ class Screen(private val context: Context, val ident: Boolean) {
                                 w = screenWidth.toPx().toInt(),
                                 i = ix
                             )
+                        }
                     }
                 else ->
                     XY(
@@ -682,6 +777,8 @@ class Screen(private val context: Context, val ident: Boolean) {
                     drawable = it.drawable,
                     level = it.level
                 )
+
+
         }
         filter()
         ruler()
@@ -714,7 +811,7 @@ class Screen(private val context: Context, val ident: Boolean) {
         TEXT("TEXT");
     }
 
-    fun traverse(
+    private fun traverse(
         element: JsonElement,
         index: Int,
         x: Int,
@@ -725,11 +822,11 @@ class Screen(private val context: Context, val ident: Boolean) {
     ): Offset? {
         when (element) {
             is JsonObject -> {
-                val e = Tags.valueOf(element["element"]?.jsonPrimitive?.content?.uppercase()!!)
+                val e = Tags.valueOf(element["tag"]?.jsonPrimitive?.content?.uppercase()!!)
                 val w1 = element["w"]?.jsonPrimitive?.int ?: w
                 val h1 = element["h"]?.jsonPrimitive?.int ?: h
                 val bg =  element["background"]?.jsonPrimitive?.content?.toColorInt()
-                qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h")
+                //qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h")
                 when (e) {
                     COLUMN, ROW ->
                         pixBox(
@@ -739,8 +836,8 @@ class Screen(private val context: Context, val ident: Boolean) {
                         )
                     TEXT ->
                         pixTextAutoHeight(
-                            w1,
-                            when (element["text"]!!.jsonPrimitive.content) {
+                            w = w1,
+                            text = when (element["text"]!!.jsonPrimitive.content) {
                                 "%DESCRIPTION%" ->
                                     expandable(
                                         index = index,
@@ -751,26 +848,27 @@ class Screen(private val context: Context, val ident: Boolean) {
                                         scale = vm.scale.value!!,
                                         txt = list[index].description
                                     ).toString()
+
                                 "%TITLE%" -> list[index].title ?: ""
                                 "%ORIGIN%" -> list[index].origin ?: ""
                                 else -> ""
                             },
-                            bg,
+                            background = bg,
                             size = element["size"]?.jsonPrimitive?.int
                         )
                     IMAGE ->
                         pixImage(
-                            w1,
-                            h1,
-                            list[index].drawable?.let { context.getDrawable(it) },
-                            bg
+                            w = w1,
+                            h = h1,
+                            drawable = list[index].drawable?.let { context.getDrawable(it) },
+                            background = bg
                         )
                 }.also { bmp ->
                     bitmap = mergeBitmaps(
-                        bitmap,
-                        bmp,
-                        x,
-                        y
+                        back = bitmap,
+                        front = bmp,
+                        x = x,
+                        y = y
                     )
                     val children =
                         element["children"]?.jsonArray ?: return Offset(bmp.width.toFloat(), bmp.height.toFloat())
@@ -778,7 +876,8 @@ class Screen(private val context: Context, val ident: Boolean) {
                         var yy = y
                         children.map {
                             yy += traverse(
-                                element = it, index = index,
+                                element = it,
+                                index = index,
                                 x = x,
                                 y = yy,
                                 w = w,
@@ -821,9 +920,9 @@ class Screen(private val context: Context, val ident: Boolean) {
         elements.map { ix ->
             val index = mx.point.getOrNull(ix) ?: return
             val xy = mx.view.xy.getOrNull(index) ?: return
-            val root = Json.parseToJsonElement(json)
+          //  val root = Json.parseToJsonElement(json)
             bitmap = createBitmap(xy.w, xy.h)
-            traverse(root, index, 0, 0, xy.w, xy.h)
+            traverse(json1, index, 0, 0, xy.w, xy.h)
             scr = mergeBitmaps(scr, bitmap, xy.x, xy.y)
         }
         vm.bitmap(scr)

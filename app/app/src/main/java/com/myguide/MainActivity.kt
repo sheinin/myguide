@@ -52,6 +52,9 @@ import com.myguide.views.Main
 import com.myguide.views.MyDialog
 import com.myguide.views.Splash
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 const val batch = 21
 lateinit var colorScheme: ColorScheme
@@ -59,6 +62,7 @@ lateinit var db: DB
 lateinit var density: Density
 lateinit var fontFamilyResolver: FontFamily.Resolver
 lateinit var json: String
+lateinit var json1: JsonElement
 lateinit var state: MutableTransitionState<Boolean>
 lateinit var screen: Map<Boolean, Screen>
 lateinit var typography: Typography
@@ -91,7 +95,7 @@ class MainActivity : ComponentActivity() {
 
         // Convert byte array to String
         json = String(buffer, Charsets.UTF_8)
-
+        json1 = Json.parseToJsonElement(json)
 
         val dao = StoreDatabase.getDatabase(application).storeDao()
         val repository = Repository(dao)

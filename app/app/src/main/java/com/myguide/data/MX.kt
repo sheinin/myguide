@@ -1,5 +1,7 @@
 package com.myguide.data
 
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.text.AnnotatedString
 import com.myguide.data.Cycler.XY
 import java.util.concurrent.CopyOnWriteArrayList
@@ -14,6 +16,7 @@ data class MX(
     var view: View,
 ) {
     data class View(
+        var bitmap: MutableList<Bitmap>,
         var details: MutableList<Details>,
         var expand: MutableList<Pair<Boolean, AnnotatedString>>,
         var toggle: MutableList<Boolean>,
