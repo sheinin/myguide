@@ -25,8 +25,6 @@ fun pixImage(w: Int, h: Int, drawable: Drawable?, background: Int? = null): Bitm
     return bitmap
 }
 
-
-
 fun pixTextAutoHeight(
     w: Int,
     text: String,

@@ -1,8 +1,8 @@
     {
       "tag": "ROW",
       "background": "#000022",
-      "paddingStart": 8,
-      "paddingEnd": 8,
+      "paddingStart": 18,
+      "paddingEnd": 18,
       "children": [
         {
           "tag": "IMAGE",
@@ -12,23 +12,26 @@
         },
         {
           "tag": "COLUMN",
-          "paddingStart": 8,
-          "paddingEnd": 8,
+          "background": "#220000",
+          "paddingStart": 28,
+          "paddingEnd": 28,
+          "paddingTop": 16,
+          "paddingBottom": 16,
           "children": [
             {
               "tag": "TEXT",
               "text": "%TITLE%",
-              "size": 48
+              "size": 16
             },
             {
               "tag": "TEXT",
               "text": "%ORIGIN%",
-              "size": 44
+              "size": 14
             },
             {
               "tag": "TEXT",
               "text": "%DESCRIPTION%",
-              "size": 36
+              "size": 12
             }
           ]
         }

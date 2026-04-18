@@ -4,6 +4,7 @@ import android.R.attr.bitmap
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log.v
+import android.util.TypedValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
@@ -567,8 +568,14 @@ class Screen(private val context: Context, val ident: Boolean) {
                         vm.h.postValue(mx.point.sumOf { mx.display[it].let { d -> d.first + d.second } })
                     }
                     true -> {
+                        mx.view.bitmap.clear()
                         list.indices.map { index ->
-                            val h = mx.display[index].first + mx.display[index].second
+                            val h =
+                                (
+                                    (mx.display[index].first + mx.display[index].second)
+                                            * vm.ratioH() * vm.scale.value!!
+                                ).toInt()
+                            qqq(">>> $h")
                             bitmap = createBitmap(screenWidth.toPx().toInt(), h)
                             traverse(json1, index, 0, 0, screenWidth.toPx().toInt(), h)
                             mx.view.bitmap.add(bitmap)
@@ -708,8 +715,8 @@ class Screen(private val context: Context, val ident: Boolean) {
                         true -> {
                             XY(
                                 x = 0,
-                                y = mx.ruler[ix].toInt() - scrollY,
-                                h = mx.display[index].first + mx.display[index].second,
+                                y = ((mx.ruler[ix].toInt() - scrollY) * vm.ratioV() * vm.scale.value!!).toInt(),
+                                h = ((mx.display[index].first + mx.display[index].second) * vm.ratioH() * vm.scale.value!!).toInt(),
                                 w = screenWidth.toPx().toInt(),
                                 i = ix
                             )
@@ -804,11 +811,11 @@ class Screen(private val context: Context, val ident: Boolean) {
             else null
     }
 
-    enum class Tags(val key: String) {
-        COLUMN("COLUMN"),
-        IMAGE("IMAGE"),
-        ROW("ROW"),
-        TEXT("TEXT");
+    enum class Tags {
+        COLUMN,
+        IMAGE,
+        ROW,
+        TEXT;
     }
 
     private fun traverse(
@@ -823,15 +830,19 @@ class Screen(private val context: Context, val ident: Boolean) {
         when (element) {
             is JsonObject -> {
                 val e = Tags.valueOf(element["tag"]?.jsonPrimitive?.content?.uppercase()!!)
-                val w1 = element["w"]?.jsonPrimitive?.int ?: w
-                val h1 = element["h"]?.jsonPrimitive?.int ?: h
+                val w1 = ((element["w"]?.jsonPrimitive?.int ?: w) * vm.ratioV()).toInt()
+                val h1 = ((element["h"]?.jsonPrimitive?.int ?: h) * vm.ratioH()).toInt()
                 val bg =  element["background"]?.jsonPrimitive?.content?.toColorInt()
-                //qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h")
+                val pl = ((element["paddingStart"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
+                val pr = ((element["paddingEnd"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
+                val pt = ((element["paddingTop"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
+                val pb = ((element["paddingBottom"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
+                qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h pl:$pl pr:$pr pt:$pt pb:$pb bg:$bg")
                 when (e) {
                     COLUMN, ROW ->
                         pixBox(
-                            w1,
-                            h1,
+                            w1 - pl - pr,
+                            (h1 * vm.ratioH()).toInt() - pt - pb,
                             bg
                         )
                     TEXT ->
@@ -854,7 +865,14 @@ class Screen(private val context: Context, val ident: Boolean) {
                                 else -> ""
                             },
                             background = bg,
-                            size = element["size"]?.jsonPrimitive?.int
+                            size =
+                                (
+                                    TypedValue.applyDimension(
+                                        TypedValue.COMPLEX_UNIT_SP,
+                                        element["size"]?.jsonPrimitive?.float ?: 12f,
+                                        context.resources.displayMetrics
+                                    ) * vm.ratioV() * vm.scale.value!!
+                                ).toInt()
                         )
                     IMAGE ->
                         pixImage(
@@ -867,8 +885,8 @@ class Screen(private val context: Context, val ident: Boolean) {
                     bitmap = mergeBitmaps(
                         back = bitmap,
                         front = bmp,
-                        x = x,
-                        y = y
+                        x = x + pl,
+                        y = y + pb
                     )
                     val children =
                         element["children"]?.jsonArray ?: return Offset(bmp.width.toFloat(), bmp.height.toFloat())
@@ -878,9 +896,9 @@ class Screen(private val context: Context, val ident: Boolean) {
                             yy += traverse(
                                 element = it,
                                 index = index,
-                                x = x,
-                                y = yy,
-                                w = w,
+                                x = x + pl,
+                                y = yy + pt,
+                                w = w - pl - pr,
                                 h = h - yy,
                                 tag = e
                             )!!.y.toInt()
@@ -892,9 +910,9 @@ class Screen(private val context: Context, val ident: Boolean) {
                             xx += traverse(
                                 element = it,
                                 index = index,
-                                x = xx,
-                                y = y,
-                                w = w - xx,
+                                x = xx + pl,
+                                y = y + pt,
+                                w = w - xx - pl - pr,
                                 h = h,
                                 tag = e
                             )!!.x.toInt()
