@@ -80,9 +80,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-        windowInsetsController.hide(navigationBars())
-        windowInsetsController.hide(statusBars())
+    //    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+    //    windowInsetsController.hide(navigationBars())
+    //    windowInsetsController.hide(statusBars())
 
         // Open the file from assets
         val inputStream = assets.open("view.json")
