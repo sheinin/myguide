@@ -15,6 +15,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.myguide.Expandable.expandable
 import com.myguide.Expandable.expanded
 import com.myguide.Expandable.static
@@ -575,7 +576,6 @@ class Screen(private val context: Context, val ident: Boolean) {
                                     (mx.display[index].first + mx.display[index].second)
                                             * vm.ratioH() * vm.scale.value!!
                                 ).toInt()
-                            qqq(">>> $h")
                             bitmap = createBitmap(screenWidth.toPx().toInt(), h)
                             traverse(json1, index, 0, 0, screenWidth.toPx().toInt(), h)
                             mx.view.bitmap.add(bitmap)
@@ -830,14 +830,14 @@ class Screen(private val context: Context, val ident: Boolean) {
         when (element) {
             is JsonObject -> {
                 val e = Tags.valueOf(element["tag"]?.jsonPrimitive?.content?.uppercase()!!)
-                val w1 = ((element["w"]?.jsonPrimitive?.int ?: w) * vm.ratioV()).toInt()
-                val h1 = ((element["h"]?.jsonPrimitive?.int ?: h) * vm.ratioH()).toInt()
+                val w1 = ((element["w"]?.jsonPrimitive?.int?.dp ?: w.toDp()) * vm.ratioV()).toPx().toInt()
+                val h1 = ((element["h"]?.jsonPrimitive?.int?.dp ?: h.toDp()) * vm.ratioH()).toPx().toInt()
                 val bg =  element["background"]?.jsonPrimitive?.content?.toColorInt()
-                val pl = ((element["paddingStart"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
-                val pr = ((element["paddingEnd"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
-                val pt = ((element["paddingTop"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
-                val pb = ((element["paddingBottom"]?.jsonPrimitive?.int ?: 0) * vm.ratioH()).toInt()
-                qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h pl:$pl pr:$pr pt:$pt pb:$pb bg:$bg")
+                val pl = ((element["paddingStart"]?.jsonPrimitive?.int?.dp ?: 0.dp) * vm.ratioH()).toPx().toInt()
+                val pr = ((element["paddingEnd"]?.jsonPrimitive?.int?.dp ?: 0.dp) * vm.ratioH()).toPx().toInt()
+                val pt = ((element["paddingTop"]?.jsonPrimitive?.int?.dp ?: 0.dp) * vm.ratioH()).toPx().toInt()
+                val pb = ((element["paddingBottom"]?.jsonPrimitive?.int?.dp ?: 0.dp) * vm.ratioH()).toPx().toInt()
+                //qqq("E $e $w1 $h1 x:$x y:$y w:$w h:$h pl:$pl pr:$pr pt:$pt pb:$pb bg:$bg")
                 when (e) {
                     COLUMN, ROW ->
                         pixBox(

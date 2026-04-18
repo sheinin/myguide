@@ -1,22 +1,22 @@
     {
       "tag": "ROW",
       "background": "#000022",
-      "paddingStart": 18,
-      "paddingEnd": 18,
+      "paddingStart": 8,
+      "paddingEnd": 8,
       "children": [
         {
           "tag": "IMAGE",
-          "w": 194,
-          "h": 194,
+          "w": 68,
+          "h": 68,
           "image": "%ICON%"
         },
         {
           "tag": "COLUMN",
           "background": "#220000",
-          "paddingStart": 28,
-          "paddingEnd": 28,
-          "paddingTop": 16,
-          "paddingBottom": 16,
+          "paddingStart": 8,
+          "paddingEnd": 8,
+          "paddingTop": 0,
+          "paddingBottom": 0,
           "children": [
             {
               "tag": "TEXT",

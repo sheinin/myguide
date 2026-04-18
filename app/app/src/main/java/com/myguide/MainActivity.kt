@@ -147,6 +147,7 @@ fun Measures(callback: () -> Unit = {}) {
             }
             .onGloballyPositioned { coordinates ->
                 ITEM_HEIGHT = coordinates.size.height
+                qqq("IH ${ITEM_HEIGHT.toDp()}")
                 callback()
             }
     ) {
